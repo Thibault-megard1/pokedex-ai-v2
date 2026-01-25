@@ -51,9 +51,6 @@ graph TD;
 	 E --> F;
 ```
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Acknowledgments
 - Thanks to the Pokémon API for providing the data.
 - Inspired by various Pokémon applications and communities.

@@ -75,6 +75,7 @@ a {
 
 
 .poke-sprite { image-rendering: pixelated; }
+.pixelated { image-rendering: pixelated; }
 
 @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 .bob { animation: bob 1.6s ease-in-out infinite; }

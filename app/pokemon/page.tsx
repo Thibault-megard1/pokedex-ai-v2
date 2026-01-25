@@ -1,7 +1,7 @@
 import PokemonCard from "@/components/PokemonCard";
 import { queryPokemon } from "@/lib/pokeapi";
-import { REGION_OPTIONS, TYPE_OPTIONS } from "@/lib/regions";
 import { backgroundForPokedex } from "@/lib/backgrounds";
+import PokedexSearchBar from "@/components/PokedexSearchBar";
 
 export const dynamic = "force-dynamic";
 
@@ -74,45 +74,14 @@ export default async function PokemonListPage({
         <div className="card p-4 mt-24">
           <h1 className="text-xl font-semibold">Pokédex</h1>
 
-          <form className="mt-3 grid grid-cols-1 lg:grid-cols-6 gap-2" action="/pokemon" method="GET">
-            <input className="input lg:col-span-2" name="q" placeholder="Rechercher (ex: pika)" defaultValue={q} />
-            <input type="hidden" name="page" value="1" />
-
-            <select className="input" name="size" defaultValue={String(pageSize)}>
-              <option value="20">20 / page</option>
-              <option value="50">50 / page</option>
-              <option value="100">100 / page</option>
-            </select>
-
-            <select className="input" name="type" defaultValue={type}>
-              <option value="">Tous types</option>
-              {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-
-            <select className="input" name="region" defaultValue={region}>
-              <option value="">Toutes régions</option>
-              {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-
-            <select className="input" name="sort" defaultValue={sort}>
-              <option value="id">Numéro</option>
-              <option value="name">Nom</option>
-              <option value="height">Taille</option>
-              <option value="weight">Poids</option>
-              <option value="total">Total stats</option>
-              <option value="hp">HP</option>
-              <option value="attack">Attack</option>
-              <option value="defense">Defense</option>
-              <option value="speed">Speed</option>
-            </select>
-
-            <select className="input" name="order" defaultValue={order}>
-              <option value="asc">Croissant</option>
-              <option value="desc">Décroissant</option>
-            </select>
-
-            <button className="btn btn-primary lg:col-span-6" type="submit">Appliquer</button>
-          </form>
+          <PokedexSearchBar
+            initialQ={q}
+            initialSize={String(pageSize)}
+            initialType={type}
+            initialRegion={region}
+            initialSort={sort}
+            initialOrder={order}
+          />
 
           <p className="text-xs text-gray-500 mt-2">
             Résultats: {result.total} — Page {page} / {totalPages}

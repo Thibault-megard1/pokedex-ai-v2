@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import { typeStyle } from "@/lib/typeStyle";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 
@@ -158,11 +159,21 @@ return (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-sm">Joueur (A)</label>
-              <input className="input mt-1" value={aName} onChange={e => setAName(e.target.value)} placeholder="ex: pikachu" />
+              <PokemonAutocomplete
+                id="a"
+                value={aName}
+                onChange={setAName}
+                placeholder="ex: raichu"
+              />
             </div>
             <div>
               <label className="text-sm">Adversaire (B)</label>
-              <input className="input mt-1" value={bName} onChange={e => setBName(e.target.value)} placeholder="ex: bulbasaur" />
+              <PokemonAutocomplete
+                id="b"
+                value={bName}
+                onChange={setBName}
+                placeholder="ex: rattata"
+              />
             </div>
           </div>
 
