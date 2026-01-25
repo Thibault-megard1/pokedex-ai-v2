@@ -34,6 +34,9 @@ export type PokemonDetail = PokemonBasic & {
   generation?: string | null;
   region?: string | null;
   cry?: { latest?: string | null; legacy?: string | null } | null;
+  evolutionStage?: number | null; // 1 = base, 2 = stage 1, 3 = stage 2
+  evolutionIds?: number[];        // ids des évolutions possibles (toutes branches)
+
 };
 
 export type PokemonQueryParams = {

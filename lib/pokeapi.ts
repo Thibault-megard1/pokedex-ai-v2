@@ -58,6 +58,40 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
   const generation = species.generation?.name ?? null;
   const region = generationToRegion(generation);
 
+  // Ajout de la gestion des évolutions dans getPokemonDetail
+  let evolutionStage: number | null = null;
+  let evolutionIds: number[] = [];
+
+  try {
+    const chainUrl = species.evolution_chain?.url;
+    if (chainUrl) {
+      const chainData = await fetchJson(chainUrl);
+      const stages = flattenEvolutionChain(chainData.chain as EvolutionNode);
+
+      // stage du pokemon actuel (1..n)
+      for (let i = 0; i < stages.length; i++) {
+        if (stages[i].id === Number(pokemon.id)) {
+          evolutionStage = i + 1;
+          break;
+        }
+      }
+
+      // ids des évolutions = tous les ids des stages après son stage
+      if (evolutionStage != null) {
+        const after = stages.slice(evolutionStage); // ex: si stage=1 -> on prend stage 2+
+        evolutionIds = after.flat().map(node => node.id).filter(id => id !== Number(pokemon.id));
+      } else {
+        // fallback: tout sauf lui
+        evolutionIds = stages.flat().map(node => node.id).filter(id => id !== Number(pokemon.id));
+      }
+
+      // enlève doublons
+      evolutionIds = Array.from(new Set(evolutionIds));
+    }
+  } catch {
+    // si PokéAPI rate, on laisse null / []
+  }
+
   const detail: PokemonDetail = {
     id: pokemon.id,
     name: pokemon.name,
@@ -69,7 +103,10 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
     stats,
     generation,
     region,
-    cry: pokemon.cries ?? null
+    cry: pokemon.cries ?? null,
+    // Ajout des champs evolutionStage et evolutionIds dans detail
+    evolutionStage,
+    evolutionIds,
   };
 
   await writeJsonFile(p, detail);
@@ -169,3 +206,63 @@ export async function getAdjacentPokemonId(id: number, dir: "prev" | "next") {
   // dir === "prev"
   return id <= MIN ? MAX : id - 1;
 }
+
+// Ajout des helpers pour la gestion des évolutions Pokémon
+
+// Type pour les nœuds d'évolution
+export type EvolutionNode = {
+  id: number;
+  name: string;
+  level?: number;
+  item?: string;
+  trigger?: string;
+  evolvesTo?: EvolutionNode[];
+};
+
+// Fonction pour extraire l'ID d'une URL
+function extractIdFromUrl(url: string): number {
+  const id = url.split("/").filter(Boolean).pop();
+  return id ? parseInt(id, 10) : 0;
+}
+
+// Fonction pour aplatir la chaîne d'évolution
+function flattenEvolutionChain(chain: any, acc: EvolutionNode[] = []): EvolutionNode[] {
+  if (!chain) return acc;
+
+  const id = extractIdFromUrl(chain.species?.url);
+  const name = chain.species?.name;
+  const node: EvolutionNode = { id, name };
+
+  if (chain.evolution_details?.length) {
+    const details = chain.evolution_details[0];
+    if (details.min_level) node.level = details.min_level;
+    if (details.item) node.item = details.item.name;
+    if (details.trigger) node.trigger = details.trigger.name;
+  }
+
+  acc.push(node);
+
+  if (chain.evolves_to?.length) {
+    for (const evolve of chain.evolves_to) {
+      flattenEvolutionChain(evolve, acc);
+    }
+  }
+
+  return acc;
+}
+
+// Récupère la chaîne d'évolution complète d'un Pokémon
+export async function getPokemonEvolutionChain(pokemonId: number): Promise<EvolutionNode[]> {
+  const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`;
+  const speciesData = await fetchJson(speciesUrl);
+
+  const evolutionChainUrl = speciesData.evolution_chain?.url;
+  if (!evolutionChainUrl) return [];
+
+  const evolutionData = await fetchJson(evolutionChainUrl);
+  return flattenEvolutionChain(evolutionData.chain);
+}
+
+// Exemple d'utilisation
+// const evolutions = await getPokemonEvolutionChain(1);
+// console.log(JSON.stringify(evolutions, null, 2));
