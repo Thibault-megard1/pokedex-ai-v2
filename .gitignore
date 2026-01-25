@@ -1,0 +1,38 @@
+# .gitignore for pokedex-ai-v2
+# Node.js dependencies
+node_modules/
+
+# Build outputs
+.next/
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+
+# Cache and temp
+*.tmp
+.cache/
+
+# Data and generated files
+/data/pokemon-cache/
+
+# Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore public backgrounds if generated
+/public/backgrounds/
