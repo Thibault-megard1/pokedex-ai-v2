@@ -18,7 +18,7 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
   return (
     <div className="page-bg" style={{ ["--bg-url" as any]: `url(${bg})` }}>
       <div className="page-content space-y-4">
-      <div className="card p-5">
+      <div className="card p-5 mt-24">
         <div className="flex items-center gap-4">
           <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}

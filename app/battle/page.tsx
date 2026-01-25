@@ -149,11 +149,11 @@ export default function BattlePage() {
     }
   }
 
-  return (
-    <div className="page-bg" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
-      <div className="page-content space-y-4">
-        <div className="card p-6">
-          <h1 className="text-xl font-semibold">Combat</h1>
+return (
+  <div className="page-bg" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
+    <div className="page-content space-y-4">
+      <div className="card p-6 mt-24">
+        <h1 className="text-xl font-semibold">Combat</h1>
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

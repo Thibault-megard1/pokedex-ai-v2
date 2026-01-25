@@ -6,7 +6,7 @@ import { typeStyle } from "@/lib/typeStyle";
 
 type TeamSlot = { slot: number; pokemonId: number; pokemonName: string };
 type Me = { username: string } | null;
-
+const slots = [1, 2, 3, 4, 5, 6];
 type PokeLite = {
   id: number;
   name: string;
@@ -140,7 +140,7 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-6">
+      <div className="card p-6 mt-24">
         <h1 className="text-xl font-semibold">Mon équipe</h1>
         <p className="text-sm text-gray-600 mt-1">Connecté : <b>{me.username}</b></p>
 
@@ -161,72 +161,82 @@ export default function TeamPage() {
         <h2 className="text-lg font-semibold">Slots (max 6)</h2>
 
         <div className="mt-3 space-y-3">
-  {[1, 2, 3, 4, 5, 6].map(slot => {
-    const s = sortedTeam.find(x => x.slot === slot);
-    const d = s ? details[slot] : null;
-    const expanded = expandedSlot === slot;
+        <div className="grid grid-cols-2 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(slot => {
+            const s = sortedTeam.find(x => x.slot === slot);
+            const d = s ? details[slot] : null;
+            const expanded = expandedSlot === slot;
 
-    return (
-      <div key={slot} className="border rounded-xl p-4 bg-gray-50">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-14 h-14 rounded-xl bg-white border flex items-center justify-center overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {d?.sprite ? <img src={d.sprite} alt={d.name} className="w-14 h-14" /> : <span className="text-xs text-gray-500">—</span>}
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm text-gray-600">Slot {slot}</div>
-              <div className="font-semibold capitalize truncate">{s ? s.pokemonName : "— vide —"}</div>
+            return (
+              <div key={slot} className="border rounded-xl p-4 bg-gray-50">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-14 h-14 rounded-xl bg-white border flex items-center justify-center overflow-hidden">
+                      {d?.sprite ? (
+                        <img src={d.sprite} alt={d.name} className="w-14 h-14" />
+                      ) : (
+                        <span className="text-xs text-gray-500">—</span>
+                      )}
+                    </div>
 
-              {d?.types?.length ? (
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {d.types.map(t => {
-                    const ts = typeStyle(t);
-                    return (
-                      <span key={t} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${ts.badgeClass}`}>
-                        <span aria-hidden>{ts.icon}</span>
-                        <span className="capitalize">{t}</span>
-                      </span>
-                    );
-                  })}
+                    <div className="min-w-0">
+                      <div className="text-sm text-gray-600">Slot {slot}</div>
+                      <div className="font-semibold capitalize truncate">
+                        {s ? s.pokemonName : "— vide —"}
+                      </div>
+
+                      {d?.types?.length ? (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {d.types.map(t => {
+                            const ts = typeStyle(t);
+                            return (
+                              <span
+                                key={t}
+                                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${ts.badgeClass}`}
+                              >
+                                <span aria-hidden>{ts.icon}</span>
+                                <span className="capitalize">{t}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {s ? (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        className="btn"
+                        onClick={() => {
+                          setExpandedSlot(expanded ? null : slot);
+                          void loadDetailFor(slot, s.pokemonName);
+                        }}
+                      >
+                        {expanded ? "Masquer stats" : "Voir stats"}
+                      </button>
+                      <button className="btn" onClick={() => removeSlot(slot)}>Retirer</button>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </div>
 
-          {s ? (
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                className="btn"
-                onClick={() => {
-                  setExpandedSlot(expanded ? null : slot);
-                  void loadDetailFor(slot, s.pokemonName);
-                }}
-              >
-                {expanded ? "Masquer stats" : "Voir stats"}
-              </button>
-              <button className="btn" onClick={() => removeSlot(slot)}>Retirer</button>
-            </div>
-          ) : null}
-        </div>
-
-        {s && expanded ? (
-          <div className="mt-3 border-t pt-3">
-            {d ? (
-              <div className="space-y-1">
-                {d.stats.map(st => <StatRow key={st.name} s={st} />)}
+                {s && expanded ? (
+                  <div className="mt-3 border-t pt-3">
+                    {d ? (
+                      <div className="space-y-1">
+                        {d.stats.map(st => <StatRow key={st.name} s={st} />)}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-600">Chargement des stats...</div>
+                    )}
+                  </div>
+                ) : null}
               </div>
-            ) : (
-              <div className="text-sm text-gray-600">Chargement des stats...</div>
-            )}
-          </div>
-        ) : null}
-      </div>
-    );
-  })}
+            );
+          })}
         </div>
 
-        <p className="text-xs text-gray-500 mt-3">Stockage local dans <code>data/teams.json</code>.</p>
+        </div>
       </div>
     </div>
   );

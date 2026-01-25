@@ -4,5 +4,11 @@
     "username": "Jiz3o",
     "passwordHash": "$2a$10$TAZVw451hZgjfOYHEMVqJebMO6Rzy47oSjFqTzfFkYF3iWlUB4KG.",
     "createdAt": "2026-01-25T13:15:03.369Z"
+  },
+  {
+    "id": "5665ec45-eaa8-4279-a631-cc6c0e1b252d",
+    "username": "goatier",
+    "passwordHash": "$2a$10$YNumLyBarJlRmuvLd6MQAuoom68CEE3FFvs0HaN7hmhshDbT.znfy",
+    "createdAt": "2026-01-25T14:57:47.848Z"
   }
 ]

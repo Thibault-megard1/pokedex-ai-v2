@@ -71,7 +71,7 @@ export default async function PokemonListPage({
   return (
     <div className="page-bg" style={{ ["--bg-url" as any]: `url(${bg})` }}>
       <div className="page-content space-y-4">
-        <div className="card p-4">
+        <div className="card p-4 mt-24">
           <h1 className="text-xl font-semibold">Pokédex</h1>
 
           <form className="mt-3 grid grid-cols-1 lg:grid-cols-6 gap-2" action="/pokemon" method="GET">
