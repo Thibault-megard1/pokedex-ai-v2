@@ -1,17 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { ThemeToggle } from "./ThemeProvider";
 
 type Me = { username: string } | null;
 
 export default function NavBar() {
   const [me, setMe] = useState<Me>(null);
+  const fetchingRef = useRef(false);
 
   async function refresh() {
-    const res = await fetch("/api/me", { cache: "no-store" });
-    const data = await res.json();
-    setMe(data.user ?? null);
+    // Éviter les appels multiples simultanés
+    if (fetchingRef.current) return;
+    
+    fetchingRef.current = true;
+    try {
+      const res = await fetch("/api/me", { cache: "no-store" });
+      const data = await res.json();
+      setMe(data.user ?? null);
+    } finally {
+      fetchingRef.current = false;
+    }
   }
 
   useEffect(() => { refresh(); }, []);
@@ -38,9 +48,13 @@ export default function NavBar() {
           <nav className="flex items-center gap-2">
             {[
               { href: "/pokemon", label: "Pokémon" },
+              { href: "/favorites", label: "⭐ Favoris" },
               { href: "/battle", label: "Combat" },
+              { href: "/damage-calculator", label: "Calculateur" },
               { href: "/compare", label: "Comparer" },
               { href: "/team", label: "Équipe" },
+              { href: "/quiz", label: "🎮 Quiz" },
+              { href: "/stats", label: "📊 Stats" },
             ].map(link => (
               <Link
                 key={link.href}
@@ -58,6 +72,7 @@ export default function NavBar() {
         {/* Auth */}
         {me ? (
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <span className="text-sm text-gray-600">
               Connecté : <b>{me.username}</b>
             </span>
@@ -67,6 +82,7 @@ export default function NavBar() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link className="btn" href="/auth/login">
               Connexion
             </Link>

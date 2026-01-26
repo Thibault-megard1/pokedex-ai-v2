@@ -1,10 +1,17 @@
 import Link from "next/link";
-import { getPokemonDetail, getAdjacentPokemonId, getPokemonEvolutionChain } from "@/lib/pokeapi";
+import { getPokemonDetail, getAdjacentPokemonId, getPokemonEvolutionTree } from "@/lib/pokeapi";
 import { typeStyle } from "@/lib/typeStyle";
 import { backgroundForPokemonDetail } from "@/lib/backgrounds";
-import EvolutionDisplay from "@/components/EvolutionDisplay";
+import { getTypeRelations } from "@/lib/typeRelations";
+import { formatPokemonName } from "@/lib/pokemonNames.utils";
+import EvolutionTree from "@/components/EvolutionTree";
 import MovesList from "@/components/MovesList";
 import NaturesList from "@/components/NaturesList";
+import TypeRelations from "@/components/TypeRelations";
+import PokemonForms from "@/components/PokemonForms";
+import FavoriteButton from "@/components/FavoriteButton";
+import HistoryTracker from "@/components/HistoryTracker";
+import PokemonNotes from "@/components/PokemonNotes";
 
 
 export default async function PokemonDetailPage({ params }: { params: { name: string } }) {
@@ -13,10 +20,11 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
   const prevId = await getAdjacentPokemonId(p.id, "prev");
   const nextId = await getAdjacentPokemonId(p.id, "next");
 
-  // Récupérer la chaîne d'évolution
-  const evolutionChain = await getPokemonEvolutionChain(p.id);
-  const currentIndex = evolutionChain.findIndex(evo => evo.id === p.id);
-  const currentStage = currentIndex !== -1 ? currentIndex + 1 : null;
+  // Récupérer l'arbre d'évolution complet
+  const evolutionTree = await getPokemonEvolutionTree(p.id);
+
+  // Calculer les relations de types (faiblesses, résistances, immunités)
+  const typeRelations = getTypeRelations(p.types);
 
   const heightM = (p.heightDecimeters / 10).toFixed(1);
   const weightKg = (p.weightHectograms / 10).toFixed(1);
@@ -25,6 +33,7 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
 
   return (
     <div className="page-bg" style={{ ["--bg-url" as any]: `url(${bg})` }}>
+      <HistoryTracker id={p.id} name={p.name} sprite={p.sprite} />
       <div className="page-content space-y-4">
       <div className="card p-5 mt-24">
         <div className="flex items-start gap-4">
@@ -47,9 +56,15 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
           </div>
 
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold capitalize truncate">
-              {p.name} <span className="text-gray-400 text-base">#{p.id}</span>
-            </h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-semibold truncate">
+                {formatPokemonName(p.name, p.frenchName).primary} <span className="text-gray-400 text-base">#{p.id}</span>
+              </h1>
+              <FavoriteButton pokemonId={p.id} pokemonName={p.name} size="lg" />
+            </div>
+            {formatPokemonName(p.name, p.frenchName).secondary && (
+              <p className="text-lg text-gray-600 italic mt-1 capitalize">{formatPokemonName(p.name, p.frenchName).secondary}</p>
+            )}
             <div className="mt-4 flex gap-2 flex-wrap">
               <Link className="btn" href={`/pokemon/${prevId}`}>← Précédent</Link>
               <Link className="btn" href={`/pokemon/${nextId}`}>Suivant →</Link>
@@ -106,15 +121,38 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
         </div>
       </div>
 
+      {/* Section Notes Personnelles */}
+      <div className="card p-5">
+        <h2 className="text-lg font-semibold mb-4">📝 Mes Notes</h2>
+        <PokemonNotes pokemonId={p.id} pokemonName={p.name} />
+      </div>
+
+      {/* Section Relations de types (Faiblesses/Résistances/Immunités) */}
+      <div className="card p-5">
+        <h2 className="text-lg font-semibold mb-4">Efficacité des types</h2>
+        <TypeRelations
+          weakTo={typeRelations.weakTo}
+          resistantTo={typeRelations.resistantTo}
+          immuneTo={typeRelations.immuneTo}
+          strongAgainst={typeRelations.strongAgainst}
+          weakAgainst={typeRelations.weakAgainst}
+        />
+      </div>
+
       {/* Section Évolutions */}
-      {evolutionChain.length > 0 && (
+      {evolutionTree && (
         <div className="card p-5">
-          <h2 className="text-lg font-semibold mb-4">Évolutions</h2>
-          <EvolutionDisplay
-            currentStage={currentStage}
-            evolutionChain={evolutionChain}
+          <EvolutionTree
+            evolutionTree={evolutionTree}
             currentPokemonId={p.id}
           />
+        </div>
+      )}
+
+      {/* Section Formes alternatives (Mega, Gigamax, régionales) */}
+      {p.forms && p.forms.length > 0 && (
+        <div className="card p-5">
+          <PokemonForms forms={p.forms} pokemonName={p.name} />
         </div>
       )}
 

@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       a: {
         id: a.id,
         name: a.name,
+        frenchName: a.frenchName,
         sprite: a.sprite,
         types: a.types,
         stats: a.stats,
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
       b: {
         id: b.id,
         name: b.name,
+        frenchName: b.frenchName,
         sprite: b.sprite,
         types: b.types,
         stats: b.stats,

@@ -2,6 +2,7 @@ import PokemonCard from "@/components/PokemonCard";
 import { queryPokemon } from "@/lib/pokeapi";
 import { backgroundForPokedex } from "@/lib/backgrounds";
 import PokedexSearchBar from "@/components/PokedexSearchBar";
+import RecentPokemon from "@/components/RecentPokemon";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +32,14 @@ function pageList(current: number, total: number) {
 export default async function PokemonListPage({
   searchParams
 }: {
-  searchParams: { page?: string; q?: string; size?: string; type?: string; region?: string; sort?: string; order?: string };
+  searchParams: { page?: string; q?: string; size?: string; type?: string; region?: string; sort?: string; order?: string; includeForms?: string };
 }) {
   const page = Math.max(1, Number(searchParams.page ?? "1"));
   const q = (searchParams.q ?? "").toString();
   const pageSize = parseSize(searchParams.size);
   const type = (searchParams.type ?? "").toString();
   const region = (searchParams.region ?? "").toString();
+  const includeForms = searchParams.includeForms === "true";
 
   const sort = (searchParams.sort ?? "id").toString();
   const order = (searchParams.order ?? "asc").toString();
@@ -49,7 +51,8 @@ export default async function PokemonListPage({
     type: type || undefined,
     region: region || undefined,
     sort: sort as any,
-    order: order as any
+    order: order as any,
+    includeForms
   });
 
   const totalPages = result.totalPages;
@@ -63,6 +66,7 @@ export default async function PokemonListPage({
     sp.set("region", region);
     sp.set("sort", sort);
     sp.set("order", order);
+    if (includeForms) sp.set("includeForms", "true");
     return `/pokemon?${sp.toString()}`;
   };
 
@@ -81,12 +85,15 @@ export default async function PokemonListPage({
             initialRegion={region}
             initialSort={sort}
             initialOrder={order}
+            initialIncludeForms={includeForms ? "true" : undefined}
           />
 
           <p className="text-xs text-gray-500 mt-2">
             Résultats: {result.total} — Page {page} / {totalPages}
           </p>
         </div>
+
+        <RecentPokemon />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {result.items.map(p => <PokemonCard key={p.id} p={p} />)}

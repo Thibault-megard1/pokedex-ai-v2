@@ -28,3 +28,25 @@ const MAP: Record<string, TypeStyle> = {
 export function typeStyle(type: string): TypeStyle {
   return MAP[type] ?? { label: type, badgeClass: "bg-gray-100 border-gray-300 text-gray-900", icon: "🏷️" };
 }
+
+// Couleurs pour les badges de types (pour les composants qui n'utilisent pas Tailwind classes)
+export const typeColors: Record<string, string> = {
+  grass: "#4ade80",
+  fire: "#f87171",
+  water: "#60a5fa",
+  electric: "#facc15",
+  ice: "#67e8f9",
+  fighting: "#fb923c",
+  poison: "#c084fc",
+  ground: "#fbbf24",
+  flying: "#7dd3fc",
+  psychic: "#f9a8d4",
+  bug: "#bef264",
+  rock: "#a8a29e",
+  ghost: "#a78bfa",
+  dragon: "#c4b5fd",
+  dark: "#6b7280",
+  steel: "#cbd5e1",
+  fairy: "#fda4af",
+  normal: "#d1d5db"
+};

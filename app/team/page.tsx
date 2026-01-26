@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { typeStyle } from "@/lib/typeStyle";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import EvolutionDisplay from "@/components/EvolutionDisplay";
+import TeamStrategyBuilder from "@/components/TeamStrategyBuilder";
 
 type TeamSlot = { slot: number; pokemonId: number; pokemonName: string };
 type Me = { username: string } | null;
@@ -293,6 +294,19 @@ export default function TeamPage() {
 
         </div>
       </div>
+
+      {/* Analyse Stratégique */}
+      {sortedTeam.length > 0 && Object.keys(details).length > 0 && (
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold mb-4">🎯 Analyse Stratégique</h2>
+          <TeamStrategyBuilder 
+            team={sortedTeam
+              .map(s => details[s.slot])
+              .filter((d): d is PokeLite => d !== null && d !== undefined)
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

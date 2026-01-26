@@ -11,6 +11,7 @@ type Props = {
   initialRegion: string;
   initialSort: string;
   initialOrder: string;
+  initialIncludeForms?: string;
 };
 
 export default function PokedexSearchBar({
@@ -19,9 +20,11 @@ export default function PokedexSearchBar({
   initialType,
   initialRegion,
   initialSort,
-  initialOrder
+  initialOrder,
+  initialIncludeForms
 }: Props) {
   const [q, setQ] = useState(initialQ);
+  const [includeForms, setIncludeForms] = useState<boolean>(initialIncludeForms === "true");
 
   return (
     <form className="mt-3 grid grid-cols-1 lg:grid-cols-6 gap-2" action="/pokemon" method="GET">
@@ -74,6 +77,20 @@ export default function PokedexSearchBar({
         <option value="asc">Croissant</option>
         <option value="desc">Décroissant</option>
       </select>
+
+      <div className="flex items-center gap-2 lg:col-span-6">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            name="includeForms" 
+            value="true"
+            checked={includeForms}
+            onChange={(e) => setIncludeForms(e.target.checked)}
+            className="w-4 h-4 cursor-pointer"
+          />
+          <span className="text-sm">Afficher les Méga-évolutions et Gigamax</span>
+        </label>
+      </div>
 
       <button className="btn btn-primary lg:col-span-6" type="submit">Appliquer</button>
     </form>

@@ -5,11 +5,13 @@ import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import HeightScale from "@/components/HeightScale";
 import { typeStyle } from "@/lib/typeStyle";
 import { BACKGROUNDS } from "@/lib/backgrounds";
+import { getDisplayName } from "@/lib/pokemonNames.utils";
 
 // Modèle minimal utilisé par la page (données renvoyées par /api/compare)
 type P = {
   id: number;
   name: string;
+  frenchName?: string | null;
   sprite: string | null;
   types: string[];
   stats: { name: string; value: number }[];
@@ -47,8 +49,8 @@ function StatsRadar({ a, b }: { a: P; b: P }) {
       <div className="flex items-center justify-between">
         <div className="font-semibold">Comparaison des stats (0 → 255)</div>
         <div className="flex items-center gap-3 text-xs">
-          <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> {a.name}</span>
-          <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-500 inline-block" /> {b.name}</span>
+          <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> {getDisplayName(a.name, a.frenchName)}</span>
+          <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-500 inline-block" /> {getDisplayName(b.name, b.frenchName)}</span>
         </div>
       </div>
 
@@ -194,9 +196,9 @@ export default function ComparePage() {
             <div className="card p-4">
               <div className="flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="w-16 h-16 poke-sprite" src={a.sprite ?? ""} alt={a.name} />
+                <img className="w-16 h-16 poke-sprite" src={a.sprite ?? ""} alt={getDisplayName(a.name, a.frenchName)} />
                 <div>
-                  <div className="font-semibold capitalize">{a.name}</div>
+                  <div className="font-semibold">{getDisplayName(a.name, a.frenchName)}</div>
                   <div className="text-xs text-gray-600">Taille: {toMeters(a.height)} m — Poids: {toKg(a.weight)} kg</div>
                 </div>
               </div>
@@ -243,11 +245,11 @@ export default function ComparePage() {
             <div className="card p-4">
               <div className="flex items-center gap-3 justify-end">
                 <div className="text-right">
-                  <div className="font-semibold capitalize">{b.name}</div>
+                  <div className="font-semibold">{getDisplayName(b.name, b.frenchName)}</div>
                   <div className="text-xs text-gray-600">Taille: {toMeters(b.height)} m — Poids: {toKg(b.weight)} kg</div>
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="w-16 h-16 poke-sprite" src={b.sprite ?? ""} alt={b.name} />
+                <img className="w-16 h-16 poke-sprite" src={b.sprite ?? ""} alt={getDisplayName(b.name, b.frenchName)} />
               </div>
 
               <div className="mt-2 flex flex-wrap gap-2 justify-end">
@@ -279,19 +281,19 @@ export default function ComparePage() {
             <div className="text-xs text-gray-600 mt-1">Joue le cri de chaque Pokémon</div>
             <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button className="btn" disabled={!a.cryUrl} onClick={() => playCry(a.cryUrl)}>
-                {a.cryUrl ? `Cri de ${a.name}` : `Pas de cri pour ${a.name}`}
+                {a.cryUrl ? `Cri de ${getDisplayName(a.name, a.frenchName)}` : `Pas de cri pour ${getDisplayName(a.name, a.frenchName)}`}
               </button>
               <button className="btn" disabled={!b.cryUrl} onClick={() => playCry(b.cryUrl)}>
-                {b.cryUrl ? `Cri de ${b.name}` : `Pas de cri pour ${b.name}`}
+                {b.cryUrl ? `Cri de ${getDisplayName(b.name, b.frenchName)}` : `Pas de cri pour ${getDisplayName(b.name, b.frenchName)}`}
               </button>
             </div>
           </div>
 
           <HeightScale
-            aName={a.name}
+            aName={getDisplayName(a.name, a.frenchName)}
             aSprite={a.sprite}
             aHeightDm={a.height}
-            bName={b.name}
+            bName={getDisplayName(b.name, b.frenchName)}
             bSprite={b.sprite}
             bHeightDm={b.height}
           />
@@ -303,20 +305,20 @@ export default function ComparePage() {
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
               <div className="flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="w-20 h-20 poke-sprite" src={a.sprite ?? ""} alt={a.name} />
+                <img className="w-20 h-20 poke-sprite" src={a.sprite ?? ""} alt={getDisplayName(a.name, a.frenchName)} />
                 <div>
-                  <div className="font-semibold capitalize">{a.name}</div>
+                  <div className="font-semibold">{getDisplayName(a.name, a.frenchName)}</div>
                   <div className="text-sm text-gray-600">{toKg(a.weight)} kg</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 justify-end">
                 <div className="text-right">
-                  <div className="font-semibold capitalize">{b.name}</div>
+                  <div className="font-semibold">{getDisplayName(b.name, b.frenchName)}</div>
                   <div className="text-sm text-gray-600">{toKg(b.weight)} kg</div>
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="w-20 h-20 poke-sprite" src={b.sprite ?? ""} alt={b.name} />
+                <img className="w-20 h-20 poke-sprite" src={b.sprite ?? ""} alt={getDisplayName(b.name, b.frenchName)} />
               </div>
             </div>
           </div>

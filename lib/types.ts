@@ -21,6 +21,7 @@ export type Session = {
 export type PokemonBasic = {
   id: number;
   name: string;
+  frenchName?: string | null;
   sprite: string | null;
   backSprite?: string | null;
   types: string[];
@@ -40,6 +41,19 @@ export type Nature = {
   decreasedStat?: string | null;
 };
 
+export type PokemonForm = {
+  id: number;
+  name: string;
+  frenchName?: string | null;
+  formName: string; // "mega", "alola", "galar", "gmax", etc.
+  sprite: string | null;
+  types: string[];
+  stats: { name: string; value: number }[];
+  isMega?: boolean;
+  isGmax?: boolean;
+  isRegionalForm?: boolean;
+};
+
 export type PokemonDetail = PokemonBasic & {
   heightDecimeters: number;
   weightHectograms: number;
@@ -52,6 +66,7 @@ export type PokemonDetail = PokemonBasic & {
   shinySprite?: string | null;    // sprite shiny
   moves?: Move[];                 // liste des attaques
   natures?: Nature[];             // natures possibles (toutes les natures Pokémon)
+  forms?: PokemonForm[];          // formes alternatives (mega, gmax, régionales, etc.)
 };
 
 export type PokemonQueryParams = {
@@ -62,6 +77,7 @@ export type PokemonQueryParams = {
   region?: string;
   sort?: "id" | "name" | "height" | "weight" | "total" | "hp" | "attack" | "defense" | "speed";
   order?: "asc" | "desc";
+  includeForms?: boolean; // Inclure les méga-évolutions et Gigamax dans les résultats
 };
 
 export type PokemonQueryResult = {
