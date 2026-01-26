@@ -5,5 +5,17 @@
       "pokemonName": "bulbasaur",
       "pokemonId": 1
     }
+  ],
+  "4e5a6578-ccc5-4032-8956-2a89d54357f0": [
+    {
+      "slot": 1,
+      "pokemonName": "beedrill",
+      "pokemonId": 15
+    },
+    {
+      "slot": 2,
+      "pokemonName": "pikachu",
+      "pokemonId": 25
+    }
   ]
 }

@@ -3,16 +3,30 @@ import { BACKGROUNDS } from "@/lib/backgrounds";
 
 import { useEffect, useMemo, useState } from "react";
 import { typeStyle } from "@/lib/typeStyle";
+import PokemonAutocomplete from "@/components/PokemonAutocomplete";
+import EvolutionDisplay from "@/components/EvolutionDisplay";
 
 type TeamSlot = { slot: number; pokemonId: number; pokemonName: string };
 type Me = { username: string } | null;
 const slots = [1, 2, 3, 4, 5, 6];
+
+type EvolutionNode = {
+  id: number;
+  name: string;
+  level?: number;
+  item?: string;
+  trigger?: string;
+};
+
 type PokeLite = {
   id: number;
   name: string;
   sprite: string | null;
   types: string[];
   stats: { name: string; value: number }[];
+  evolutionStage?: number | null;
+  evolutionChain?: EvolutionNode[];
+  nextEvolutions?: EvolutionNode[];
 };
 
 function StatRow({ s }: { s: { name: string; value: number } }) {
@@ -144,14 +158,21 @@ export default function TeamPage() {
         <h1 className="text-xl font-semibold">Mon équipe</h1>
         <p className="text-sm text-gray-600 mt-1">Connecté : <b>{me.username}</b></p>
 
-        <div className="mt-4 flex gap-2">
-          <input
-            className="input"
-            value={addName}
-            onChange={(e) => setAddName(e.target.value)}
-            placeholder="Ajouter un Pokémon (nom ex: pikachu)"
-          />
-          <button className="btn btn-primary" onClick={addPokemon}>Ajouter</button>
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Ajouter un Pokémon à l'équipe
+          </label>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <PokemonAutocomplete
+                id="team-add"
+                value={addName}
+                onChange={setAddName}
+                placeholder="Rechercher un Pokémon (ex: pikachu)"
+              />
+            </div>
+            <button className="btn btn-primary" onClick={addPokemon}>Ajouter</button>
+          </div>
         </div>
 
         {error ? <div className="text-sm text-red-600 mt-2">{error}</div> : null}
@@ -161,32 +182,45 @@ export default function TeamPage() {
         <h2 className="text-lg font-semibold">Slots (max 6)</h2>
 
         <div className="mt-3 space-y-3">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4, 5, 6].map(slot => {
             const s = sortedTeam.find(x => x.slot === slot);
             const d = s ? details[slot] : null;
             const expanded = expandedSlot === slot;
 
             return (
-              <div key={slot} className="border rounded-xl p-4 bg-gray-50">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-14 h-14 rounded-xl bg-white border flex items-center justify-center overflow-hidden">
+              <div key={slot} className="border-2 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 min-w-0 flex-1">
+                    {/* Sprite plus grand et plus visible */}
+                    <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-gray-200 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                       {d?.sprite ? (
-                        <img src={d.sprite} alt={d.name} className="w-14 h-14" />
+                        <img 
+                          src={d.sprite} 
+                          alt={d.name} 
+                          className="w-20 h-20 pixelated hover:scale-110 transition-transform" 
+                        />
                       ) : (
-                        <span className="text-xs text-gray-500">—</span>
+                        <span className="text-2xl text-gray-400">?</span>
                       )}
                     </div>
 
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-600">Slot {slot}</div>
-                      <div className="font-semibold capitalize truncate">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                        Slot {slot}
+                      </div>
+                      <div className="text-xl font-bold capitalize truncate mt-1 text-gray-800">
                         {s ? s.pokemonName : "— vide —"}
                       </div>
+                      
+                      {d?.id && (
+                        <div className="text-sm text-gray-600 mt-0.5">
+                          #{d.id}
+                        </div>
+                      )}
 
                       {d?.types?.length ? (
-                        <div className="flex flex-wrap gap-2 mt-1">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           {d.types.map(t => {
                             const ts = typeStyle(t);
                             return (
@@ -205,30 +239,51 @@ export default function TeamPage() {
                   </div>
 
                   {s ? (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col gap-2 shrink-0">
                       <button
-                        className="btn"
+                        className="btn text-sm whitespace-nowrap"
                         onClick={() => {
                           setExpandedSlot(expanded ? null : slot);
                           void loadDetailFor(slot, s.pokemonName);
                         }}
                       >
-                        {expanded ? "Masquer stats" : "Voir stats"}
+                        {expanded ? "Masquer" : "Voir stats"}
                       </button>
-                      <button className="btn" onClick={() => removeSlot(slot)}>Retirer</button>
+                      <button 
+                        className="btn text-sm bg-red-50 hover:bg-red-100 border-red-200 text-red-700 whitespace-nowrap" 
+                        onClick={() => removeSlot(slot)}
+                      >
+                        Retirer
+                      </button>
                     </div>
                   ) : null}
                 </div>
 
-                {s && expanded ? (
-                  <div className="mt-3 border-t pt-3">
-                    {d ? (
-                      <div className="space-y-1">
+                {s && expanded && d ? (
+                  <div className="mt-4 border-t pt-4 space-y-4">
+                    {/* Section Stats */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Statistiques</h3>
+                      <div className="space-y-2">
                         {d.stats.map(st => <StatRow key={st.name} s={st} />)}
                       </div>
-                    ) : (
-                      <div className="text-sm text-gray-600">Chargement des stats...</div>
+                    </div>
+
+                    {/* Section Évolutions */}
+                    {d.evolutionChain && d.evolutionChain.length > 0 && (
+                      <EvolutionDisplay
+                        currentStage={d.evolutionStage ?? null}
+                        evolutionChain={d.evolutionChain}
+                        currentPokemonId={d.id}
+                      />
                     )}
+                  </div>
+                ) : s && expanded && !d ? (
+                  <div className="mt-4 border-t pt-4">
+                    <div className="text-sm text-gray-600 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+                      Chargement des détails...
+                    </div>
                   </div>
                 ) : null}
               </div>

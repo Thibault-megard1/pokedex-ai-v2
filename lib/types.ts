@@ -27,6 +27,19 @@ export type PokemonBasic = {
   region?: string | null;
 };
 
+export type Move = {
+  name: string;
+  learnMethod: string; // "level-up" | "machine" | "tutor" | "egg"
+  levelLearnedAt?: number;
+  machineNumber?: string; // "TM01", "HM05", etc.
+};
+
+export type Nature = {
+  name: string;
+  increasedStat?: string | null;
+  decreasedStat?: string | null;
+};
+
 export type PokemonDetail = PokemonBasic & {
   heightDecimeters: number;
   weightHectograms: number;
@@ -36,7 +49,9 @@ export type PokemonDetail = PokemonBasic & {
   cry?: { latest?: string | null; legacy?: string | null } | null;
   evolutionStage?: number | null; // 1 = base, 2 = stage 1, 3 = stage 2
   evolutionIds?: number[];        // ids des évolutions possibles (toutes branches)
-
+  shinySprite?: string | null;    // sprite shiny
+  moves?: Move[];                 // liste des attaques
+  natures?: Nature[];             // natures possibles (toutes les natures Pokémon)
 };
 
 export type PokemonQueryParams = {

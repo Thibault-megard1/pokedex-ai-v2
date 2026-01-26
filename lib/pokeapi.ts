@@ -1,10 +1,86 @@
 import path from "path";
 import { promises as fs } from "fs";
 import { DATA_DIR, ensureDir, writeJsonFile } from "@/lib/utils";
-import type { PokemonBasic, PokemonDetail, PokemonQueryParams, PokemonQueryResult } from "@/lib/types";
+import type { PokemonBasic, PokemonDetail, PokemonQueryParams, PokemonQueryResult, Nature } from "@/lib/types";
 import { generationToRegion } from "@/lib/regions";
 
 const CACHE_DIR = path.join(DATA_DIR, "pokemon-cache");
+
+// Liste des natures Pokémon (fixe)
+const POKEMON_NATURES: Nature[] = [
+  { name: "hardy", increasedStat: null, decreasedStat: null },
+  { name: "lonely", increasedStat: "attack", decreasedStat: "defense" },
+  { name: "brave", increasedStat: "attack", decreasedStat: "speed" },
+  { name: "adamant", increasedStat: "attack", decreasedStat: "special-attack" },
+  { name: "naughty", increasedStat: "attack", decreasedStat: "special-defense" },
+  { name: "bold", increasedStat: "defense", decreasedStat: "attack" },
+  { name: "docile", increasedStat: null, decreasedStat: null },
+  { name: "relaxed", increasedStat: "defense", decreasedStat: "speed" },
+  { name: "impish", increasedStat: "defense", decreasedStat: "special-attack" },
+  { name: "lax", increasedStat: "defense", decreasedStat: "special-defense" },
+  { name: "timid", increasedStat: "speed", decreasedStat: "attack" },
+  { name: "hasty", increasedStat: "speed", decreasedStat: "defense" },
+  { name: "serious", increasedStat: null, decreasedStat: null },
+  { name: "jolly", increasedStat: "speed", decreasedStat: "special-attack" },
+  { name: "naive", increasedStat: "speed", decreasedStat: "special-defense" },
+  { name: "modest", increasedStat: "special-attack", decreasedStat: "attack" },
+  { name: "mild", increasedStat: "special-attack", decreasedStat: "defense" },
+  { name: "quiet", increasedStat: "special-attack", decreasedStat: "speed" },
+  { name: "bashful", increasedStat: null, decreasedStat: null },
+  { name: "rash", increasedStat: "special-attack", decreasedStat: "special-defense" },
+  { name: "calm", increasedStat: "special-defense", decreasedStat: "attack" },
+  { name: "gentle", increasedStat: "special-defense", decreasedStat: "defense" },
+  { name: "sassy", increasedStat: "special-defense", decreasedStat: "speed" },
+  { name: "careful", increasedStat: "special-defense", decreasedStat: "special-attack" },
+  { name: "quirky", increasedStat: null, decreasedStat: null },
+];
+
+// Fonction pour récupérer toutes les natures
+async function getAllNatures(): Promise<Nature[]> {
+  return POKEMON_NATURES;
+}
+
+// Type pour les nœuds d'évolution
+export type EvolutionNode = {
+  id: number;
+  name: string;
+  level?: number;
+  item?: string;
+  trigger?: string;
+  evolvesTo?: EvolutionNode[];
+};
+
+// Fonction pour extraire l'ID d'une URL
+function extractIdFromUrl(url: string): number {
+  const id = url.split("/").filter(Boolean).pop();
+  return id ? parseInt(id, 10) : 0;
+}
+
+// Fonction pour aplatir la chaîne d'évolution
+function flattenEvolutionChain(chain: any, acc: EvolutionNode[] = []): EvolutionNode[] {
+  if (!chain) return acc;
+
+  const id = extractIdFromUrl(chain.species?.url);
+  const name = chain.species?.name;
+  const node: EvolutionNode = { id, name };
+
+  if (chain.evolution_details?.length) {
+    const details = chain.evolution_details[0];
+    if (details.min_level) node.level = details.min_level;
+    if (details.item) node.item = details.item.name;
+    if (details.trigger) node.trigger = details.trigger.name;
+  }
+
+  acc.push(node);
+
+  if (chain.evolves_to?.length) {
+    for (const evolve of chain.evolves_to) {
+      flattenEvolutionChain(evolve, acc);
+    }
+  }
+
+  return acc;
+}
 
 function normalizeName(name: string) {
   return name.toLowerCase().trim();
@@ -37,9 +113,16 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
 
   try {
     const raw = await fs.readFile(p, "utf-8");
-    return JSON.parse(raw) as PokemonDetail;
+    const cached = JSON.parse(raw) as PokemonDetail;
+    
+    // Vérifier si le cache contient les nouveaux champs (moves, natures, shinySprite)
+    // Si non, on recharge depuis l'API
+    if (cached.moves !== undefined && cached.natures !== undefined && cached.shinySprite !== undefined) {
+      return cached;
+    }
+    // Si les nouveaux champs ne sont pas présents, on continue pour refetch
   } catch {
-    // miss
+    // miss ou erreur de lecture
   }
 
   const pokemon = await fetchJson(`https://pokeapi.co/api/v2/pokemon/${normalizeName(nameOrId)}`);
@@ -49,11 +132,63 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
 
   const sprite = pokemon.sprites?.front_default ?? null;
   const backSprite = pokemon.sprites?.back_default ?? null;
+  const shinySprite = pokemon.sprites?.front_shiny ?? null;
 
   const stats = (pokemon.stats ?? []).map((s: any) => ({
     name: s.stat?.name ?? "unknown",
     value: Number(s.base_stat ?? 0)
   }));
+
+  // Récupération des attaques
+  const moves: any[] = [];
+  if (pokemon.moves && Array.isArray(pokemon.moves)) {
+    for (const moveData of pokemon.moves) {
+      const moveName = moveData.move?.name ?? "";
+      
+      // Parcourir les différentes méthodes d'apprentissage
+      for (const versionDetail of moveData.version_group_details ?? []) {
+        const method = versionDetail.move_learn_method?.name ?? "";
+        const level = versionDetail.level_learned_at ?? 0;
+        
+        if (method === "level-up") {
+          moves.push({
+            name: moveName,
+            learnMethod: "level-up",
+            levelLearnedAt: level
+          });
+        } else if (method === "machine") {
+          moves.push({
+            name: moveName,
+            learnMethod: "machine",
+            machineNumber: `TM/HM` // PokéAPI ne donne pas toujours le numéro exact
+          });
+        } else if (method === "tutor") {
+          moves.push({
+            name: moveName,
+            learnMethod: "tutor"
+          });
+        } else if (method === "egg") {
+          moves.push({
+            name: moveName,
+            learnMethod: "egg"
+          });
+        }
+      }
+    }
+  }
+
+  // Dédupliquer les attaques (même attaque, même méthode, même niveau)
+  const uniqueMoves = Array.from(
+    new Map(
+      moves.map(m => [
+        `${m.name}-${m.learnMethod}-${m.levelLearnedAt ?? ""}`,
+        m
+      ])
+    ).values()
+  );
+
+  // Récupération de toutes les natures Pokémon (liste fixe)
+  const natures = await getAllNatures();
 
   const generation = species.generation?.name ?? null;
   const region = generationToRegion(generation);
@@ -66,7 +201,7 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
     const chainUrl = species.evolution_chain?.url;
     if (chainUrl) {
       const chainData = await fetchJson(chainUrl);
-      const stages = flattenEvolutionChain(chainData.chain as EvolutionNode);
+      const stages = flattenEvolutionChain(chainData.chain);
 
       // stage du pokemon actuel (1..n)
       for (let i = 0; i < stages.length; i++) {
@@ -79,10 +214,10 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
       // ids des évolutions = tous les ids des stages après son stage
       if (evolutionStage != null) {
         const after = stages.slice(evolutionStage); // ex: si stage=1 -> on prend stage 2+
-        evolutionIds = after.flat().map(node => node.id).filter(id => id !== Number(pokemon.id));
+        evolutionIds = after.map(node => node.id).filter(id => id !== Number(pokemon.id));
       } else {
         // fallback: tout sauf lui
-        evolutionIds = stages.flat().map(node => node.id).filter(id => id !== Number(pokemon.id));
+        evolutionIds = stages.map(node => node.id).filter(id => id !== Number(pokemon.id));
       }
 
       // enlève doublons
@@ -97,6 +232,7 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
     name: pokemon.name,
     sprite,
     backSprite,
+    shinySprite,
     types,
     heightDecimeters: Number(pokemon.height ?? 0),
     weightHectograms: Number(pokemon.weight ?? 0),
@@ -104,6 +240,8 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
     generation,
     region,
     cry: pokemon.cries ?? null,
+    moves: uniqueMoves,
+    natures,
     // Ajout des champs evolutionStage et evolutionIds dans detail
     evolutionStage,
     evolutionIds,
@@ -207,50 +345,6 @@ export async function getAdjacentPokemonId(id: number, dir: "prev" | "next") {
   return id <= MIN ? MAX : id - 1;
 }
 
-// Ajout des helpers pour la gestion des évolutions Pokémon
-
-// Type pour les nœuds d'évolution
-export type EvolutionNode = {
-  id: number;
-  name: string;
-  level?: number;
-  item?: string;
-  trigger?: string;
-  evolvesTo?: EvolutionNode[];
-};
-
-// Fonction pour extraire l'ID d'une URL
-function extractIdFromUrl(url: string): number {
-  const id = url.split("/").filter(Boolean).pop();
-  return id ? parseInt(id, 10) : 0;
-}
-
-// Fonction pour aplatir la chaîne d'évolution
-function flattenEvolutionChain(chain: any, acc: EvolutionNode[] = []): EvolutionNode[] {
-  if (!chain) return acc;
-
-  const id = extractIdFromUrl(chain.species?.url);
-  const name = chain.species?.name;
-  const node: EvolutionNode = { id, name };
-
-  if (chain.evolution_details?.length) {
-    const details = chain.evolution_details[0];
-    if (details.min_level) node.level = details.min_level;
-    if (details.item) node.item = details.item.name;
-    if (details.trigger) node.trigger = details.trigger.name;
-  }
-
-  acc.push(node);
-
-  if (chain.evolves_to?.length) {
-    for (const evolve of chain.evolves_to) {
-      flattenEvolutionChain(evolve, acc);
-    }
-  }
-
-  return acc;
-}
-
 // Récupère la chaîne d'évolution complète d'un Pokémon
 export async function getPokemonEvolutionChain(pokemonId: number): Promise<EvolutionNode[]> {
   const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`;
@@ -263,6 +357,3 @@ export async function getPokemonEvolutionChain(pokemonId: number): Promise<Evolu
   return flattenEvolutionChain(evolutionData.chain);
 }
 
-// Exemple d'utilisation
-// const evolutions = await getPokemonEvolutionChain(1);
-// console.log(JSON.stringify(evolutions, null, 2));

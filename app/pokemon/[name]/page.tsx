@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { getPokemonDetail, getAdjacentPokemonId } from "@/lib/pokeapi";
+import { getPokemonDetail, getAdjacentPokemonId, getPokemonEvolutionChain } from "@/lib/pokeapi";
 import { typeStyle } from "@/lib/typeStyle";
 import { backgroundForPokemonDetail } from "@/lib/backgrounds";
+import EvolutionDisplay from "@/components/EvolutionDisplay";
+import MovesList from "@/components/MovesList";
+import NaturesList from "@/components/NaturesList";
 
 
 export default async function PokemonDetailPage({ params }: { params: { name: string } }) {
@@ -9,6 +12,11 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
   const bg = backgroundForPokemonDetail({ id: p.id, region: p.region ?? null, types: p.types });
   const prevId = await getAdjacentPokemonId(p.id, "prev");
   const nextId = await getAdjacentPokemonId(p.id, "next");
+
+  // Récupérer la chaîne d'évolution
+  const evolutionChain = await getPokemonEvolutionChain(p.id);
+  const currentIndex = evolutionChain.findIndex(evo => evo.id === p.id);
+  const currentStage = currentIndex !== -1 ? currentIndex + 1 : null;
 
   const heightM = (p.heightDecimeters / 10).toFixed(1);
   const weightKg = (p.weightHectograms / 10).toFixed(1);
@@ -19,12 +27,26 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
     <div className="page-bg" style={{ ["--bg-url" as any]: `url(${bg})` }}>
       <div className="page-content space-y-4">
       <div className="card p-5 mt-24">
-        <div className="flex items-center gap-4">
-          <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {p.sprite ? <img src={p.sprite} alt={p.name} className="w-24 h-24" /> : null}
+        <div className="flex items-start gap-4">
+          {/* Sprites normaux et shiny */}
+          <div className="flex flex-col gap-3">
+            <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-gray-200 flex items-center justify-center overflow-hidden shadow-inner">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {p.sprite ? <img src={p.sprite} alt={p.name} className="w-28 h-28 pixelated hover:scale-110 transition-transform" /> : null}
+            </div>
+            
+            {p.shinySprite && (
+              <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 flex items-center justify-center overflow-hidden shadow-inner relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.shinySprite} alt={`${p.name} shiny`} className="w-28 h-28 pixelated hover:scale-110 transition-transform" />
+                <div className="absolute top-1 right-1 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">
+                  ✨ Shiny
+                </div>
+              </div>
+            )}
           </div>
-          <div className="min-w-0">
+
+          <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold capitalize truncate">
               {p.name} <span className="text-gray-400 text-base">#{p.id}</span>
             </h1>
@@ -83,6 +105,34 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
           <a className="btn" href="/pokemon">Retour</a>
         </div>
       </div>
+
+      {/* Section Évolutions */}
+      {evolutionChain.length > 0 && (
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold mb-4">Évolutions</h2>
+          <EvolutionDisplay
+            currentStage={currentStage}
+            evolutionChain={evolutionChain}
+            currentPokemonId={p.id}
+          />
+        </div>
+      )}
+
+      {/* Section Attaques */}
+      {p.moves && p.moves.length > 0 && (
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold mb-4">Attaques</h2>
+          <MovesList moves={p.moves} />
+        </div>
+      )}
+
+      {/* Section Natures */}
+      {p.natures && p.natures.length > 0 && (
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold mb-4">Natures possibles</h2>
+          <NaturesList natures={p.natures} />
+        </div>
+      )}
       </div>
     </div>
   );
