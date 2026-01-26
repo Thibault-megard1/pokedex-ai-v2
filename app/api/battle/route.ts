@@ -11,6 +11,7 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Prépare un duel : charge deux Pokémon, estime les chances et exécute la simulation.
   try {
     const json = await req.json();
     const body = Body.parse(json);

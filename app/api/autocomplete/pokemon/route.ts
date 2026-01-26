@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
+  // Renvoie jusqu'à 20 noms de Pokémon qui commencent par la requête q.
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").toLowerCase();
 

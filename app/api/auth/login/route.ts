@@ -8,6 +8,7 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Authentifie un utilisateur, crée la session si les identifiants sont valides.
   try {
     const json = await req.json();
     const body = Body.parse(json);

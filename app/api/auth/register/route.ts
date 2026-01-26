@@ -9,6 +9,7 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Inscrit un nouvel utilisateur, vérifie le double mot de passe, ouvre la session.
   try {
     const json = await req.json();
     const body = Body.parse(json);

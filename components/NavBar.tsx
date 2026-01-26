@@ -23,7 +23,7 @@ export default function NavBar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50">
+    <header className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur border-b border-gray-200">
       <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
 
         {/* Logo */}
@@ -39,6 +39,7 @@ export default function NavBar() {
             {[
               { href: "/pokemon", label: "Pokémon" },
               { href: "/battle", label: "Combat" },
+              { href: "/compare", label: "Comparer" },
               { href: "/team", label: "Équipe" },
             ].map(link => (
               <Link

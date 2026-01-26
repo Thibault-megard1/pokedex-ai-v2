@@ -13,6 +13,7 @@ const TeamBody = z.object({
 });
 
 export async function GET() {
+  // Récupère l'équipe enregistrée pour l'utilisateur courant (ou tableau vide si non connecté).
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ team: [] });
 
@@ -21,6 +22,7 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  // Sauvegarde une équipe : valide le payload, vérifie chaque Pokémon, trie et stocke par slot.
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
 

@@ -5,6 +5,7 @@ import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import { typeStyle } from "@/lib/typeStyle";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 
+// Type pour stocker les données d'un Pokémon (léger)
 type PokeLite = {
   name: string;
   sprite: string | null;
@@ -14,38 +15,48 @@ type PokeLite = {
   cry: string | null;
 };
 
+// Type pour un tour de combat
 type Turn = { attacker: "A" | "B"; damage: number; aHp: number; bHp: number; note: string };
 
+// Type pour le résultat du combat simulé
 type Result = {
-  a: PokeLite;
-  b: PokeLite;
-  chanceA: number;
-  winner: "A" | "B";
-  turns: Turn[];
+  a: PokeLite;           // Pokémon du joueur
+  b: PokeLite;           // Pokémon adversaire
+  chanceA: number;       // Probabilité de victoire du joueur (0-1)
+  winner: "A" | "B";    // Gagnant du combat
+  turns: Turn[];         // Liste de tous les tours du combat
 };
 
 function stat(p: PokeLite, key: string) {
+  // Récupère la valeur d'une stat (ex: "hp", "attack", etc.) d'un Pokémon
   return p.stats.find(s => s.name === key)?.value ?? 0;
 }
 function clamp(n: number, a: number, b: number) {
+  // Limite une valeur entre min (a) et max (b)
+  // Utilisé pour: s'assurer que les PV n'affichent pas de valeurs négatives ou > maxHP
   return Math.max(a, Math.min(b, n));
 }
 
 export default function BattlePage() {
-  const [aName, setAName] = useState("");
-  const [bName, setBName] = useState("");
-  const [res, setRes] = useState<Result | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  // === ÉTATS DE SAISIE ===
+  const [aName, setAName] = useState("");      // Nom du Pokémon du joueur (A)
+  const [bName, setBName] = useState("");      // Nom du Pokémon adversaire (B)
+  
+  // === RÉSULTAT DU COMBAT ===
+  const [res, setRes] = useState<Result | null>(null);  // Données du combat simulé
+  const [error, setError] = useState<string | null>(null);  // Message d'erreur
+  const [loading, setLoading] = useState(false);  // État de chargement
+  
+  // === ANIMATION DU COMBAT ===
+  const [step, setStep] = useState(0);           // Tour actuel de l'animation
+  const [aHpNow, setAHpNow] = useState<number>(0);  // PV actuels du joueur (A)
+  const [bHpNow, setBHpNow] = useState<number>(0);  // PV actuels de l'adversaire (B)
+  const [aAnim, setAAnim] = useState<string>("");  // Animation du joueur (attack-left, hit, etc.)
+  const [bAnim, setBAnim] = useState<string>("");  // Animation de l'adversaire (attack-right, hit, etc.)
 
-  const [step, setStep] = useState(0);
-  const [aHpNow, setAHpNow] = useState<number>(0);
-  const [bHpNow, setBHpNow] = useState<number>(0);
-  const [aAnim, setAAnim] = useState<string>("");
-  const [bAnim, setBAnim] = useState<string>("");
-
-  const playToken = useRef(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // === RÉFÉRENCES POUR CONTRÔLE DE TOKENS ===
+  const playToken = useRef(0);                    // Permet d'annuler l'animation si une nouvelle commence
+  const audioRef = useRef<HTMLAudioElement | null>(null);  // Référence pour jouer les cris
 
   const chanceText = useMemo(() => {
     if (!res) return null;
@@ -54,9 +65,15 @@ export default function BattlePage() {
     return { pctA, pctB };
   }, [res]);
 
-  const maxAHp = res ? stat(res.a, "hp") : 1;
-  const maxBHp = res ? stat(res.b, "hp") : 1;
+  // === STATISTIQUES DU COMBAT ===
+  const maxAHp = res ? stat(res.a, "hp") : 1;   // PV max du joueur (A)
+  const maxBHp = res ? stat(res.b, "hp") : 1;   // PV max de l'adversaire (B)
 
+  // === VÉRIFICATION KO ===
+  const aKO = res ? aHpNow <= 0 : false;        // Le joueur est KO
+  const bKO = res ? bHpNow <= 0 : false;        // L'adversaire est KO
+
+  // Joue un cri audio d'un Pokémon
   function playCry(url: string | null) {
     if (!url) return;
     try {
@@ -69,6 +86,7 @@ export default function BattlePage() {
     }
   }
 
+  // Lance le combat: appelle l'API, récupère les données, initialise les PV
   async function fightNow() {
     setError(null);
     setRes(null);
@@ -108,6 +126,8 @@ export default function BattlePage() {
     }
   }
 
+  // Joue l'animation complète du combat
+  // Joue l'animation complète du combat
   async function playTurns() {
     if (!res) return;
 
@@ -125,8 +145,12 @@ export default function BattlePage() {
 
       const t = res.turns[i];
 
+      // Joue le cri du Pokémon qui attaque
       playCry(t.attacker === "A" ? res.a.cry : res.b.cry);
 
+      // Lance l'animation d'attaque et de coup reçu
+      // Si A attaque : A attaque vers la gauche (attack-left), B prend un coup (hit)
+      // Si B attaque : B attaque vers la droite (attack-right), A prend un coup (hit)
       if (t.attacker === "A") {
         setAAnim("attack-left");
         setBAnim("hit");
@@ -138,9 +162,11 @@ export default function BattlePage() {
       await new Promise(r => setTimeout(r, 380));
       if (token !== playToken.current) return;
 
+      // Arrête l'animation d'attaque et met à jour les PV
       setAAnim("");
       setBAnim("");
 
+      // Met à jour les PV avec les dégâts du tour
       setAHpNow(t.aHp);
       setBHpNow(t.bHp);
       setStep(i + 1);
@@ -172,7 +198,7 @@ return (
                 id="b"
                 value={bName}
                 onChange={setBName}
-                placeholder="ex: rattata"
+                placeholder="ex: dialga"
               />
             </div>
           </div>
@@ -207,6 +233,7 @@ return (
             </div>
 
             <div className="card p-4 relative overflow-hidden">
+              {/* BARRE DE PV DE L'ADVERSAIRE (B) - HAUT À DROITE */}
               <div className="flex justify-end">
                 <div className="bg-white/85 rounded-xl border px-4 py-3 w-[280px]">
                   <div className="flex items-center justify-between">
@@ -229,18 +256,38 @@ return (
                 </div>
               </div>
 
+              {/* ZONE D'ARÈNE - Contient les sprites des deux Pokémon */}
               <div className="h-[260px] relative">
-                <div className={`absolute top-6 left-10 ${bAnim} bob`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="poke-sprite w-[140px] h-[140px]" src={res.b.sprite ?? ""} alt={res.b.name} />
+                {/* SPRITE DE L'ADVERSAIRE (B) - À DROITE - HAUT */}
+                {/* Position: top-6 right-10 (en haut à droite) */}
+                {/* Animation: ${bAnim} (peut être 'attack-right', 'hit', ou vide) */}
+                {/* Taille: 140x140px */}
+                {/* Classe KO: appliquée si bKO est true (quand PV <= 0) */}
+                <div className={`absolute top-6 right-10 ${bAnim} bob`}>
+                  {/* Nom de l'adversaire au-dessus de son sprite */}
+                  <div className="absolute -top-6 right-0 bg-white/85 border rounded-lg px-2 py-1 text-sm font-semibold capitalize">
+                    {res.b.name}
+                  </div>
+                  {/* Sprite frontal de l'adversaire - applique la classe 'ko' si KO */}
+                  <img className={`poke-sprite w-[140px] h-[140px] ${bKO ? "ko" : ""}`} src={res.b.sprite ?? ""} alt={res.b.name} />
                 </div>
 
-                <div className={`absolute bottom-2 right-10 ${aAnim} bob`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="poke-sprite w-[160px] h-[160px]" src={res.a.backSprite ?? res.a.sprite ?? ""} alt={res.a.name} />
+                {/* SPRITE DU JOUEUR (A) - À GAUCHE - BAS */}
+                {/* Position: bottom-2 left-10 (en bas à gauche) */}
+                {/* Animation: ${aAnim} (peut être 'attack-left', 'hit', ou vide) */}
+                {/* Taille: 160x160px (légèrement plus grand) */}
+                {/* Classe KO: appliquée si aKO est true (quand PV <= 0) */}
+                <div className={`absolute bottom-1 left-10 ${aAnim} bob`}>
+                  {/* Nom du joueur au-dessus de son sprite */}
+                  <div className="absolute -top-6 left-0 bg-white/85 border rounded-lg px-2 py-1 text-sm font-semibold capitalize">
+                    {res.a.name}
+                  </div>
+                  {/* Sprite de dos du joueur (ou sprite frontal en fallback) - applique la classe 'ko' si KO */}
+                  <img className={`poke-sprite w-[160px] h-[160px] ${aKO ? "ko" : ""}`} src={res.a.backSprite ?? res.a.sprite ?? ""} alt={res.a.name} />
                 </div>
               </div>
 
+              {/* BARRE DE PV DU JOUEUR (A) - BAS À GAUCHE */}
               <div className="flex justify-start">
                 <div className="bg-white/85 rounded-xl border px-4 py-3 w-[320px]">
                   <div className="flex items-center justify-between">

@@ -42,13 +42,74 @@ npm start
 
 ### Mermaid Diagram
 ```mermaid
-graph TD;
-	 A[Start] --> B{Is it a Pokémon?};
-	 B -- Yes --> C[Show Pokémon Details];
-	 B -- No --> D[Show Error];
-	 C --> E[Show Evolutions];
-	 D --> F[End];
-	 E --> F;
+graph TB
+    subgraph "Endpoints API"
+        LOGIN["/auth/login<br/>POST"]
+        LOGOUT["/auth/logout<br/>POST"]
+        REGISTER["/auth/register<br/>POST"]
+        ME["/me<br/>GET"]
+        AUTOCOMPLETE["/autocomplete/pokemon<br/>GET"]
+        BATTLE["/battle<br/>POST"]
+        COMPARE["/compare<br/>POST"]
+        TEAM_GET["/team<br/>GET"]
+        TEAM_PUT["/team<br/>PUT"]
+    end
+
+    subgraph "Lib Auth"
+        AUTH["lib/auth.ts<br/>verifyLogin()<br/>registerUser()<br/>createSession()<br/>destroySession()<br/>getCurrentSession()"]
+    end
+
+    subgraph "Lib Database"
+        DB["lib/db.ts<br/>getTeam()<br/>setTeam()"]
+    end
+
+    subgraph "Lib PokéAPI"
+        POKEAPI["lib/pokeapi.ts<br/>getPokemonDetail()<br/>queryPokemon()<br/>getAdjacentPokemonId()"]
+    end
+
+    subgraph "Lib Battle"
+        BATTLE_LIB["lib/battle.ts<br/>fight()<br/>estimateWinChance()"]
+    end
+
+    subgraph "Data Files"
+        USERS["data/users.json<br/>(stockage utilisateurs)"]
+        SESSIONS["data/sessions.json<br/>(sessions actives)"]
+        TEAMS["data/teams.json<br/>(équipes sauvegardées)"]
+        CACHE["data/pokemon-cache/<br/>*.json<br/>(cache local)"]
+        NAMES["data/pokemon-names.json<br/>(liste noms)"]
+    end
+
+    subgraph "External API"
+        POKEAPI_EXT["PokéAPI<br/>https://pokeapi.co"]
+    end
+
+    LOGIN --> AUTH
+    LOGOUT --> AUTH
+    REGISTER --> AUTH
+    ME --> AUTH
+    
+    AUTH --> USERS
+    AUTH --> SESSIONS
+    
+    AUTOCOMPLETE --> NAMES
+    AUTOCOMPLETE --> POKEAPI_EXT
+    
+    BATTLE --> POKEAPI
+    BATTLE --> BATTLE_LIB
+    
+    COMPARE --> POKEAPI
+    
+    TEAM_GET --> ME
+    TEAM_GET --> DB
+    TEAM_PUT --> ME
+    TEAM_PUT --> DB
+    TEAM_PUT --> POKEAPI
+    
+    POKEAPI --> CACHE
+    POKEAPI --> POKEAPI_EXT
+    
+    DB --> TEAMS
+    DB --> SESSIONS
 ```
 
 ## Acknowledgments

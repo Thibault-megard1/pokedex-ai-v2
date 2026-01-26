@@ -10,5 +10,11 @@
     "username": "goatier",
     "passwordHash": "$2a$10$YNumLyBarJlRmuvLd6MQAuoom68CEE3FFvs0HaN7hmhshDbT.znfy",
     "createdAt": "2026-01-25T14:57:47.848Z"
+  },
+  {
+    "id": "2320f294-46a5-4b26-bd10-9d8e0a66ae2a",
+    "username": "Clement",
+    "passwordHash": "$2a$10$e8aicoE8JxJKdLDgiH1B9eyyANzEzAmUYA0M7I63MqL5YD.9GzjvC",
+    "createdAt": "2026-01-26T09:53:40.233Z"
   }
 ]

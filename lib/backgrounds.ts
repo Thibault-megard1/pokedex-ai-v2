@@ -11,7 +11,8 @@ export const BACKGROUNDS = {
   home: "/backgrounds/home.jpg",
   team: "/backgrounds/team.jpg",
   auth: "/backgrounds/auth.jpg",
-  battle: "/backgrounds/battle-arena.jpg"
+  battle: "/backgrounds/battle-arena.jpg",
+  compare: "/backgrounds/compare.jpg"
 };
 
 export function cardBackgroundForPokemon(p: { id: number; region?: string | null; types: string[] }): string {

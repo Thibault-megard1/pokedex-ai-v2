@@ -21,11 +21,28 @@ export default function PokemonAutocomplete({ id, value, onChange, placeholder }
       .catch(() => {});
   }, []);
 
+  const normalized = value.trim().toLowerCase();
+  const tokens = normalized.split(/[-\s]+/).filter(Boolean);
+  const lastToken = tokens[tokens.length - 1] ?? "";
+  const lastTokenIsRoman = /^[ivxlcdm]+$/.test(lastToken);
+
   const items =
-    value.length < 2
+    normalized.length < 2
       ? []
       : names
-          .filter(n => n.startsWith(value.toLowerCase()))
+          .filter(n => {
+            const lower = n.toLowerCase();
+
+            if (lastTokenIsRoman) {
+              // Quand l'utilisateur tape un suffixe en chiffre romain (generation-i, etc.),
+              // on filtre uniquement sur cette valeur exacte pour éviter de suggérer ii/iii/iv.
+              const parts = lower.split(/[-\s]+/).filter(Boolean);
+              const candidateLast = parts[parts.length - 1] ?? "";
+              if (candidateLast !== lastToken) return false;
+            }
+
+            return lower.startsWith(normalized);
+          })
           .slice(0, 20);
 
   return (
