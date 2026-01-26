@@ -17,11 +17,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Check for stored preference first, then system preference
     const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored) {
-      setTheme(stored);
-      document.documentElement.classList.toggle("dark", stored === "dark");
-    }
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initialTheme = stored || (systemPrefersDark ? "dark" : "light");
+    
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle("dark", initialTheme === "dark");
     setMounted(true);
   }, []);
 
@@ -32,7 +34,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  if (!mounted) return <>{children}</>;
+  // Prevent flash of unstyled content
+  if (!mounted) {
+    return <div style={{ visibility: "hidden" }}>{children}</div>;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
@@ -51,10 +56,16 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition text-2xl"
+      className="pokeball-toggle"
       title={`Passer en mode ${theme === "light" ? "sombre" : "clair"}`}
+      aria-label={`Passer en mode ${theme === "light" ? "sombre" : "clair"}`}
     >
-      {theme === "light" ? "🌙" : "☀️"}
+      <div className="pokeball-inner">
+        <div className="pokeball-top"></div>
+        <div className="pokeball-button"></div>
+        <div className="pokeball-bottom"></div>
+      </div>
     </button>
   );
 }
+

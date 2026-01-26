@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import HeightScale from "@/components/HeightScale";
+import TypeBadge, { BadgeKey } from "@/components/TypeBadge";
 import { typeStyle } from "@/lib/typeStyle";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 import { getDisplayName } from "@/lib/pokemonNames.utils";
@@ -130,15 +131,33 @@ export default function ComparePage() {
     }
   };
 
+  // Résout un nom (français ou anglais) en nom anglais
+  async function resolveName(name: string): Promise<string> {
+    try {
+      const response = await fetch(`/api/pokemon-names/resolve?name=${encodeURIComponent(name)}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.englishName || name;
+      }
+    } catch {
+      // En cas d'erreur, utiliser le nom tel quel
+    }
+    return name;
+  }
+
   // Appelle l'API /api/compare pour récupérer les deux Pokémon
   async function runCompare() {
     setError(null);
     setLoading(true);
     try {
+      // Résoudre les noms français en noms anglais si nécessaire
+      const resolvedA = await resolveName(aName);
+      const resolvedB = await resolveName(bName);
+      
       const r = await fetch("/api/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ a: aName, b: bName }),
+        body: JSON.stringify({ a: resolvedA, b: resolvedB }),
       });
       const data = await r.json();
       if (!r.ok) {
@@ -237,6 +256,10 @@ export default function ComparePage() {
                           <b className="text-red-600">{s.value}</b>
                         </div>
                       ))}
+                      <div className="flex justify-between pt-1 mt-1 border-t-2 border-gray-300">
+                        <span className="font-bold text-gray-900">TOTAL</span>
+                        <b className="text-red-600">{a.stats.reduce((sum, s) => sum + s.value, 0)}</b>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -278,6 +301,10 @@ export default function ComparePage() {
                           <b className="text-blue-600">{s.value}</b>
                         </div>
                       ))}
+                      <div className="flex justify-between pt-1 mt-1 border-t-2 border-gray-300">
+                        <span className="font-bold text-gray-900">TOTAL</span>
+                        <b className="text-blue-600">{b.stats.reduce((sum, s) => sum + s.value, 0)}</b>
+                      </div>
                     </div>
                   </div>
                 </div>

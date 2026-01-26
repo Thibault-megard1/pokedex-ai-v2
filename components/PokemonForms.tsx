@@ -13,16 +13,16 @@ interface PokemonFormsProps {
 }
 
 export default function PokemonForms({ forms, pokemonName }: PokemonFormsProps) {
-  // On retire les Méga/Gigamax qui sont désormais affichés dans l'arbre d'évolution
-  const filteredForms = forms.filter(f => !f.isMega && !f.isGmax);
+  // Grouper les formes par catégorie
+  const megaForms = forms.filter(f => f.isMega);
+  const gmaxForms = forms.filter(f => f.isGmax);
+  const regionalForms = forms.filter(f => f.isRegionalForm && !f.isMega && !f.isGmax);
+  const otherForms = forms.filter(f => !f.isRegionalForm && !f.isMega && !f.isGmax);
 
-  if (!filteredForms || filteredForms.length === 0) {
+  // Si aucune forme à afficher
+  if (megaForms.length === 0 && gmaxForms.length === 0 && regionalForms.length === 0 && otherForms.length === 0) {
     return null;
   }
-
-  // Grouper les formes par catégorie
-  const regionalForms = filteredForms.filter(f => f.isRegionalForm);
-  const otherForms = filteredForms.filter(f => !f.isRegionalForm);
 
   return (
     <div className="space-y-6">

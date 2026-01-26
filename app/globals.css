@@ -16,7 +16,17 @@
   --pokedex-blue: #3B4CCA;
   --pokedex-light-blue: #88AAEA;
   
-  /* UI Colors */
+  /* Light Mode UI Colors */
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #f5f5f5;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-color: #7A7A7A;
+  --shadow: rgba(0, 0, 0, 0.25);
+  
   --screen-bg: #98D8E8;
   --screen-border: #2A475E;
   --panel-bg: #E8E8E8;
@@ -24,7 +34,7 @@
   --border-gray: #7A7A7A;
   --shadow-dark: rgba(0, 0, 0, 0.25);
   
-  /* Type Colors (consistent across app) */
+  /* Type Colors (consistent across all modes) */
   --type-normal: #A8A878;
   --type-fire: #F08030;
   --type-water: #6890F0;
@@ -56,6 +66,31 @@
   --spacing-xl: 2rem;
 }
 
+/* Dark Mode Theme */
+.dark {
+  /* Dark Mode UI Colors */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --surface: #1e293b;
+  --surface-elevated: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border-color: #475569;
+  --shadow: rgba(0, 0, 0, 0.5);
+  
+  --screen-bg: #1e3a5f;
+  --screen-border: #60a5fa;
+  --panel-bg: #1e293b;
+  --panel-dark: #0f172a;
+  --border-gray: #475569;
+  --shadow-dark: rgba(0, 0, 0, 0.5);
+}
+
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -63,10 +98,12 @@ html, body {
 }
 
 body {
-  @apply bg-gray-50 text-gray-900;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ============================================================================
@@ -88,17 +125,75 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-body);
 }
 
+/* Auto dark mode for common text colors */
+.text-gray-600 {
+  color: #374151 !important; /* gray-700 - darker in light mode */
+  transition: color 0.3s ease;
+}
+
+.text-gray-700 {
+  color: #1f2937 !important; /* gray-800 - darker in light mode */
+  transition: color 0.3s ease;
+}
+
+.text-gray-800 {
+  color: #111827 !important; /* gray-900 - darkest in light mode */
+  transition: color 0.3s ease;
+}
+
+.text-gray-900 {
+  color: #030712 !important; /* gray-950 - near black in light mode */
+  transition: color 0.3s ease;
+}
+
+.text-gray-500 {
+  color: #6b7280 !important; /* gray-600 - darker in light mode */
+  transition: color 0.3s ease;
+}
+
+.text-gray-400 {
+  color: #9ca3af !important; /* gray-500 - darker in light mode */
+  transition: color 0.3s ease;
+}
+
+/* Dark mode overrides - lighter colors for dark backgrounds */
+.dark .text-gray-600 {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.dark .text-gray-700 {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.dark .text-gray-800 {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+.dark .text-gray-900 {
+  color: #f3f4f6 !important; /* gray-100 */
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark .text-gray-400 {
+  color: #9ca3af !important; /* gray-400 - stays same */
+}
+
 /* ============================================================================
    POKÉDEX UI COMPONENTS
    ============================================================================ */
 
 /* Pokédex Panel - Main container */
 .pokedex-panel {
-  @apply bg-white rounded-2xl shadow-2xl border-4;
-  border-color: var(--pokedex-red);
-  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px var(--shadow);
+  border: 4px solid var(--pokedex-red);
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%);
   position: relative;
   overflow: hidden;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .pokedex-panel::before {
@@ -120,31 +215,40 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Pokédex Card - Individual item card */
 .pokedex-card {
-  @apply rounded-xl shadow-lg border-3 transition-all duration-300 cursor-pointer;
-  border: 3px solid var(--border-gray);
-  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px var(--shadow);
+  border: 3px solid var(--border-color);
+  background: var(--surface);
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .pokedex-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);
   pointer-events: none;
 }
 
 .pokedex-card:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px var(--shadow-dark);
+  box-shadow: 0 20px 25px -5px var(--shadow);
   border-color: var(--pokedex-yellow);
+}
+
+.dark .pokedex-card:hover {
+  border-color: var(--pokedex-yellow);
+  box-shadow: 0 0 30px rgba(255, 203, 5, 0.3);
 }
 
 .pokedex-card-header {
   background: linear-gradient(135deg, var(--panel-bg) 0%, var(--panel-dark) 100%);
   padding: 0.75rem;
-  border-bottom: 2px solid var(--border-gray);
+  border-bottom: 2px solid var(--border-color);
+  transition: background 0.3s ease;
 }
 
 /* Pokédex Button - Primary action button */
@@ -192,26 +296,41 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Pokédex Input - Form input */
-.pokedex-input {
-  @apply w-full rounded-lg px-4 py-3 border-3 outline-none transition-all;
-  border: 3px solid var(--border-gray);
-  background: white;
+.pokedex-input, .input {
+  width: 100%;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
 }
 
-.pokedex-input:focus {
+.pokedex-input:focus, .input:focus {
   border-color: var(--pokedex-blue);
   box-shadow: 0 0 0 3px rgba(59, 76, 202, 0.2);
 }
 
+.dark .pokedex-input:focus, .dark .input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 76, 202, 0.4), 0 0 20px rgba(59, 76, 202, 0.2);
+}
+
 /* Screen - Display screen (like Pokédex screen) */
 .pokedex-screen {
-  @apply rounded-lg p-4;
+  border-radius: 0.5rem;
+  padding: 1rem;
   background: var(--screen-bg);
   border: 4px solid var(--screen-border);
   box-shadow: inset 0 4px 8px rgba(0,0,0,0.2);
   position: relative;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .pokedex-screen {
+  box-shadow: inset 0 4px 8px rgba(0,0,0,0.4), 0 0 15px rgba(96, 165, 250, 0.1);
 }
 
 .pokedex-screen::after {
@@ -279,18 +398,27 @@ a {
 }
 
 .card {
-  @apply bg-white rounded-xl shadow-lg border-3;
-  border: 3px solid var(--border-gray);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px var(--shadow);
+  border: 3px solid var(--border-color);
+  background: var(--surface);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .btn {
-  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 border-3 transition-all;
-  border: 2px solid var(--border-gray);
-  background: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .btn:hover {
-  @apply bg-gray-100;
+  background: var(--surface-elevated);
   transform: translateY(-1px);
 }
 
@@ -303,7 +431,15 @@ a {
 }
 
 .badge {
-  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs border border-gray-300 bg-gray-100;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color);
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* ============================================================================
@@ -334,6 +470,15 @@ a {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.00);
+  transition: background 0.3s ease;
+}
+
+.dark .page-bg::after {
+  background: rgba(0,0,0,0.4);
+}
+
+.dark .page-bg::before {
+  filter: saturate(0.8) brightness(0.6);
 }
 
 
@@ -466,3 +611,106 @@ a {
     linear-gradient(0deg, #d0d0d0 0%, #e8e8e8 50%, #d0d0d0 100%);
   background-size: 200% 100%, 100% 100%;
 }
+
+/* ============================================================================
+   POKÉBALL THEME TOGGLE
+   ============================================================================ */
+.pokeball-toggle {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.3s ease;
+}
+
+.pokeball-toggle:hover {
+  transform: scale(1.1);
+}
+
+.pokeball-toggle:active {
+  transform: scale(0.95);
+}
+
+.pokeball-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid #333;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dark .pokeball-inner {
+  border-color: #60a5fa;
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.5);
+}
+
+.pokeball-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--pokedex-red);
+  transition: background 0.3s ease;
+}
+
+.dark .pokeball-top {
+  background: #1e3a5f;
+}
+
+.pokeball-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: white;
+  transition: background 0.3s ease;
+}
+
+.dark .pokeball-bottom {
+  background: #0f172a;
+}
+
+.pokeball-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: white;
+  border: 3px solid #333;
+  border-radius: 50%;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.dark .pokeball-button {
+  background: #60a5fa;
+  border-color: #60a5fa;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
+}
+
+.pokeball-inner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #333;
+  transform: translateY(-50%);
+  z-index: 5;
+  transition: background 0.3s ease;
+}
+
+.dark .pokeball-inner::before {
+  background: #60a5fa;
+}
+

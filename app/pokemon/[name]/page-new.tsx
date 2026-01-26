@@ -65,8 +65,9 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
                         alt={`${p.name} shiny`} 
                         className="w-40 h-40 mx-auto pixelated hover:scale-110 transition-transform" 
                       />
-                      <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
-                        ✨ SHINY
+                      <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                        <img src="/icons/ui/ic-success.png" alt="Shiny" className="w-3 h-3" />
+                        <span>SHINY</span>
                       </div>
                     </div>
                   </div>
@@ -142,7 +143,10 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
         {/* Stats Section */}
         <div className="pokedex-panel max-w-6xl mx-auto mb-6">
           <div className="pokedex-panel-content p-6">
-            <h2 className="text-pokemon text-2xl mb-4">📊 STATISTIQUES</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <img src="/icons/ui/ic-search.png" alt="Stats" className="w-6 h-6" />
+              <h2 className="text-pokemon text-2xl">STATISTIQUES</h2>
+            </div>
             <div className="space-y-3">
               {p.stats.map(s => {
                 const percentage = Math.min(100, (s.value / 255) * 100);
@@ -190,7 +194,10 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
         {/* Type Relations */}
         <div className="pokedex-panel max-w-6xl mx-auto mb-6">
           <div className="pokedex-panel-content p-6">
-            <h2 className="text-pokemon text-2xl mb-4">⚔️ EFFICACITÉ DES TYPES</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <img src="/icons/ui/nav-battle.png" alt="Battle" className="w-6 h-6" />
+              <h2 className="text-pokemon text-2xl">EFFICACITÉ DES TYPES</h2>
+            </div>
             <TypeRelations
               weakTo={typeRelations.weakTo}
               resistantTo={typeRelations.resistantTo}

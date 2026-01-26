@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { ThemeToggle } from "./ThemeProvider";
+import { MenuGroup } from "./MenuGroup";
 
 type Me = { username: string } | null;
 
 export default function NavBar() {
   const [me, setMe] = useState<Me>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const fetchingRef = useRef(false);
 
   async function refresh() {
@@ -33,16 +35,38 @@ export default function NavBar() {
     window.location.href = "/";
   }
 
-  const navLinks = [
-    { href: "/", label: "Accueil", icon: "🏠" },
-    { href: "/pokemon", label: "Pokédex", icon: "📖" },
-    { href: "/favorites", label: "Favoris", icon: "⭐" },
-    { href: "/team", label: "Équipe", icon: "👥" },
-    { href: "/battle", label: "Combat", icon: "⚔️" },
-    { href: "/tournament", label: "Tournoi", icon: "🏆" },
-    { href: "/quiz", label: "Quiz", icon: "🎮" },
-    { href: "/compare", label: "Comparer", icon: "📊" },
-    { href: "/stats", label: "Stats", icon: "📈" },
+  // Grouped navigation structure
+  const menuGroups = [
+    {
+      id: "pokedex",
+      title: "Pokédex",
+      icon: "/icons/ui/nav-pokedex.png",
+      items: [
+        { href: "/pokemon", label: "Liste", icon: "/icons/ui/ic-pokemon.png" },
+        { href: "/favorites", label: "Favoris", icon: "/icons/ui/ic-success.png" },
+        { href: "/compare", label: "Comparer", icon: "/icons/ui/ic-filter.png" },
+        { href: "/stats", label: "Statistiques", icon: "/icons/ui/ic-search.png" },
+      ]
+    },
+    {
+      id: "battle",
+      title: "Combat",
+      icon: "/icons/ui/nav-battle.png",
+      items: [
+        { href: "/battle", label: "1v1", icon: "/icons/ui/nav-battle.png" },
+        { href: "/tournament", label: "Tournoi 6v6", icon: "/icons/ui/ic-success.png" },
+        { href: "/damage-calculator", label: "Calculateur", icon: "/icons/ui/ic-filter.png" },
+      ]
+    },
+    {
+      id: "trainer",
+      title: "Dresseur",
+      icon: "/icons/ui/ic-trainer.png",
+      items: [
+        { href: "/team", label: "Mon Équipe", icon: "/icons/ui/nav-team.png" },
+        { href: "/quiz", label: "Quiz", icon: "/icons/ui/nav-quiz.png" },
+      ]
+    }
   ];
 
   return (
@@ -66,15 +90,38 @@ export default function NavBar() {
           {/* Desktop Navigation */}
           {me && (
             <nav className="hidden lg:flex items-center gap-1">
-              {navLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2"
-                >
-                  <span>{link.icon}</span>
-                  <span className="hidden xl:inline">{link.label}</span>
-                </Link>
+              <Link
+                href="/"
+                className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2"
+              >
+                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5" />
+                <span>Accueil</span>
+              </Link>
+              
+              {menuGroups.map(group => (
+                <div key={group.id} className="relative group/nav">
+                  <button className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-all flex items-center gap-2">
+                    <img src={group.icon} alt={group.title} className="w-5 h-5" />
+                    <span>{group.title}</span>
+                    <span className="text-xs">▾</span>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute top-full left-0 mt-1 hidden group-hover/nav:block bg-red-700 rounded-lg shadow-xl border-2 border-red-800 min-w-[180px] z-50">
+                    <div className="py-2">
+                      {group.items.map(item => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="px-4 py-2 text-sm text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2 whitespace-nowrap"
+                        >
+                          <img src={item.icon} alt={item.label} className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ))}
             </nav>
           )}
@@ -128,17 +175,25 @@ export default function NavBar() {
         {/* Mobile Menu */}
         {me && mobileMenuOpen && (
           <div className="lg:hidden bg-red-700 border-t border-red-800">
-            <nav className="px-4 py-3 flex flex-col gap-1">
-              {navLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2 rounded-lg text-white hover:bg-white/20 transition-all no-underline flex items-center gap-3"
-                >
-                  <span>{link.icon}</span>
-                  <span>{link.label}</span>
-                </Link>
+            <nav className="px-4 py-3 space-y-2">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2 rounded-lg text-white hover:bg-white/20 transition-all no-underline flex items-center gap-3"
+              >
+                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5" />
+                <span>Accueil</span>
+              </Link>
+              
+              {menuGroups.map(group => (
+                <MenuGroup
+                  key={group.id}
+                  title={group.title}
+                  icon={group.icon}
+                  items={group.items}
+                  isOpen={openGroup === group.id}
+                  onToggle={() => setOpenGroup(openGroup === group.id ? null : group.id)}
+                />
               ))}
             </nav>
           </div>

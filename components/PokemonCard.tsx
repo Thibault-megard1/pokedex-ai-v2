@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { PokemonBasic } from "@/lib/types";
-import TypeBadge from "@/components/TypeBadge";
-import type { BadgeKey } from "@/lib/typeBadgesSprite";
+import TypeLogo from "@/components/TypeLogo";
 import { getDisplayName, formatPokemonName } from "@/lib/pokemonNames.utils";
 
 
@@ -59,10 +58,10 @@ export default function PokemonCard({ p }: { p: PokemonBasic }) {
               </div>
             )}
             
-            {/* Type Badges */}
+            {/* Type Logos */}
             <div className="flex flex-wrap gap-2 mt-3 justify-center">
               {p.types.map(t => (
-                <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                <TypeLogo key={t} type={t} size={24} />
               ))}
             </div>
           </div>

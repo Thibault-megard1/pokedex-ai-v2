@@ -2,8 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
-import TypeBadge from "@/components/TypeBadge";
-import type { BadgeKey } from "@/lib/typeBadgesSprite";
+import TypeLogo from "@/components/TypeLogo";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 
 // Type pour stocker les données d'un Pokémon (léger)
@@ -246,7 +245,7 @@ return (
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {res.b.types.map(t => (
-                      <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                      <TypeLogo key={t} type={t} size={24} />
                     ))}
                   </div>
                 </div>
@@ -295,7 +294,7 @@ return (
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {res.a.types.map(t => (
-                      <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                      <TypeLogo key={t} type={t} size={24} />
                     ))}
                   </div>
                 </div>

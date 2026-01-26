@@ -70,8 +70,9 @@ export default function LoginPage() {
               </div>
 
               {error ? (
-                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3 text-sm text-red-700">
-                  ⚠️ {error}
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3 text-sm text-red-700 flex items-center gap-2">
+                  <img src="/icons/ui/ic-error.png" alt="Error" className="w-4 h-4" />
+                  <span>{error}</span>
                 </div>
               ) : null}
 

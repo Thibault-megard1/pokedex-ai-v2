@@ -82,14 +82,14 @@ export default async function PokemonListPage({
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-pokemon mb-2">POKÉDEX NATIONAL</h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   {result.total} Pokémon trouvés — Page {page}/{totalPages}
                 </p>
               </div>
               
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-xs text-gray-600 pokemon-text">SYSTÈME ACTIF</span>
+                <span className="text-xs text-gray-600 dark:text-gray-300 pokemon-text">SYSTÈME ACTIF</span>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default async function PokemonListPage({
               <div className="pokedex-panel-content p-12 text-center">
                 <div className="text-6xl mb-4">❌</div>
                 <h3 className="text-pokemon text-xl mb-2">AUCUN RÉSULTAT</h3>
-                <p className="text-gray-600">Essayez de modifier vos filtres de recherche.</p>
+                <p className="text-gray-600 dark:text-gray-300">Essayez de modifier vos filtres de recherche.</p>
               </div>
             </div>
           )}

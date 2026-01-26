@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
-import TypeBadge from "@/components/TypeBadge";
-import type { BadgeKey } from "@/lib/typeBadgesSprite";
+import TypeLogo from "@/components/TypeLogo";
 import { 
   initializeBattle, 
   executeTurn, 
@@ -230,7 +229,7 @@ export default function TournamentPage() {
       // Initialize battle
       const battle = initializeBattle(playerBattleTeam, aiTeam);
       setBattleState(battle);
-      setBattleLog(["⚔️ Le combat commence !"]);
+      setBattleLog(["⚡ Le combat commence !"]);
     } catch (error) {
       console.error("Error starting battle:", error);
       alert("Erreur lors du démarrage du combat");
@@ -246,7 +245,10 @@ export default function TournamentPage() {
     <div className="page-bg min-h-screen">
       <div className="page-content space-y-4">
         <div className="card p-6 mt-24">
-          <h1 className="text-3xl font-bold mb-2">🏆 Tournoi Pokémon</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <img src="/icons/ui/ic-success.png" alt="Tournoi" className="w-8 h-8" />
+            <h1 className="text-3xl font-bold">Tournoi Pokémon</h1>
+          </div>
           <p className="text-gray-600">Affrontez l'IA dans un combat 6 vs 6 avec système d'évolution</p>
         </div>
 
@@ -254,7 +256,10 @@ export default function TournamentPage() {
           <>
             {/* Team Builder */}
             <div className="card p-6">
-              <h2 className="text-xl font-bold mb-4">📋 Construisez votre équipe (6 Pokémon)</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <img src="/icons/ui/ic-pokemon.png" alt="Équipe" className="w-6 h-6" />
+                <h2 className="text-xl font-bold">Construisez votre équipe (6 Pokémon)</h2>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {playerTeam.map((pokemon, index) => (
@@ -269,7 +274,7 @@ export default function TournamentPage() {
                             <div className="font-bold capitalize">{pokemon.name}</div>
                             <div className="flex gap-1 mt-1">
                               {pokemon.types.map(t => (
-                                <TypeBadge key={t} kind={t as BadgeKey} width={60} />
+                                <TypeLogo key={t} type={t} size={20} />
                               ))}
                             </div>
                           </div>
@@ -341,9 +346,14 @@ export default function TournamentPage() {
                 <button
                   onClick={startBattle}
                   disabled={playerTeam.filter(p => p !== null).length !== 6 || totalPointsUsed > 6 || isLoading}
-                  className="btn btn-primary text-lg px-6 py-3"
+                  className="btn btn-primary text-lg px-6 py-3 flex items-center gap-2"
                 >
-                  {isLoading ? "Chargement..." : "⚔️ Lancer le combat"}
+                  {isLoading ? "Chargement..." : (
+                    <>
+                      <img src="/icons/ui/nav-battle.png" alt="Battle" className="w-5 h-5" />
+                      <span>Lancer le combat</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -353,7 +363,10 @@ export default function TournamentPage() {
             {/* Battle View */}
             <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">⚔️ Combat en cours</h2>
+                <div className="flex items-center gap-2">
+                  <img src="/icons/ui/nav-battle.png" alt="Combat" className="w-6 h-6" />
+                  <h2 className="text-xl font-bold">Combat en cours</h2>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setAutoPlay(!autoPlay)}
@@ -391,7 +404,10 @@ export default function TournamentPage() {
               {/* Teams Display */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300">
-                  <div className="font-bold mb-2">👤 Votre Équipe</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src="/icons/ui/ic-trainer.png" alt="Trainer" className="w-5 h-5" />
+                    <span className="font-bold">Votre Équipe</span>
+                  </div>
                   <div className="space-y-1">
                     {battleState.team1.pokemon.map((p, i) => (
                       <div key={i} className={`flex items-center justify-between text-sm ${p.isFainted ? "opacity-40 line-through" : i === battleState.team1.activeIndex ? "font-bold" : ""}`}>

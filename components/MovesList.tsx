@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import MoveDetailModal from "./MoveDetailModal";
-import TypeIcon from "./TypeIcon";
+import TypeLogo from "./TypeLogo";
 
 type Move = {
   name: string;
@@ -89,7 +89,7 @@ export default function MovesList({ moves }: Props) {
             >
               {move.type && (
                 <div className="flex-shrink-0">
-                  <TypeIcon type={move.type} size={24} />
+                  <TypeLogo type={move.type} size={24} />
                 </div>
               )}
               <div className="flex-1 min-w-0">

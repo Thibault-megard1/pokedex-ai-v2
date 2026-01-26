@@ -10,7 +10,7 @@ import fs from "fs/promises";
 import path from "path";
 
 // ============================================================================
-// POKEMON CANDIDATE LIST (First 151 for cost efficiency)
+// POKEMON CANDIDATE LIST (ALL Pokémon from cache)
 // ============================================================================
 
 interface PokemonCandidate {
@@ -21,17 +21,20 @@ interface PokemonCandidate {
 }
 
 /**
- * Load first 151 Pokémon as candidates
+ * Load ALL Pokémon from cache as candidates
  */
 async function loadPokemonCandidates(): Promise<PokemonCandidate[]> {
   const candidates: PokemonCandidate[] = [];
   const cacheDir = path.join(process.cwd(), "data", "pokemon-cache");
 
   try {
-    // Try to load from cache files (1-151)
-    for (let id = 1; id <= 151; id++) {
+    // Read all files from cache directory
+    const files = await fs.readdir(cacheDir);
+    const jsonFiles = files.filter(f => f.endsWith('.json') && !isNaN(parseInt(f.replace('.json', ''))));
+    
+    for (const file of jsonFiles) {
       try {
-        const filePath = path.join(cacheDir, `${id}.json`);
+        const filePath = path.join(cacheDir, file);
         const data = await fs.readFile(filePath, "utf-8");
         const pokemon = JSON.parse(data);
         
@@ -42,12 +45,13 @@ async function loadPokemonCandidates(): Promise<PokemonCandidate[]> {
           tags: inferTags(pokemon)
         });
       } catch (err) {
-        // File doesn't exist, skip
+        // Skip invalid files
         continue;
       }
     }
 
     if (candidates.length > 0) {
+      console.log(`Loaded ${candidates.length} Pokémon candidates from cache`);
       return candidates;
     }
   } catch (error) {
@@ -119,6 +123,30 @@ function formatCandidates(candidates: PokemonCandidate[]): string {
     .join("\n");
 }
 
+/**
+ * Fetch French name from PokéAPI species endpoint
+ */
+async function fetchFrenchName(idOrName: string | number): Promise<string | null> {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${idOrName}`);
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    const frenchName = data.names?.find((n: any) => n.language.name === "fr");
+    return frenchName?.name || null;
+  } catch (error) {
+    console.error(`Failed to fetch French name for ${idOrName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get sprite URL for a Pokémon
+ */
+function getSpriteUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}
+
 // ============================================================================
 // API ROUTE HANDLER
 // ============================================================================
@@ -174,10 +202,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 8. Return result
+    // 8. Enrich with French names and sprites
+    const enrichedResult = { ...result };
+    
+    // Enrich primary match
+    const primaryFrenchName = await fetchFrenchName(result.primary.id);
+    enrichedResult.primary = {
+      ...result.primary,
+      name_fr: primaryFrenchName || result.primary.name,
+      sprite_url: getSpriteUrl(result.primary.id)
+    };
+    
+    // Enrich alternatives
+    enrichedResult.alternatives = await Promise.all(
+      result.alternatives.map(async (alt) => {
+        const frenchName = await fetchFrenchName(alt.id);
+        return {
+          ...alt,
+          name_fr: frenchName || alt.name,
+          sprite_url: getSpriteUrl(alt.id)
+        };
+      })
+    );
+
+    // 9. Return enriched result
     return NextResponse.json({
       success: true,
-      result
+      result: enrichedResult
     });
 
   } catch (error) {

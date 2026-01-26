@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import EvolutionDisplay from "@/components/EvolutionDisplay";
 import TeamStrategyBuilder from "@/components/TeamStrategyBuilder";
-import TypeBadge from "@/components/TypeBadge";
-import type { BadgeKey } from "@/lib/typeBadgesSprite";
+import TypeLogo from "@/components/TypeLogo";
 
 type TeamSlot = { slot: number; pokemonId: number; pokemonName: string };
 type Me = { username: string } | null;
@@ -37,16 +36,16 @@ function StatRow({ s }: { s: { name: string; value: number } }) {
   
   return (
     <div className="flex items-center gap-3">
-      <div className="w-24 text-xs font-semibold text-gray-700 capitalize pokemon-text">
+      <div className="w-24 text-xs font-semibold text-gray-700 dark:text-gray-300 capitalize pokemon-text">
         {s.name}
       </div>
-      <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden border border-gray-300">
+      <div className="flex-1 h-4 bg-gray-900 rounded-full overflow-hidden border border-gray-700">
         <div 
-          className={`h-full hp-bar-${color} transition-all duration-500`}
+          className="h-full bg-white transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <div className="w-12 text-right text-sm font-bold text-gray-800">
+      <div className="w-12 text-right text-sm font-bold text-gray-800 dark:text-gray-200">
         {s.value}
       </div>
     </div>
@@ -100,8 +99,19 @@ export default function TeamPage() {
   
   async function addPokemon() {
     setError(null);
-    const name = addName.trim().toLowerCase();
+    let name = addName.trim().toLowerCase();
     if (!name) return;
+
+    // Résoudre le nom français en nom anglais si nécessaire
+    try {
+      const response = await fetch(`/api/pokemon-names/resolve?name=${encodeURIComponent(name)}`);
+      if (response.ok) {
+        const data = await response.json();
+        name = data.englishName || name;
+      }
+    } catch {
+      // En cas d'erreur, utiliser le nom tel quel
+    }
 
     const next = [...sortedTeam];
     if (next.length >= 6) {
@@ -279,7 +289,7 @@ export default function TeamPage() {
                           {d.types?.length ? (
                             <div className="flex flex-wrap gap-2 mt-3 justify-center">
                               {d.types.map(t => (
-                                <TypeBadge key={t} kind={t as BadgeKey} width={90} />
+                                <TypeLogo key={t} type={t} size={24} />
                               ))}
                             </div>
                           ) : null}
@@ -301,6 +311,10 @@ export default function TeamPage() {
                           <div className="mt-4 pokedex-screen p-3 space-y-2">
                             <h4 className="text-xs font-bold pokemon-text mb-2">STATISTIQUES</h4>
                             {d.stats.map(st => <StatRow key={st.name} s={st} />)}
+                            <div className="flex justify-between pt-2 mt-2 border-t-2 border-gray-300 text-sm">
+                              <span className="font-bold text-gray-900 dark:text-gray-100">TOTAL</span>
+                              <b className="text-blue-600">{d.stats.reduce((sum, s) => sum + s.value, 0)}</b>
+                            </div>
                           </div>
                         )}
 

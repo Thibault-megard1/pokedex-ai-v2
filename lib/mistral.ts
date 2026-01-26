@@ -177,51 +177,52 @@ export class MistralClient {
     userAnswers: string,
     pokemonCandidates: string
   ): Promise<QuizResult> {
-    const systemPrompt = `You are a Pokémon personality analyst. Your task is to match a person to a Pokémon based on their personality quiz answers.
+    const systemPrompt = `Tu es un analyste de personnalité Pokémon. Ta tâche est d'associer une personne à un Pokémon basé sur ses réponses au quiz de personnalité.
 
-STRICT RULES:
-1. You MUST output valid JSON following the exact schema provided
-2. You MUST only choose Pokémon IDs from the provided candidate list
-3. You MUST NOT invent Pokémon IDs or names that don't exist in the list
-4. The confidence score must be between 0 and 1
-5. Provide clear, specific reasons for each match
-6. Infer 3-8 personality traits from the answers
-7. Do NOT request or reference sensitive personal data
+RÈGLES STRICTES:
+1. Tu DOIS produire du JSON valide suivant exactement le schéma fourni
+2. Tu DOIS uniquement choisir des IDs Pokémon de la liste de candidats fournie
+3. Tu NE DOIS PAS inventer des IDs ou noms de Pokémon qui n'existent pas dans la liste
+4. Le score de confiance doit être entre 0 et 1
+5. Fournis des raisons claires et spécifiques pour chaque correspondance EN FRANÇAIS
+6. Déduis 3-8 traits de personnalité des réponses EN FRANÇAIS
+7. NE demande PAS et ne référence PAS de données personnelles sensibles
+8. TOUTES les raisons et traits doivent être rédigés en français
 
 OUTPUT FORMAT (JSON):
 {
   "primary": {
-    "id": <number from candidate list>,
-    "name": "<exact name from candidate list>",
+    "id": <numéro de la liste de candidats>,
+    "name": "<nom exact de la liste de candidats>",
     "confidence": <0-1>,
-    "reasons": ["reason 1", "reason 2", ...]
+    "reasons": ["raison 1 en français", "raison 2 en français", ...]
   },
   "alternatives": [
     {
-      "id": <number>,
-      "name": "<name>",
+      "id": <numéro>,
+      "name": "<nom>",
       "confidence": <0-1>,
-      "reasons": ["reason 1", ...]
+      "reasons": ["raison 1 en français", ...]
     }
   ],
-  "traits_inferred": ["trait1", "trait2", ...]
+  "traits_inferred": ["trait1 en français", "trait2 en français", ...]
 }
 
-CANDIDATE POKÉMON LIST:
+LISTE DES POKÉMON CANDIDATS:
 ${pokemonCandidates}`;
 
-    const userPrompt = `Based on these quiz answers, determine which Pokémon best matches this person's personality:
+    const userPrompt = `Basé sur ces réponses au quiz, détermine quel Pokémon correspond le mieux à la personnalité de cette personne:
 
 ${userAnswers}
 
-Analyze the answers and select the Pokémon that best represents this personality. Consider:
-- Their social energy and preferences
-- Their values and motivations
-- Their approach to challenges
-- Their emotional style
-- Their ideal environment
+Analyse les réponses et sélectionne le Pokémon qui représente le mieux cette personnalité. Considère:
+- Son énergie sociale et ses préférences
+- Ses valeurs et motivations
+- Son approche face aux défis
+- Son style émotionnel
+- Son environnement idéal
 
-Return your analysis as JSON following the schema.`;
+Retourne ton analyse en JSON suivant le schéma. Toutes les raisons et traits doivent être en français.`;
 
     const messages: MistralMessage[] = [
       { role: "system", content: systemPrompt },

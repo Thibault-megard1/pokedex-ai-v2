@@ -234,22 +234,24 @@ export default function QuizPage() {
         {/* Primary Match */}
         <div className="card p-8 text-center">
           <h2 className="text-3xl font-bold mb-2">🎉 Votre Pokémon est...</h2>
-          <h1 className="text-5xl font-bold mb-6 capitalize">{primary.name} !</h1>
           
-          {pokemonData && (
-            <div className="flex flex-col items-center gap-4 mb-6">
-              <img 
-                src={pokemonData.sprite} 
-                alt={primary.name} 
-                className="w-48 h-48 pixelated"
-              />
+          {/* Sprite first */}
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <img 
+              src={primary.sprite_url || pokemonData?.sprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${primary.id}.png`}
+              alt={primary.name_fr || primary.name} 
+              className="w-48 h-48 pixelated"
+            />
+            <h1 className="text-5xl font-bold capitalize">{primary.name_fr || primary.name} !</h1>
+            
+            {pokemonData && pokemonData.types && (
               <div className="flex gap-2">
-                {pokemonData.types?.map((type: string) => (
+                {pokemonData.types.map((type: string) => (
                   <TypeBadge key={type} kind={type as BadgeKey} width={80} />
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
             <div className="text-sm text-gray-600 mb-2">Confiance du match</div>
@@ -293,11 +295,18 @@ export default function QuizPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {alternatives.map((alt, i) => (
                 <div key={i} className="border-2 border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-bold text-lg capitalize">{alt.name}</h4>
-                    <span className="text-sm text-gray-600">
-                      {Math.round(alt.confidence * 100)}%
-                    </span>
+                  <div className="flex items-center gap-3 mb-3">
+                    <img 
+                      src={alt.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${alt.id}.png`}
+                      alt={alt.name_fr || alt.name}
+                      className="w-16 h-16 pixelated"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-lg capitalize">{alt.name_fr || alt.name}</h4>
+                      <span className="text-sm text-gray-600">
+                        {Math.round(alt.confidence * 100)}% de correspondance
+                      </span>
+                    </div>
                   </div>
                   <ul className="text-sm space-y-1">
                     {alt.reasons.map((reason, j) => (

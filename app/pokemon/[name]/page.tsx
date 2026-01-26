@@ -64,7 +64,7 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
               <FavoriteButton pokemonId={p.id} pokemonName={p.name} size="lg" />
             </div>
             {formatPokemonName(p.name, p.frenchName).secondary && (
-              <p className="text-lg text-gray-600 italic mt-1 capitalize">{formatPokemonName(p.name, p.frenchName).secondary}</p>
+              <p className="text-lg text-gray-600 dark:text-gray-400 italic mt-1 capitalize">{formatPokemonName(p.name, p.frenchName).secondary}</p>
             )}
             <div className="mt-4 flex gap-2 flex-wrap">
               <Link className="btn" href={`/pokemon/${prevId}`}>← Précédent</Link>
@@ -98,13 +98,18 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
         <div className="mt-3 space-y-2">
           {p.stats.map(s => (
             <div key={s.name} className="flex items-center gap-3">
-              <div className="w-28 text-sm text-gray-700 capitalize">{s.name}</div>
-              <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden border">
-                <div className="h-3 bg-gray-800" style={{ width: `${Math.min(100, s.value)}%` }} />
+              <div className="w-28 text-sm text-gray-700 dark:text-gray-300 capitalize">{s.name}</div>
+              <div className="flex-1 h-3 bg-gray-900 rounded-full overflow-hidden border border-gray-700">
+                <div className="h-3 bg-white" style={{ width: `${Math.min(100, (s.value / 255) * 100)}%` }} />
               </div>
               <div className="w-10 text-right text-sm">{s.value}</div>
             </div>
           ))}
+          <div className="flex items-center gap-3 pt-2 mt-2 border-t-2 border-gray-300">
+            <div className="w-28 text-sm font-bold text-gray-900 dark:text-gray-100">TOTAL</div>
+            <div className="flex-1"></div>
+            <div className="w-10 text-right text-sm font-bold text-blue-600">{p.stats.reduce((sum, s) => sum + s.value, 0)}</div>
+          </div>
         </div>
 
         <div className="mt-5 flex gap-2">

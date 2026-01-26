@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { typeColors } from "@/lib/typeStyle";
 import TypeIcon from "@/components/TypeIcon";
 import TypeBadge from "@/components/TypeBadge";
-import type { BadgeKey } from "@/lib/typeBadgesSprite";
+import MoveCategoryBadge from "@/components/MoveCategoryBadge";
 
 type MoveDetail = {
   name: string;
@@ -130,8 +130,11 @@ export default function MoveDetailModal({ moveName, isOpen, onClose }: Props) {
 
               {/* Type et Catégorie */}
               <div className="flex flex-wrap gap-3 mt-4">
-                <TypeBadge kind={moveDetail.type as BadgeKey} width={120} />
-                <TypeBadge kind={moveDetail.damageClass as BadgeKey} width={120} />
+                <TypeBadge kind={moveDetail.type} width={120} />
+                <MoveCategoryBadge 
+                  category={moveDetail.damageClass as "physical" | "special" | "status"} 
+                  width={120} 
+                />
               </div>
             </div>
 

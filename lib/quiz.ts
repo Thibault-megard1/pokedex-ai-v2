@@ -26,6 +26,8 @@ export interface QuizAnswers {
 export interface PokemonMatch {
   id: number;
   name: string;
+  name_fr?: string;
+  sprite_url?: string;
   confidence: number;
   reasons: string[];
 }

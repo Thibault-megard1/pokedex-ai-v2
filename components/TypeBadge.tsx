@@ -1,32 +1,35 @@
-import { TYPE_BADGES_SPRITE, type BadgeKey } from "@/lib/typeBadgesSprite";
+/**
+ * TypeBadge - Type badge with text label
+ * Use for: Pokémon detail pages, move details, quiz explanations, educational displays
+ * Path: /icons/types-badges/{type}.png
+ */
+
+type TypeBadgeProps = {
+  kind: string;
+  width?: number;
+  className?: string;
+};
 
 export default function TypeBadge({
   kind,
-  width = 110
-}: {
-  kind: BadgeKey;
-  width?: number;
-}) {
-  const p = TYPE_BADGES_SPRITE.pos[kind];
-  if (!p) return null;
-
-  // Garde le ratio du badge d'origine
-  const scale = width / TYPE_BADGES_SPRITE.w;
-  const height = Math.round(TYPE_BADGES_SPRITE.h * scale);
+  width = 110,
+  className = ""
+}: TypeBadgeProps) {
+  const typeNormalized = kind.toLowerCase();
+  
+  // Type badges have a 2.5:1 aspect ratio (width:height)
+  const height = Math.round(width / 2.5);
 
   return (
-    <span
-      aria-label={kind}
+    <img
+      src={`/icons/types-badges/${typeNormalized}.png`}
+      alt={kind}
       title={kind}
-      className="inline-block"
+      className={`inline-block ${className}`}
       style={{
         width,
         height,
-        backgroundImage: `url(${TYPE_BADGES_SPRITE.sheet})`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: `${TYPE_BADGES_SPRITE.sheetW * scale}px ${TYPE_BADGES_SPRITE.sheetH * scale}px`,
-        backgroundPosition: `${-p.x * scale}px ${-p.y * scale}px`,
-        imageRendering: "auto",
+        objectFit: "contain"
       }}
     />
   );
