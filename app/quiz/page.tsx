@@ -1,262 +1,348 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { quizQuestions, type QuizAnswers, type QuizResult } from "@/lib/quiz";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 
-type QuizMode = "silhouette" | "cry" | "stats";
-type QuizState = {
-  pokemon: { id: number; name: string };
-  options: string[];
-  score: number;
-  total: number;
-  answered: boolean;
-  correct: boolean;
-};
-
-function getRandomPokemon(allPokemonNames: string[]) {
-  const randomIndex = Math.floor(Math.random() * allPokemonNames.length);
-  const name = allPokemonNames[randomIndex];
-  return { id: randomIndex + 1, name };
-}
-
-function getRandomOptions(correct: string, allPokemonNames: string[], count: number = 4) {
-  const options = [correct];
-  while (options.length < count) {
-    const random = allPokemonNames[Math.floor(Math.random() * allPokemonNames.length)];
-    if (!options.includes(random)) {
-      options.push(random);
-    }
-  }
-  return options.sort(() => Math.random() - 0.5);
-}
+type QuizStep = "intro" | "questions" | "loading" | "results";
 
 export default function QuizPage() {
-  const [allPokemonNames, setAllPokemonNames] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<QuizMode>("silhouette");
-  const [state, setState] = useState<QuizState | null>(null);
-  const [stats, setStats] = useState<any>(null);
+  const [step, setStep] = useState<QuizStep>("intro");
+  const [answers, setAnswers] = useState<QuizAnswers>({});
+  const [result, setResult] = useState<QuizResult | null>(null);
+  const [pokemonData, setPokemonData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadPokemonNames() {
-      try {
-        const response = await fetch('/api/pokemon-names');
-        const names = await response.json();
-        setAllPokemonNames(names);
-      } catch (error) {
-        console.error('Failed to load pokemon names:', error);
-      } finally {
-        setLoading(false);
-      }
+  // Start the quiz
+  const startQuiz = () => {
+    setStep("questions");
+    setAnswers({});
+    setResult(null);
+    setPokemonData(null);
+    setError(null);
+  };
+
+  // Update an answer
+  const updateAnswer = (questionId: string, value: string | number) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+  // Check if all required questions are answered
+  const isComplete = () => {
+    const requiredQuestions = quizQuestions.filter(q => q.type !== "text");
+    return requiredQuestions.every(q => answers[q.id] !== undefined && answers[q.id] !== "");
+  };
+
+  // Submit the quiz
+  const submitQuiz = async () => {
+    if (!isComplete()) {
+      setError("Veuillez répondre à toutes les questions obligatoires");
+      return;
     }
-    loadPokemonNames();
-  }, []);
 
-  function startQuiz() {
-    if (!allPokemonNames.length) return;
-    const pokemon = getRandomPokemon(allPokemonNames);
-    setState({
-      pokemon,
-      options: getRandomOptions(pokemon.name, allPokemonNames),
-      score: 0,
-      total: 0,
-      answered: false,
-      correct: false
-    });
-    
-    if (mode === "stats") {
-      loadStats(pokemon.name);
-    }
-  }
+    setStep("loading");
+    setError(null);
 
-  async function loadStats(name: string) {
     try {
-      const res = await fetch(`/api/pokemon?name=${name}`);
-      const data = await res.json();
-      if (res.ok) {
-        setStats(data.pokemon.stats);
+      // Call API to analyze quiz
+      const response = await fetch("/api/quiz/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to analyze quiz");
       }
+
+      const data = await response.json();
+      setResult(data.result);
+
+      // Fetch full Pokémon data for the primary match
+      const pokemonResponse = await fetch(`/api/pokemon/${data.result.primary.name}`);
+      if (pokemonResponse.ok) {
+        const pokemonInfo = await pokemonResponse.json();
+        setPokemonData(pokemonInfo);
+      }
+
+      setStep("results");
     } catch (err) {
-      console.error(err);
+      console.error("Quiz submission error:", err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setStep("questions");
     }
-  }
+  };
 
-  function nextQuestion() {
-    if (!allPokemonNames.length) return;
-    const pokemon = getRandomPokemon(allPokemonNames);
-    setState(prev => prev ? {
-      pokemon,
-      options: getRandomOptions(pokemon.name, allPokemonNames),
-      score: prev.score,
-      total: prev.total,
-      answered: false,
-      correct: false
-    } : null);
-    setStats(null);
-    
-    if (mode === "stats") {
-      loadStats(pokemon.name);
-    }
-  }
-
-  function checkAnswer(answer: string) {
-    if (!state || state.answered) return;
-    
-    const correct = answer === state.pokemon.name;
-    setState({
-      ...state,
-      answered: true,
-      correct,
-      score: state.score + (correct ? 1 : 0),
-      total: state.total + 1
-    });
-  }
-
-  if (loading) {
-    return (
-      <div className="page-content mt-24">
-        <div className="card p-8 text-center max-w-2xl mx-auto">
-          <p className="text-lg">Chargement...</p>
-        </div>
+  // Render functions for each step
+  const renderIntro = () => (
+    <div className="card p-8 max-w-2xl mx-auto text-center">
+      <h1 className="text-4xl font-bold mb-4">🔮 Quel Pokémon êtes-vous ?</h1>
+      <p className="text-lg text-gray-600 mb-6">
+        Répondez à quelques questions personnelles et découvrez quel Pokémon correspond le mieux à votre personnalité !
+      </p>
+      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
+        <p className="text-sm text-gray-700">
+          ✨ <strong>Propulsé par l'IA</strong> - Notre système utilise l'intelligence artificielle Mistral 
+          pour analyser vos réponses et trouver le Pokémon qui vous correspond le mieux.
+        </p>
       </div>
-    );
-  }
-
-  if (!state) {
-    return (
-      <div className="page-content mt-24">
-        <div className="card p-8 text-center max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">🎮 Quiz Pokémon</h1>
-          <p className="text-gray-600 mb-6">Testez vos connaissances !</p>
-          
-          <div className="space-y-4">
-            <button
-              className="btn btn-primary w-full text-lg py-4"
-              onClick={() => { setMode("silhouette"); startQuiz(); }}
-            >
-              🌑 Qui est ce Pokémon ? (Silhouette)
-            </button>
-            
-            <button
-              className="btn btn-primary w-full text-lg py-4"
-              onClick={() => { setMode("cry"); startQuiz(); }}
-            >
-              🔊 Devine par le cri
-            </button>
-            
-            <button
-              className="btn btn-primary w-full text-lg py-4"
-              onClick={() => { setMode("stats"); startQuiz(); }}
-            >
-              📊 Devine par les stats
-            </button>
-          </div>
-        </div>
+      <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
+        <p className="text-sm text-gray-700">
+          🔒 <strong>Confidentialité</strong> - Vos réponses ne sont pas stockées de manière permanente. 
+          Elles sont uniquement utilisées pour générer votre résultat.
+        </p>
       </div>
-    );
-  }
+      <button
+        onClick={startQuiz}
+        className="btn btn-primary text-xl px-8 py-4"
+      >
+        Commencer le quiz
+      </button>
+    </div>
+  );
 
-  return (
-    <div className="page-content mt-24">
-      <div className="card p-8 max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">
-            {mode === "silhouette" && "🌑 Qui est ce Pokémon ?"}
-            {mode === "cry" && "🔊 Devine par le cri"}
-            {mode === "stats" && "📊 Devine par les stats"}
-          </h2>
-          <div className="text-lg font-semibold">
-            Score: {state.score}/{state.total}
+  const renderQuestions = () => (
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">📝 Questionnaire de personnalité</h2>
+          <div className="text-sm text-gray-600">
+            {Object.keys(answers).length} / {quizQuestions.length} réponses
           </div>
         </div>
 
-        {/* Affichage selon le mode */}
-        <div className="mb-8 flex justify-center">
-          {mode === "silhouette" && (
-            <div className={`w-64 h-64 flex items-center justify-center ${!state.answered ? "brightness-0" : ""}`}>
-              <img
-                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${state.pokemon.id}.png`}
-                alt="Pokemon"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
+        {error && (
+          <div className="bg-red-100 border-2 border-red-300 rounded-lg p-4 mb-6">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
 
-          {mode === "cry" && (
-            <div className="text-center">
-              <audio 
-                controls 
-                src={`https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${state.pokemon.id}.ogg`}
-                className="mx-auto"
-              />
-              <p className="text-sm text-gray-500 mt-2">Écoutez le cri et devinez !</p>
-            </div>
-          )}
+        <div className="space-y-8">
+          {quizQuestions.map((question, index) => (
+            <div key={question.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-lg">{question.question}</p>
+                  {question.type === "text" && (
+                    <p className="text-sm text-gray-500 mt-1">(Optionnel)</p>
+                  )}
+                </div>
+              </div>
 
-          {mode === "stats" && stats && (
-            <div className="w-full max-w-md">
-              <div className="space-y-3">
-                {stats.map((s: any) => (
-                  <div key={s.name} className="flex items-center gap-3">
-                    <div className="w-32 text-sm capitalize">{s.name}</div>
-                    <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-4 bg-blue-500"
-                        style={{ width: `${Math.min(100, (s.value / 255) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="w-12 text-right text-sm font-bold">{s.value}</div>
+              <div className="ml-11">
+                {question.type === "multiple-choice" && question.options && (
+                  <div className="space-y-2">
+                    {question.options.map((option, optionIndex) => (
+                      <label
+                        key={optionIndex}
+                        className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                        style={{
+                          borderColor: answers[question.id] === option ? "#3b82f6" : "#e5e7eb",
+                          backgroundColor: answers[question.id] === option ? "#eff6ff" : "transparent"
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={question.id}
+                          value={option}
+                          checked={answers[question.id] === option}
+                          onChange={(e) => updateAnswer(question.id, e.target.value)}
+                          className="w-4 h-4"
+                        />
+                        <span>{option}</span>
+                      </label>
+                    ))}
                   </div>
+                )}
+
+                {question.type === "slider" && (
+                  <div className="space-y-3">
+                    <input
+                      type="range"
+                      min={question.min}
+                      max={question.max}
+                      value={answers[question.id] || 3}
+                      onChange={(e) => updateAnswer(question.id, parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>{question.min}</span>
+                      <span className="font-bold text-lg text-blue-600">{answers[question.id] || 3}</span>
+                      <span>{question.max}</span>
+                    </div>
+                  </div>
+                )}
+
+                {question.type === "text" && (
+                  <input
+                    type="text"
+                    value={answers[question.id] || ""}
+                    onChange={(e) => updateAnswer(question.id, e.target.value)}
+                    placeholder={question.placeholder}
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex gap-4">
+          <button
+            onClick={() => setStep("intro")}
+            className="btn px-6 py-3"
+          >
+            ← Retour
+          </button>
+          <button
+            onClick={submitQuiz}
+            disabled={!isComplete()}
+            className="btn btn-primary px-8 py-3 flex-1"
+          >
+            Découvrir mon Pokémon ! ✨
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLoading = () => (
+    <div className="card p-12 max-w-2xl mx-auto text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-6"></div>
+      <h2 className="text-2xl font-bold mb-2">Analyse en cours...</h2>
+      <p className="text-gray-600">
+        L'IA analyse votre personnalité pour trouver votre Pokémon parfait
+      </p>
+    </div>
+  );
+
+  const renderResults = () => {
+    if (!result) return null;
+
+    const { primary, alternatives, traits_inferred } = result;
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Primary Match */}
+        <div className="card p-8 text-center">
+          <h2 className="text-3xl font-bold mb-2">🎉 Votre Pokémon est...</h2>
+          <h1 className="text-5xl font-bold mb-6 capitalize">{primary.name} !</h1>
+          
+          {pokemonData && (
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <img 
+                src={pokemonData.sprite} 
+                alt={primary.name} 
+                className="w-48 h-48 pixelated"
+              />
+              <div className="flex gap-2">
+                {pokemonData.types?.map((type: string) => (
+                  <TypeBadge key={type} kind={type as BadgeKey} width={80} />
                 ))}
               </div>
             </div>
           )}
+
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
+            <div className="text-sm text-gray-600 mb-2">Confiance du match</div>
+            <div className="text-3xl font-bold text-blue-600">
+              {Math.round(primary.confidence * 100)}%
+            </div>
+          </div>
+
+          <div className="bg-white border-2 border-gray-200 rounded-lg p-6 text-left">
+            <h3 className="font-bold text-lg mb-3">💡 Pourquoi ce Pokémon ?</h3>
+            <ul className="space-y-2">
+              {primary.reasons.map((reason, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="text-blue-500">•</span>
+                  <span>{reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        {/* Options */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {state.options.map(option => {
-            let className = "btn w-full py-4 text-lg";
-            if (state.answered) {
-              if (option === state.pokemon.name) {
-                className += " !bg-green-500 !text-white";
-              } else if (option === state.pokemon.name) {
-                className += " !bg-red-500 !text-white";
-              }
-            }
-            
-            return (
-              <button
-                key={option}
-                className={className}
-                onClick={() => checkAnswer(option)}
-                disabled={state.answered}
+        {/* Personality Traits */}
+        <div className="card p-6">
+          <h3 className="font-bold text-xl mb-4">✨ Traits de personnalité détectés</h3>
+          <div className="flex flex-wrap gap-2">
+            {traits_inferred.map((trait, i) => (
+              <span
+                key={i}
+                className="px-4 py-2 bg-purple-100 text-purple-800 rounded-full font-medium"
               >
-                {option}
-              </button>
-            );
-          })}
+                {trait}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Résultat */}
-        {state.answered && (
-          <div className={`p-4 rounded-lg mb-4 ${state.correct ? "bg-green-100" : "bg-red-100"}`}>
-            <p className="text-center text-lg font-bold">
-              {state.correct ? "✅ Correct !" : `❌ Raté ! C'était ${state.pokemon.name}`}
-            </p>
+        {/* Alternative Matches */}
+        {alternatives.length > 0 && (
+          <div className="card p-6">
+            <h3 className="font-bold text-xl mb-4">🔀 Autres correspondances possibles</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {alternatives.map((alt, i) => (
+                <div key={i} className="border-2 border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-lg capitalize">{alt.name}</h4>
+                    <span className="text-sm text-gray-600">
+                      {Math.round(alt.confidence * 100)}%
+                    </span>
+                  </div>
+                  <ul className="text-sm space-y-1">
+                    {alt.reasons.map((reason, j) => (
+                      <li key={j} className="flex items-start gap-2">
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-700">{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex gap-4">
-          {state.answered && (
-            <button className="btn btn-primary flex-1" onClick={nextQuestion}>
-              Question Suivante →
+        <div className="card p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={startQuiz}
+              className="btn btn-primary flex-1 py-3"
+            >
+              🔄 Refaire le quiz
             </button>
-          )}
-          <button className="btn" onClick={() => setState(null)}>
-            Quitter
-          </button>
+            {pokemonData && (
+              <a
+                href={`/pokemon/${primary.name}`}
+                className="btn flex-1 py-3 text-center"
+              >
+                📖 Voir la fiche détaillée
+              </a>
+            )}
+          </div>
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="page-bg min-h-screen">
+      <div className="page-content py-24 px-4">
+        {step === "intro" && renderIntro()}
+        {step === "questions" && renderQuestions()}
+        {step === "loading" && renderLoading()}
+        {step === "results" && renderResults()}
       </div>
     </div>
   );
