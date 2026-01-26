@@ -1,26 +1,57 @@
-# pokedex-ai-v2
-## Description
-Pokedex AI is a web application that allows users to explore Pokémon data, including details about Pokémon, their evolutions, and more.
+# Pokédex AI - Official Pokémon Web Application
 
-## Getting Started
+A comprehensive Pokédex web application with AI-powered features, team building, battles, and more! Built with Next.js 14 and styled to match the official Pokémon aesthetic.
+
+## ✨ Features
+
+- 📖 **Complete Pokédex** - Browse all Pokémon with detailed stats, types, and evolutions
+- 🤖 **AI-Powered Quiz** - Discover which Pokémon matches your personality (powered by Mistral AI)
+- ⚔️ **Battle System** - 6v6 battles with evolution mechanics
+- 👥 **Team Builder** - Create and manage your dream team
+- ⭐ **Favorites** - Save your favorite Pokémon
+- 📊 **Stats & Analytics** - Track your Pokédex progress
+- 🎮 **Trainer Authentication** - Personal accounts with local database
+- 🏆 **Tournament Mode** - Advanced battle system with strategic evolution allocation
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (version 14 or higher)
+- Node.js (version 18 or higher)
 - npm (Node package manager)
 
 ### Installation
-1. Clone the repository:
-	```bash
-	git clone https://github.com/Thibault-megard1/pokedex-ai-v2.git
-	cd pokedex-ai-v2
-	```
-2. Install the dependencies:
-	```bash
-	npm install
-	```
 
-### Running the Application
-To start the development server, run:
+1. **Clone the repository:**
+```bash
+git clone https://github.com/Thibault-megard1/pokedex-ai-v2.git
+cd pokedex-ai-v2
+```
+
+2. **Install dependencies:**
+```bash
+npm install
+```
+
+3. **Download UI assets:**
+```bash
+node scripts/download-assets.mjs
+```
+
+4. **Set up environment variables:**
+```bash
+# Copy the example file
+cp .env.local.example .env.local
+
+# Edit .env.local and add your Mistral API key
+# Get your key from: https://console.mistral.ai/
+```
+
+Example `.env.local`:
+```
+MISTRAL_API_KEY=your_actual_api_key_here
+```
+
+5. **Start the development server:**
 ```bash
 npm run dev
 ```
@@ -28,11 +59,35 @@ npm run dev
 The application will be available at `http://localhost:3000`.
 
 ### Building for Production
-To build the application for production, run:
+
 ```bash
 npm run build
 npm start
 ```
+
+## 🎨 UI Redesign
+
+This application features a **complete Pokémon-themed UI redesign** inspired by official Game Freak Pokédex interfaces.
+
+### Design Features
+- ✅ **Press Start 2P** font for authentic Pokémon UI feel
+- ✅ Pokédex-style red header with Pokéball logo
+- ✅ 3D button effects with press animations
+- ✅ Pokédex entry cards with hover effects
+- ✅ Battle HP bars with color gradients
+- ✅ Type-based color system (18 Pokémon types)
+- ✅ Responsive design (mobile + desktop)
+- ✅ Smooth animations and transitions
+
+### Redesign Status
+- ✅ Global CSS theme system
+- ✅ Navigation bar
+- ✅ Pokémon cards
+- ⏳ Remaining pages (see `POKEDEX_REDESIGN_GUIDE.md` for details)
+
+For complete redesign documentation, see: **[POKEDEX_REDESIGN_GUIDE.md](./POKEDEX_REDESIGN_GUIDE.md)**
+
+## 📁 Project Structure
 
 ### Directory Structure
 - **app/**: Contains the main application files, including pages and styles.

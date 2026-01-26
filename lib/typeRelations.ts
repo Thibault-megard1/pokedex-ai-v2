@@ -75,7 +75,7 @@ const ALL_TYPES = [
 /**
  * Calcule le multiplicateur de dégâts reçus pour un type donné
  */
-function calculateDefensiveMultiplier(attackType: string, defenderTypes: string[]): number {
+export function calculateDefensiveMultiplier(attackType: string, defenderTypes: string[]): number {
   let mult = 1;
   
   for (const dt of defenderTypes) {

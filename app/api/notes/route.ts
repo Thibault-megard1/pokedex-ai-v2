@@ -28,7 +28,7 @@ async function saveNotes(notes: Note[]) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = await getUserFromRequest(req);
+  const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getUserFromRequest(req);
+  const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await getUserFromRequest(req);
+  const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -73,11 +73,31 @@ export default async function PokemonListPage({
   const bg = backgroundForPokedex(region || undefined, type || undefined);
 
   return (
-    <div className="page-bg" style={{ ["--bg-url" as any]: `url(${bg})` }}>
-      <div className="page-content space-y-4">
-        <div className="card p-4 mt-24">
-          <h1 className="text-xl font-semibold">Pokédex</h1>
+    <div className="page-bg min-h-screen" style={{ ["--bg-url" as any]: `url(${bg})` }}>
+      <div className="page-content py-24 px-4">
+        
+        {/* Header */}
+        <div className="pokedex-panel max-w-7xl mx-auto mb-6 pokedex-open-animation">
+          <div className="pokedex-panel-content p-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-pokemon mb-2">POKÉDEX NATIONAL</h1>
+                <p className="text-sm text-gray-600">
+                  {result.total} Pokémon trouvés — Page {page}/{totalPages}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-xs text-gray-600 pokemon-text">SYSTÈME ACTIF</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        {/* Search & Filters */}
+        <div className="pokedex-screen max-w-7xl mx-auto mb-6 p-6">
+          <h2 className="text-pokemon text-lg mb-4">🔍 RECHERCHE & FILTRES</h2>
           <PokedexSearchBar
             initialQ={q}
             initialSize={String(pageSize)}
@@ -87,33 +107,75 @@ export default async function PokemonListPage({
             initialOrder={order}
             initialIncludeForms={includeForms ? "true" : undefined}
           />
-
-          <p className="text-xs text-gray-500 mt-2">
-            Résultats: {result.total} — Page {page} / {totalPages}
-          </p>
         </div>
 
-        <RecentPokemon />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {result.items.map(p => <PokemonCard key={p.id} p={p} />)}
+        {/* Recent Pokemon */}
+        <div className="max-w-7xl mx-auto mb-6">
+          <RecentPokemon />
         </div>
 
-        <div className="card p-4 flex flex-wrap items-center justify-center gap-2">
-          <a className="btn" href={buildLink(Math.max(1, page - 1))}>←</a>
-
-          {pageList(page, totalPages).map((v, idx) => {
-            if (v === "…") return <span key={`dots-${idx}`} className="px-2 text-gray-500">…</span>;
-            const isActive = v === page;
-            return (
-              <a key={v} className={`btn ${isActive ? "btn-primary" : ""}`} href={buildLink(v)}>
-                {v}
-              </a>
-            );
-          })}
-
-          <a className="btn" href={buildLink(Math.min(totalPages, page + 1))}>→</a>
+        {/* Pokemon Grid */}
+        <div className="max-w-7xl mx-auto mb-6">
+          {result.items.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {result.items.map(p => <PokemonCard key={p.id} p={p} />)}
+            </div>
+          ) : (
+            <div className="pokedex-panel">
+              <div className="pokedex-panel-content p-12 text-center">
+                <div className="text-6xl mb-4">❌</div>
+                <h3 className="text-pokemon text-xl mb-2">AUCUN RÉSULTAT</h3>
+                <p className="text-gray-600">Essayez de modifier vos filtres de recherche.</p>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="pokedex-panel max-w-7xl mx-auto">
+            <div className="pokedex-panel-content p-4">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <a 
+                  className="pokedex-button text-sm" 
+                  href={buildLink(Math.max(1, page - 1))}
+                  aria-label="Page précédente"
+                >
+                  ← Précédent
+                </a>
+
+                {pageList(page, totalPages).map((v, idx) => {
+                  if (v === "…") return (
+                    <span key={`dots-${idx}`} className="px-3 text-gray-500">
+                      …
+                    </span>
+                  );
+                  
+                  const isActive = v === page;
+                  return (
+                    <a 
+                      key={v} 
+                      className={`pokedex-button text-sm min-w-[44px] ${
+                        isActive ? "pokedex-button-yellow" : ""
+                      }`}
+                      href={buildLink(v)}
+                    >
+                      {v}
+                    </a>
+                  );
+                })}
+
+                <a 
+                  className="pokedex-button text-sm" 
+                  href={buildLink(Math.min(totalPages, page + 1))}
+                  aria-label="Page suivante"
+                >
+                  Suivant →
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

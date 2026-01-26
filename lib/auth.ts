@@ -77,3 +77,14 @@ export async function getCurrentSession(): Promise<Session | null> {
   const sessions = await getSessions();
   return sessions.find(s => s.token === token) ?? null;
 }
+
+/**
+ * Get current user from session (for API routes)
+ */
+export async function getUserFromRequest(): Promise<User | null> {
+  const session = await getCurrentSession();
+  if (!session) return null;
+
+  const users = await getUsers();
+  return users.find(u => u.id === session.userId) ?? null;
+}

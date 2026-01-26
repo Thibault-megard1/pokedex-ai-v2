@@ -29,33 +29,87 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="page-bg" style={{ "--bg-url": `url(${BACKGROUNDS.auth})` } as React.CSSProperties}>
-      <div className="page-content">
-    <div className="max-w-md mx-auto card p-6">
-      <h1 className="text-xl font-semibold">Inscription</h1>
-      <p className="text-sm text-gray-600 mt-1">Créé ton compte (DB locale dans ./data)</p>
+    <div className="page-bg min-h-screen" style={{ "--bg-url": `url(${BACKGROUNDS.auth})` } as React.CSSProperties}>
+      <div className="page-content py-24 px-4">
+        <div className="max-w-md mx-auto pokedex-panel pokedex-open-animation">
+          <div className="pokedex-panel-content p-8">
+            
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white flex items-center justify-center shadow-lg pokeball-bounce">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600"></div>
+              </div>
+              <h1 className="text-3xl font-bold text-pokemon mb-2">INSCRIPTION</h1>
+              <p className="text-sm text-gray-600">Devenez un Dresseur Pokémon !</p>
+            </div>
 
-      <form className="mt-4 space-y-3" onSubmit={onSubmit}>
-        <div>
-          <label className="text-sm">Pseudo</label>
-          <input className="input mt-1" name="username" required minLength={3} />
-        </div>
-        <div>
-          <label className="text-sm">Mot de passe</label>
-          <input className="input mt-1" name="password" type="password" required minLength={6} />
-        </div>
-        <div>
-          <label className="text-sm">Confirmer le mot de passe</label>
-          <input className="input mt-1" name="confirmPassword" type="password" required minLength={6} />
-        </div>
+            {/* Form */}
+            <form className="space-y-4" onSubmit={onSubmit}>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
+                  PSEUDO
+                </label>
+                <input 
+                  className="pokedex-input w-full" 
+                  name="username" 
+                  required 
+                  minLength={3}
+                  placeholder="Min. 3 caractères"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
+                  MOT DE PASSE
+                </label>
+                <input 
+                  className="pokedex-input w-full" 
+                  name="password" 
+                  type="password" 
+                  required 
+                  minLength={6}
+                  placeholder="Min. 6 caractères"
+                />
+              </div>
 
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
+                  CONFIRMER
+                </label>
+                <input 
+                  className="pokedex-input w-full" 
+                  name="confirmPassword" 
+                  type="password" 
+                  required 
+                  minLength={6}
+                  placeholder="Retapez le mot de passe"
+                />
+              </div>
 
-        <button className="btn btn-primary w-full" type="submit">Créer mon compte</button>
-        <a className="btn w-full" href="/auth/login">J’ai déjà un compte</a>
-      </form>
-    </div>
+              {error ? (
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3 text-sm text-red-700">
+                  ⚠️ {error}
+                </div>
+              ) : null}
+
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 text-xs text-gray-600">
+                💾 Les données sont stockées localement dans ./data
+              </div>
+
+              <button className="pokedex-button-yellow w-full text-base" type="submit">
+                Créer mon compte
+              </button>
+              
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-600 mb-2">Déjà un compte ?</p>
+                <a className="pokedex-button w-full" href="/auth/login">
+                  Se connecter
+                </a>
+              </div>
+            </form>
+          </div>
         </div>
+      </div>
     </div>
   );
 }
