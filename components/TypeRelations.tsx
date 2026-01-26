@@ -1,6 +1,7 @@
 "use client";
 
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 
 type Props = {
   weakTo: string[];
@@ -11,25 +12,16 @@ type Props = {
 };
 
 export default function TypeRelations({ weakTo, resistantTo, immuneTo, strongAgainst, weakAgainst }: Props) {
-  const renderTypeBadges = (types: string[], color: string) => {
+  const renderTypeBadges = (types: string[]) => {
     if (types.length === 0) {
       return <span className="text-sm text-gray-400">Aucun</span>;
     }
 
     return (
       <div className="flex flex-wrap gap-2">
-        {types.map(type => {
-          const ts = typeStyle(type);
-          return (
-            <span
-              key={type}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${ts.badgeClass}`}
-            >
-              <span aria-hidden>{ts.icon}</span>
-              <span className="capitalize">{type}</span>
-            </span>
-          );
-        })}
+        {types.map(type => (
+          <TypeBadge key={type} kind={type as BadgeKey} width={85} />
+        ))}
       </div>
     );
   };
@@ -46,7 +38,7 @@ export default function TypeRelations({ weakTo, resistantTo, immuneTo, strongAga
             <div className="text-sm font-semibold text-red-700 mb-2">
               ❌ Faible contre (x2 ou x4 dégâts)
             </div>
-            {renderTypeBadges(weakTo, "red")}
+            {renderTypeBadges(weakTo)}
           </div>
 
           {/* Résistances */}
@@ -54,7 +46,7 @@ export default function TypeRelations({ weakTo, resistantTo, immuneTo, strongAga
             <div className="text-sm font-semibold text-green-700 mb-2">
               ✅ Résistant à (x0.5 ou x0.25 dégâts)
             </div>
-            {renderTypeBadges(resistantTo, "green")}
+            {renderTypeBadges(resistantTo)}
           </div>
 
           {/* Immunités */}
@@ -63,7 +55,7 @@ export default function TypeRelations({ weakTo, resistantTo, immuneTo, strongAga
               <div className="text-sm font-semibold text-purple-700 mb-2">
                 🚫 Immunisé contre (x0 dégâts)
               </div>
-              {renderTypeBadges(immuneTo, "purple")}
+              {renderTypeBadges(immuneTo)}
             </div>
           )}
         </div>
@@ -79,7 +71,7 @@ export default function TypeRelations({ weakTo, resistantTo, immuneTo, strongAga
             <div className="text-sm font-semibold text-blue-700 mb-2">
               💪 Efficace contre (x2 ou x4 dégâts)
             </div>
-            {renderTypeBadges(strongAgainst, "blue")}
+            {renderTypeBadges(strongAgainst)}
           </div>
 
           {/* Faiblesses offensives */}
@@ -87,7 +79,7 @@ export default function TypeRelations({ weakTo, resistantTo, immuneTo, strongAga
             <div className="text-sm font-semibold text-orange-700 mb-2">
               🔻 Peu efficace contre (x0.5 ou x0.25 dégâts)
             </div>
-            {renderTypeBadges(weakAgainst, "orange")}
+            {renderTypeBadges(weakAgainst)}
           </div>
         </div>
       </div>

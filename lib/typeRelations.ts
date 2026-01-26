@@ -157,3 +157,14 @@ export function getTypeRelations(pokemonTypes: string[]): TypeRelations {
     weakAgainst: Array.from(weakAgainst).sort()
   };
 }
+
+// Export TYPE_CHART pour compatibilité avec teamAnalysis.ts
+export const TYPE_CHART: Record<string, Record<string, number>> = {};
+
+ALL_TYPES.forEach(defenderType => {
+  TYPE_CHART[defenderType] = {};
+  
+  ALL_TYPES.forEach(attackType => {
+    TYPE_CHART[defenderType][attackType] = calculateDefensiveMultiplier(attackType, [defenderType]);
+  });
+});

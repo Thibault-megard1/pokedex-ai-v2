@@ -18,6 +18,6 @@ export const REGION_OPTIONS = [
 ] as const;
 
 export const TYPE_OPTIONS = [
-  "normal","fire","water","electric","grass","ice","fighting","poison","ground","flying",
-  "psychic","bug","rock","ghost","dragon","dark","steel","fairy"
+  "Normal","Fire","Water","Electric","Grass","Ice","Fighting","Poison","Ground","Flying",
+  "Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy"
 ] as const;

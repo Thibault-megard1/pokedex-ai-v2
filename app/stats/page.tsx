@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 
 type UserStats = {
   favoriteTypes: Record<string, number>;
@@ -122,15 +123,13 @@ export default function StatsPage() {
           <h2 className="text-xl font-bold mb-4">⭐ Types les plus utilisés</h2>
           <div className="space-y-3">
             {sortedTypes.map(([type, count]) => {
-              const style = typeStyle(type);
               const percentage = Math.round((count / stats.teamSize) * 100);
               
               return (
                 <div key={type} className="flex items-center gap-3">
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm min-w-[120px] ${style.badgeClass}`}>
-                    <span>{style.icon}</span>
-                    <span className="capitalize">{type}</span>
-                  </span>
+                  <div className="min-w-[120px]">
+                    <TypeBadge kind={type as BadgeKey} width={110} />
+                  </div>
                   
                   <div className="flex-1">
                     <div className="h-6 bg-gray-200 rounded-full overflow-hidden">

@@ -19,11 +19,19 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
   }
 
   const getEvolutionMethod = (node: EvolutionNode): string => {
+    if (node.formType === "mega") return node.requiredItem ? `Méga (${node.requiredItem})` : "Méga-Évolution";
+    if (node.formType === "gmax") return node.requiredItem ? `Gigamax (${node.requiredItem})` : "Gigamax";
     if (node.level) return `Niv. ${node.level}`;
     if (node.item) return node.item.replace(/-/g, " ");
     if (node.trigger === "trade") return "Échange";
     if (node.trigger === "use-item") return "Objet";
     return "Spécial";
+  };
+
+  const cardAccent = (node: EvolutionNode) => {
+    if (node.formType === "mega") return "border-purple-500 bg-purple-50 ring-purple-200";
+    if (node.formType === "gmax") return "border-red-500 bg-red-50 ring-red-200";
+    return "border-gray-300 bg-white hover:border-blue-400 hover:shadow-md";
   };
 
   const renderNode = (node: EvolutionNode, depth: number = 0) => {
@@ -39,7 +47,7 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
           className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer group min-w-[120px] ${
             isCurrent 
               ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300" 
-              : "border-gray-300 bg-white hover:border-blue-400 hover:shadow-md"
+              : cardAccent(node)
           }`}
           title={`Voir ${displayName}`}
         >
@@ -63,6 +71,18 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
           <div className="text-xs text-gray-500">
             #{node.id}
           </div>
+
+          {node.formType && (
+            <div className="mt-2 px-2 py-1 bg-gray-800 text-white text-[11px] rounded-full font-semibold uppercase tracking-wide">
+              {node.formType === "mega" ? "Méga" : node.formType === "gmax" ? "Gigamax" : node.formType}
+            </div>
+          )}
+
+          {node.requiredItem && (
+            <div className="mt-1 text-[11px] text-gray-700 text-center max-w-[140px] leading-tight">
+              Objet: {node.requiredItem}
+            </div>
+          )}
 
           {isCurrent && (
             <div className="mt-2 px-2 py-1 bg-blue-500 text-white text-xs rounded-full font-semibold">

@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { PokemonForm } from "@/lib/types";
-import { typeColors } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 import { getDisplayName } from "@/lib/pokemonNames.utils";
 
 interface PokemonFormsProps {
@@ -12,15 +13,16 @@ interface PokemonFormsProps {
 }
 
 export default function PokemonForms({ forms, pokemonName }: PokemonFormsProps) {
-  if (!forms || forms.length === 0) {
+  // On retire les Méga/Gigamax qui sont désormais affichés dans l'arbre d'évolution
+  const filteredForms = forms.filter(f => !f.isMega && !f.isGmax);
+
+  if (!filteredForms || filteredForms.length === 0) {
     return null;
   }
 
   // Grouper les formes par catégorie
-  const megaForms = forms.filter(f => f.isMega);
-  const gmaxForms = forms.filter(f => f.isGmax);
-  const regionalForms = forms.filter(f => f.isRegionalForm);
-  const otherForms = forms.filter(f => !f.isMega && !f.isGmax && !f.isRegionalForm);
+  const regionalForms = filteredForms.filter(f => f.isRegionalForm);
+  const otherForms = filteredForms.filter(f => !f.isRegionalForm);
 
   return (
     <div className="space-y-6">
@@ -115,15 +117,12 @@ function FormCard({ form }: FormCardProps) {
       <p className="text-sm font-semibold text-center text-gray-800">
         {form.frenchName || form.formName}
       </p>
+      {form.requiredItem && (
+        <p className="text-xs text-center text-gray-600 mt-1">Objet: {form.requiredItem}</p>
+      )}
       <div className="flex gap-1 mt-2 justify-center flex-wrap">
         {form.types.map((type) => (
-          <span
-            key={type}
-            className="px-2 py-0.5 rounded text-white text-xs capitalize"
-            style={{ backgroundColor: typeColors[type] || "#999" }}
-          >
-            {type}
-          </span>
+          <TypeBadge key={type} kind={type as BadgeKey} width={85} />
         ))}
       </div>
     </Link>

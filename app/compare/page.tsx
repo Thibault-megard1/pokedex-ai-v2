@@ -204,14 +204,9 @@ export default function ComparePage() {
               </div>
 
               <div className="mt-2 flex flex-wrap gap-2">
-                {a.types.map(t => {
-                  const s = typeStyle(t);
-                  return (
-                    <span key={t} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${s.badgeClass}`}>
-                      <span aria-hidden>{s.icon}</span><span className="capitalize">{t}</span>
-                    </span>
-                  );
-                })}
+                {a.types.map(t => (
+                  <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                ))}
               </div>
 
               <div className="mt-3 space-y-1 text-sm">
@@ -253,14 +248,9 @@ export default function ComparePage() {
               </div>
 
               <div className="mt-2 flex flex-wrap gap-2 justify-end">
-                {b.types.map(t => {
-                  const s = typeStyle(t);
-                  return (
-                    <span key={t} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${s.badgeClass}`}>
-                      <span aria-hidden>{s.icon}</span><span className="capitalize">{t}</span>
-                    </span>
-                  );
-                })}
+                {b.types.map(t => (
+                  <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                ))}
               </div>
 
               <div className="mt-3 space-y-1 text-sm">

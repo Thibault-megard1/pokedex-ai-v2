@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { analyzeTeam, suggestPokemon, type TeamAnalysis } from "@/lib/teamAnalysis";
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 
 type Props = {
   team: Array<{ types: string[]; name: string }>;
@@ -63,18 +64,9 @@ export default function TeamStrategyBuilder({ team }: Props) {
       <div className="card p-4">
         <h3 className="font-bold text-lg mb-3">⚔️ Couverture Offensive</h3>
         <div className="flex flex-wrap gap-2">
-          {analysis.coverages.map(type => {
-            const style = typeStyle(type);
-            return (
-              <span
-                key={type}
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${style.badgeClass}`}
-              >
-                <span>{style.icon}</span>
-                <span className="capitalize">{type}</span>
-              </span>
-            );
-          })}
+          {analysis.coverages.map(type => (
+            <TypeBadge key={type} kind={type as BadgeKey} width={85} />
+          ))}
         </div>
         <p className="text-xs text-gray-500 mt-2">
           {analysis.coverages.length}/18 types couverts
@@ -89,20 +81,14 @@ export default function TeamStrategyBuilder({ team }: Props) {
             {Object.entries(analysis.weaknesses)
               .sort((a, b) => b[1] - a[1])
               .slice(0, 5)
-              .map(([type, count]) => {
-                const style = typeStyle(type);
-                return (
-                  <div key={type} className="flex items-center justify-between">
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${style.badgeClass}`}>
-                      <span>{style.icon}</span>
-                      <span className="capitalize">{type}</span>
-                    </span>
-                    <span className="text-sm text-red-600 font-semibold">
-                      {count} Pokémon faible{count > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                );
-              })}
+              .map(([type, count]) => (
+                <div key={type} className="flex items-center justify-between">
+                  <TypeBadge kind={type as BadgeKey} width={85} />
+                  <span className="text-sm text-red-600 font-semibold">
+                    {count} Pokémon faible{count > 1 ? "s" : ""}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -115,20 +101,14 @@ export default function TeamStrategyBuilder({ team }: Props) {
             {Object.entries(analysis.resistances)
               .sort((a, b) => b[1] - a[1])
               .slice(0, 5)
-              .map(([type, count]) => {
-                const style = typeStyle(type);
-                return (
-                  <div key={type} className="flex items-center justify-between">
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${style.badgeClass}`}>
-                      <span>{style.icon}</span>
-                      <span className="capitalize">{type}</span>
-                    </span>
-                    <span className="text-sm text-green-600 font-semibold">
-                      {count} Pokémon résistant{count > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                );
-              })}
+              .map(([type, count]) => (
+                <div key={type} className="flex items-center justify-between">
+                  <TypeBadge kind={type as BadgeKey} width={85} />
+                  <span className="text-sm text-green-600 font-semibold">
+                    {count} Pokémon résistant{count > 1 ? "s" : ""}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -142,18 +122,9 @@ export default function TeamStrategyBuilder({ team }: Props) {
               <div key={i} className="p-3 bg-blue-50 border border-blue-200 rounded">
                 <p className="text-sm font-semibold text-blue-900">{sug.reason}</p>
                 <div className="flex gap-2 mt-2">
-                  {sug.types.map(type => {
-                    const style = typeStyle(type);
-                    return (
-                      <span
-                        key={type}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${style.badgeClass}`}
-                      >
-                        <span>{style.icon}</span>
-                        <span className="capitalize">{type}</span>
-                      </span>
-                    );
-                  })}
+                  {sug.types.map(type => (
+                    <TypeBadge key={type} kind={type as BadgeKey} width={70} />
+                  ))}
                 </div>
               </div>
             ))}

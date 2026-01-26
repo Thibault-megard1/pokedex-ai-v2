@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import { calculateDamage, calculateCriticalDamage, ITEMS, NATURES, type CalculatorInput } from "@/lib/damageCalculator";
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 
 type PokeLite = {
   name: string;
@@ -115,14 +116,9 @@ export default function DamageCalculatorPage() {
                 <div>
                   <p className="font-bold capitalize">{attacker.name}</p>
                   <div className="flex gap-1">
-                    {attacker.types.map(t => {
-                      const style = typeStyle(t);
-                      return (
-                        <span key={t} className={`text-xs px-2 py-0.5 rounded ${style.badgeClass}`}>
-                          {t}
-                        </span>
-                      );
-                    })}
+                    {attacker.types.map(t => (
+                      <TypeBadge key={t} kind={t as BadgeKey} width={70} />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -175,14 +171,9 @@ export default function DamageCalculatorPage() {
                 <div>
                   <p className="font-bold capitalize">{defender.name}</p>
                   <div className="flex gap-1">
-                    {defender.types.map(t => {
-                      const style = typeStyle(t);
-                      return (
-                        <span key={t} className={`text-xs px-2 py-0.5 rounded ${style.badgeClass}`}>
-                          {t}
-                        </span>
-                      );
-                    })}
+                    {defender.types.map(t => (
+                      <TypeBadge key={t} kind={t as BadgeKey} width={70} />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -229,10 +220,9 @@ export default function DamageCalculatorPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Type</label>
             <select className="input" value={moveType} onChange={(e) => setMoveType(e.target.value)}>
-              {Object.keys(typeStyle("normal")).map((_, i) => {
-                const types = ["normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy"];
-                return types[i] ? <option key={types[i]} value={types[i]}>{types[i]}</option> : null;
-              })}
+              {["normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy"].map(type => (
+                <option key={type} value={type} className="capitalize">{type}</option>
+              ))}
             </select>
           </div>
 

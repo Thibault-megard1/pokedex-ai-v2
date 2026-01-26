@@ -1,6 +1,5 @@
 "use client";
 
-import { typeStyle } from "@/lib/typeStyle";
 import Link from "next/link";
 
 type EvolutionNode = {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getPokemonDetail, getAdjacentPokemonId, getPokemonEvolutionTree } from "@/lib/pokeapi";
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 import { backgroundForPokemonDetail } from "@/lib/backgrounds";
 import { getTypeRelations } from "@/lib/typeRelations";
 import { formatPokemonName } from "@/lib/pokemonNames.utils";
@@ -70,15 +71,9 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
               <Link className="btn" href={`/pokemon/${nextId}`}>Suivant →</Link>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {p.types.map(t => {
-                const s = typeStyle(t);
-                return (
-                  <span key={t} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${s.badgeClass}`}>
-                    <span aria-hidden>{s.icon}</span>
-                    <span className="capitalize">{t}</span>
-                  </span>
-                );
-              })}
+              {p.types.map(t => (
+                <TypeBadge key={t} kind={t as BadgeKey} width={110} />
+              ))}
             </div>
             <div className="text-sm text-gray-600 mt-2">
               Taille: <b>{heightM} m</b> — Poids: <b>{weightKg} kg</b>
@@ -149,8 +144,8 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
         </div>
       )}
 
-      {/* Section Formes alternatives (Mega, Gigamax, régionales) */}
-      {p.forms && p.forms.length > 0 && (
+      {/* Section Formes alternatives (régionales et autres, hors Mega/Gigamax) */}
+      {p.forms && p.forms.filter(f => !f.isMega && !f.isGmax).length > 0 && (
         <div className="card p-5">
           <PokemonForms forms={p.forms} pokemonName={p.name} />
         </div>

@@ -2,10 +2,11 @@
 import { BACKGROUNDS } from "@/lib/backgrounds";
 
 import { useEffect, useMemo, useState } from "react";
-import { typeStyle } from "@/lib/typeStyle";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import EvolutionDisplay from "@/components/EvolutionDisplay";
 import TeamStrategyBuilder from "@/components/TeamStrategyBuilder";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 
 type TeamSlot = { slot: number; pokemonId: number; pokemonName: string };
 type Me = { username: string } | null;
@@ -222,18 +223,9 @@ export default function TeamPage() {
 
                       {d?.types?.length ? (
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {d.types.map(t => {
-                            const ts = typeStyle(t);
-                            return (
-                              <span
-                                key={t}
-                                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${ts.badgeClass}`}
-                              >
-                                <span aria-hidden>{ts.icon}</span>
-                                <span className="capitalize">{t}</span>
-                              </span>
-                            );
-                          })}
+                          {d.types.map(t => (
+                            <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                          ))}
                         </div>
                       ) : null}
                     </div>

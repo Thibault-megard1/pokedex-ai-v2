@@ -50,6 +50,7 @@ export default function NavBar() {
               { href: "/pokemon", label: "Pokémon" },
               { href: "/favorites", label: "⭐ Favoris" },
               { href: "/battle", label: "Combat" },
+              { href: "/tournament", label: "🏆 Tournoi" },
               { href: "/damage-calculator", label: "Calculateur" },
               { href: "/compare", label: "Comparer" },
               { href: "/team", label: "Équipe" },

@@ -30,6 +30,7 @@ export type PokemonBasic = {
 
 export type Move = {
   name: string;
+  type?: string; // Type de l'attaque (fire, water, etc.)
   learnMethod: string; // "level-up" | "machine" | "tutor" | "egg"
   levelLearnedAt?: number;
   machineNumber?: string; // "TM01", "HM05", etc.
@@ -52,6 +53,8 @@ export type PokemonForm = {
   isMega?: boolean;
   isGmax?: boolean;
   isRegionalForm?: boolean;
+  formType?: "mega" | "gmax" | "regional" | "other";
+  requiredItem?: string | null;
 };
 
 export type PokemonDetail = PokemonBasic & {

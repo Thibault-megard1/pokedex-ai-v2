@@ -50,7 +50,7 @@ export default function PokedexSearchBar({
       <select className="input" name="type" defaultValue={initialType}>
         <option value="">Tous types</option>
         {TYPE_OPTIONS.map(t => (
-          <option key={t} value={t}>{t}</option>
+          <option key={t} value={t.toLowerCase()}>{t}</option>
         ))}
       </select>
 

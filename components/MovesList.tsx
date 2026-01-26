@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import MoveDetailModal from "./MoveDetailModal";
+import TypeIcon from "./TypeIcon";
 
 type Move = {
   name: string;
+  type?: string;
   learnMethod: string;
   levelLearnedAt?: number;
   machineNumber?: string;
@@ -16,6 +19,7 @@ type Props = {
 export default function MovesList({ moves }: Props) {
   const [filterMethod, setFilterMethod] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMove, setSelectedMove] = useState<string | null>(null);
 
   if (!moves || moves.length === 0) {
     return (
@@ -78,24 +82,32 @@ export default function MovesList({ moves }: Props) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {filtered.map((move, idx) => (
-            <div 
+            <button
               key={`${move.name}-${idx}`}
-              className={`p-2 rounded-lg border ${getMethodColor(method)}`}
+              onClick={() => setSelectedMove(move.name)}
+              className={`p-2 rounded-lg border ${getMethodColor(method)} hover:shadow-md transition-all cursor-pointer text-left flex items-center gap-2`}
             >
-              <div className="font-medium text-sm capitalize">
-                {move.name.replace(/-/g, " ")}
+              {move.type && (
+                <div className="flex-shrink-0">
+                  <TypeIcon type={move.type} size={24} />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm capitalize truncate">
+                  {move.name.replace(/-/g, " ")}
+                </div>
+                {move.learnMethod === "level-up" && move.levelLearnedAt !== undefined && (
+                  <div className="text-xs mt-1">
+                    Niveau {move.levelLearnedAt || "Départ"}
+                  </div>
+                )}
+                {move.learnMethod === "machine" && move.machineNumber && (
+                  <div className="text-xs mt-1">
+                    {move.machineNumber}
+                  </div>
+                )}
               </div>
-              {move.learnMethod === "level-up" && move.levelLearnedAt !== undefined && (
-                <div className="text-xs mt-1">
-                  Niveau {move.levelLearnedAt || "Départ"}
-                </div>
-              )}
-              {move.learnMethod === "machine" && move.machineNumber && (
-                <div className="text-xs mt-1">
-                  {move.machineNumber}
-                </div>
-              )}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -190,6 +202,13 @@ export default function MovesList({ moves }: Props) {
         {filterMethod === "all" || filterMethod === "tutor" ? renderMoveList(tutorMoves, "tutor") : null}
         {filterMethod === "all" || filterMethod === "egg" ? renderMoveList(eggMoves, "egg") : null}
       </div>
+
+      {/* Modal de détails d'attaque */}
+      <MoveDetailModal
+        moveName={selectedMove || ""}
+        isOpen={selectedMove !== null}
+        onClose={() => setSelectedMove(null)}
+      />
     </div>
   );
 }

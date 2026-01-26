@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { PokemonBasic } from "@/lib/types";
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 import { getDisplayName, formatPokemonName } from "@/lib/pokemonNames.utils";
 
 
@@ -39,19 +40,9 @@ export default function PokemonCard({ p }: { p: PokemonBasic }) {
             <div className="text-xs text-gray-500 italic truncate capitalize">{names.secondary}</div>
           )}
           <div className="flex flex-wrap gap-1 mt-1">
-            {p.types.map(t => {
-              const s = typeStyle(t);
-              return (
-                <span
-                  key={t}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border ${s.badgeClass}`}
-                  title={s.label}
-                >
-                  <span aria-hidden>{s.icon}</span>
-                  <span className="capitalize">{t}</span>
-                </span>
-              );
-            })}
+            {p.types.map(t => (
+              <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+            ))}
           </div>
         </div>
       </div>

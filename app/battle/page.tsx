@@ -2,7 +2,8 @@
 
 import { useMemo, useRef, useState } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
-import { typeStyle } from "@/lib/typeStyle";
+import TypeBadge from "@/components/TypeBadge";
+import type { BadgeKey } from "@/lib/typeBadgesSprite";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 
 // Type pour stocker les données d'un Pokémon (léger)
@@ -244,14 +245,9 @@ return (
                     <div className="hpfill" style={{ width: `${clamp((bHpNow / maxBHp) * 100, 0, 100)}%` }} />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {res.b.types.map(t => {
-                      const s = typeStyle(t);
-                      return (
-                        <span key={t} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${s.badgeClass}`}>
-                          <span aria-hidden>{s.icon}</span><span className="capitalize">{t}</span>
-                        </span>
-                      );
-                    })}
+                    {res.b.types.map(t => (
+                      <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -298,14 +294,9 @@ return (
                     <div className="hpfill" style={{ width: `${clamp((aHpNow / maxAHp) * 100, 0, 100)}%` }} />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {res.a.types.map(t => {
-                      const s = typeStyle(t);
-                      return (
-                        <span key={t} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm border ${s.badgeClass}`}>
-                          <span aria-hidden>{s.icon}</span><span className="capitalize">{t}</span>
-                        </span>
-                      );
-                    })}
+                    {res.a.types.map(t => (
+                      <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                    ))}
                   </div>
                 </div>
               </div>

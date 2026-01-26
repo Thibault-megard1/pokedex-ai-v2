@@ -6,6 +6,74 @@ import { generationToRegion } from "@/lib/regions";
 
 const CACHE_DIR = path.join(DATA_DIR, "pokemon-cache");
 
+// Mapping manuel pour afficher l'objet nécessaire à la Méga-Évolution.
+// Les noms sont conservés en anglais pour rester cohérents avec la PokéAPI.
+const MEGA_STONES: Record<string, string> = {
+  "venusaur": "Venusaurite",
+  "charizard-mega-x": "Charizardite X",
+  "charizard-mega-y": "Charizardite Y",
+  "blastoise": "Blastoisinite",
+  "alakazam": "Alakazite",
+  "gengar": "Gengarite",
+  "kangaskhan": "Kangaskhanite",
+  "pinsir": "Pinsirite",
+  "gyarados": "Gyaradosite",
+  "aerodactyl": "Aerodactylite",
+  "mewtwo-mega-x": "Mewtwonite X",
+  "mewtwo-mega-y": "Mewtwonite Y",
+  "ampharos": "Ampharosite",
+  "scizor": "Scizorite",
+  "heracross": "Heracronite",
+  "houndoom": "Houndoominite",
+  "tyranitar": "Tyranitarite",
+  "blaziken": "Blazikenite",
+  "gardevoir": "Gardevoirite",
+  "mawile": "Mawilite",
+  "aggron": "Aggronite",
+  "medicham": "Medichamite",
+  "manectric": "Manectite",
+  "banette": "Banettite",
+  "absol": "Absolite",
+  "garchomp": "Garchompite",
+  "lucario": "Lucarionite",
+  "abomasnow": "Abomasite",
+  "latias": "Latiasite",
+  "latios": "Latiosite",
+  "swampert": "Swampertite",
+  "sceptile": "Sceptilite",
+  "sableye": "Sablenite",
+  "altaria": "Altarianite",
+  "gallade": "Galladite",
+  "audino": "Audinite",
+  "sharpedo": "Sharpedonite",
+  "slowbro": "Slowbronite",
+  "steelix": "Steelixite",
+  "pidgeot": "Pidgeotite",
+  "glalie": "Glalitite",
+  "diancie": "Diancite",
+  "metagross": "Metagrossite",
+  "beedrill": "Beedrillite",
+  "camerupt": "Cameruptite",
+  "lopunny": "Lopunnite",
+  "salamence": "Salamencite",
+  // Rayquaza méga-évolue via Draco-Ascension plutôt qu'une méga-gemme
+  "rayquaza": "Aucune (utiliser l'attaque Dragon Ascent)",
+};
+
+const GIGAMAX_ITEM = "Soupe Gigamax"; // Item générique permettant de débloquer le facteur Gigamax
+
+function inferMegaStoneName(baseName: string, varietyName: string): string | null {
+  const keyVariety = varietyName.toLowerCase();
+  const keyBase = baseName.toLowerCase();
+  if (MEGA_STONES[keyVariety]) return MEGA_STONES[keyVariety];
+  if (MEGA_STONES[keyBase]) return MEGA_STONES[keyBase];
+  return null;
+}
+
+function inferGigamaxItem(): string {
+  return GIGAMAX_ITEM;
+}
+
 // Liste des natures Pokémon (fixe)
 const POKEMON_NATURES: Nature[] = [
   { name: "hardy", increasedStat: null, decreasedStat: null },
@@ -49,6 +117,11 @@ export type EvolutionNode = {
   item?: string;
   trigger?: string;
   evolvesTo?: EvolutionNode[];
+  // Champs pour rattacher les formes alternatives (méga / gigamax) à l'arbre
+  formType?: "mega" | "gmax" | "regional" | "other";
+  formName?: string;
+  requiredItem?: string | null;
+  isAlternateForm?: boolean;
 };
 
 export type EvolutionTree = {
@@ -146,6 +219,109 @@ function flattenEvolutionChain(chain: any, acc: EvolutionNode[] = []): Evolution
   return acc;
 }
 
+// Récupère uniquement les formes alternatives à partir des variétés de species (sans dépendre du cache)
+async function fetchAlternateForms(baseName: string) {
+  const species = await fetchJson(`https://pokeapi.co/api/v2/pokemon-species/${normalizeName(baseName)}`);
+  const out: any[] = [];
+
+  if (species.varieties && Array.isArray(species.varieties)) {
+    for (const variety of species.varieties) {
+      if (variety.is_default) continue;
+      const varietyName = variety.pokemon?.name;
+      if (!varietyName) continue;
+
+      try {
+        const formData = await fetchJson(`https://pokeapi.co/api/v2/pokemon/${varietyName}`);
+        const formTypes = (formData.types ?? []).map((t: any) => t.type?.name).filter(Boolean);
+        const formStats = (formData.stats ?? []).map((s: any) => ({
+          name: s.stat?.name ?? "unknown",
+          value: Number(s.base_stat ?? 0)
+        }));
+        const formSprite = formData.sprites?.front_default ?? null;
+
+        const isMega = varietyName.includes("mega");
+        const isGmax = varietyName.includes("gmax");
+        const isRegionalForm = varietyName.includes("alola") || varietyName.includes("galar") || varietyName.includes("hisui") || varietyName.includes("paldea");
+        const formType = isMega ? "mega" : isGmax ? "gmax" : isRegionalForm ? "regional" : "other";
+        const requiredItem = isMega ? inferMegaStoneName(baseName, varietyName) : isGmax ? inferGigamaxItem() : null;
+
+        let formName = varietyName.replace(baseName + "-", "");
+        if (isMega) formName = "Méga-Évolution";
+        else if (isGmax) formName = "Gigamax";
+        else if (varietyName.includes("alola")) formName = "Forme d'Alola";
+        else if (varietyName.includes("galar")) formName = "Forme de Galar";
+        else if (varietyName.includes("hisui")) formName = "Forme de Hisui";
+        else if (varietyName.includes("paldea")) formName = "Forme de Paldea";
+
+        out.push({
+          id: formData.id,
+          name: varietyName,
+          frenchName: null,
+          formName,
+          sprite: formSprite,
+          types: formTypes,
+          stats: formStats,
+          isMega,
+          isGmax,
+          isRegionalForm,
+          formType,
+          requiredItem,
+        });
+      } catch (e) {
+        console.warn(`Could not fetch fallback form data for ${varietyName}:`, e);
+      }
+    }
+  }
+
+  return out;
+}
+
+async function attachAlternateFormsToTree(node: EvolutionNode): Promise<EvolutionNode> {
+  // Éviter de boucler sur les nœuds déjà marqués comme forme alternative
+  if (node.isAlternateForm) {
+    return node;
+  }
+
+  try {
+    const detail = await getPokemonDetail(node.name);
+    let alternateForms = (detail.forms ?? []).filter(f => f.isMega || f.isGmax);
+
+    // Fallback: si le cache ne contenait pas encore les formes, on refetch directement les variétés
+    if (alternateForms.length === 0) {
+      try {
+        const fresh = await fetchAlternateForms(node.name);
+        alternateForms = fresh.filter(f => f.isMega || f.isGmax);
+      } catch (e) {
+        console.warn(`Fallback alternate forms fetch failed for ${node.name}:`, e);
+      }
+    }
+
+    if (alternateForms.length > 0) {
+      const extraNodes: EvolutionNode[] = alternateForms.map(f => ({
+        id: f.id,
+        name: f.name,
+        frenchName: f.frenchName ?? node.frenchName,
+        item: f.requiredItem ?? undefined,
+        trigger: f.isMega ? "mega-evolution" : f.isGmax ? "gigamax" : undefined,
+        formType: f.formType,
+        formName: f.formName,
+        requiredItem: f.requiredItem ?? null,
+        isAlternateForm: true,
+      }));
+
+      node.evolvesTo = [...(node.evolvesTo ?? []), ...extraNodes];
+    }
+
+    if (node.evolvesTo && node.evolvesTo.length > 0) {
+      node.evolvesTo = await Promise.all(node.evolvesTo.map(child => attachAlternateFormsToTree(child)));
+    }
+  } catch (error) {
+    console.warn(`Could not attach alternate forms for ${node.name}:`, error);
+  }
+
+  return node;
+}
+
 function normalizeName(name: string) {
   return name.toLowerCase().trim();
 }
@@ -181,6 +357,12 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
   try {
     const raw = await fs.readFile(p, "utf-8");
     const cached = JSON.parse(raw) as PokemonDetail;
+    const hasFormMetadata = Array.isArray((cached as any).forms)
+      ? (cached as any).forms.every((f: any) => f && "formType" in f && "requiredItem" in f)
+      : false;
+    const hasMoveTypes = Array.isArray(cached.moves)
+      ? cached.moves.every((m: any) => m && "type" in m)
+      : false;
     
     // Vérifier si le cache contient les nouveaux champs (moves, natures, shinySprite, frenchName, forms)
     // Si non, on recharge depuis l'API
@@ -188,7 +370,9 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
         cached.natures !== undefined && 
         cached.shinySprite !== undefined &&
         cached.frenchName !== undefined &&
-        cached.forms !== undefined) {
+        cached.forms !== undefined &&
+        hasFormMetadata &&
+        hasMoveTypes) {
       return cached;
     }
     // Si les nouveaux champs ne sont pas présents, on continue pour refetch
@@ -219,9 +403,30 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
 
   // Récupération des attaques
   const moves: any[] = [];
+  const moveTypeCache = new Map<string, string>(); // Cache pour les types de moves
+  
   if (pokemon.moves && Array.isArray(pokemon.moves)) {
+    // Récupérer les types de tous les moves en parallèle
+    const moveUrls = pokemon.moves.map((m: any) => m.move?.url).filter(Boolean);
+    const moveDetailsPromises = moveUrls.map(async (url: string) => {
+      try {
+        const moveDetail = await fetchJson(url);
+        return { name: moveDetail.name, type: moveDetail.type?.name ?? "normal" };
+      } catch {
+        return null;
+      }
+    });
+    
+    const moveDetails = await Promise.all(moveDetailsPromises);
+    moveDetails.forEach(detail => {
+      if (detail) {
+        moveTypeCache.set(detail.name, detail.type);
+      }
+    });
+    
     for (const moveData of pokemon.moves) {
       const moveName = moveData.move?.name ?? "";
+      const moveType = moveTypeCache.get(moveName) ?? "normal";
       
       // Parcourir les différentes méthodes d'apprentissage
       for (const versionDetail of moveData.version_group_details ?? []) {
@@ -231,23 +436,27 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
         if (method === "level-up") {
           moves.push({
             name: moveName,
+            type: moveType,
             learnMethod: "level-up",
             levelLearnedAt: level
           });
         } else if (method === "machine") {
           moves.push({
             name: moveName,
+            type: moveType,
             learnMethod: "machine",
             machineNumber: `TM/HM` // PokéAPI ne donne pas toujours le numéro exact
           });
         } else if (method === "tutor") {
           moves.push({
             name: moveName,
+            type: moveType,
             learnMethod: "tutor"
           });
         } else if (method === "egg") {
           moves.push({
             name: moveName,
+            type: moveType,
             learnMethod: "egg"
           });
         }
@@ -297,6 +506,8 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
           const isMega = varietyName.includes("mega");
           const isGmax = varietyName.includes("gmax");
           const isRegionalForm = varietyName.includes("alola") || varietyName.includes("galar") || varietyName.includes("hisui") || varietyName.includes("paldea");
+          const formType = isMega ? "mega" : isGmax ? "gmax" : isRegionalForm ? "regional" : "other";
+          const requiredItem = isMega ? inferMegaStoneName(pokemon.name, varietyName) : isGmax ? inferGigamaxItem() : null;
           
           let formName = varietyName.replace(pokemon.name + "-", "");
           if (isMega) formName = "Méga-Évolution";
@@ -316,7 +527,9 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
             stats: formStats,
             isMega,
             isGmax,
-            isRegionalForm
+            isRegionalForm,
+            formType,
+            requiredItem
           });
         } catch (e) {
           console.warn(`Could not fetch form data for ${varietyName}:`, e);
@@ -448,7 +661,7 @@ export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQ
     let finalItems = slice.map(d => ({
       id: d.id,
       name: d.name,
-      frenchName: d.frenchName,
+      frenchName: d.frenchName ?? null,
       sprite: d.sprite,
       backSprite: d.backSprite ?? null,
       types: d.types,
@@ -457,7 +670,7 @@ export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQ
 
     if (includeForms) {
       // Ajouter les méga-évolutions et Gigamax de chaque Pokémon
-      const formItems: PokemonBasic[] = [];
+      const formItems = [];
       for (const d of slice) {
         if (d.forms && d.forms.length > 0) {
           for (const form of d.forms) {
@@ -467,7 +680,7 @@ export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQ
             formItems.push({
               id: form.id,
               name: form.name,
-              frenchName: form.frenchName,
+              frenchName: form.frenchName ?? null,
               sprite: form.sprite,
               backSprite: null,
               types: form.types,
@@ -534,7 +747,8 @@ export async function getPokemonEvolutionTree(pokemonId: number): Promise<Evolut
     }
 
     const evolutionData = await fetchJson(evolutionChainUrl);
-    return await buildEvolutionTreeWithNames(evolutionData.chain);
+    const tree = await buildEvolutionTreeWithNames(evolutionData.chain);
+    return await attachAlternateFormsToTree(tree);
   } catch (error) {
     console.error(`Error fetching evolution tree for pokemon ${pokemonId}:`, error);
     return null;
