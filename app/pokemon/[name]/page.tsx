@@ -35,7 +35,7 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
 
   return (
     <div className="pokedex-page" style={{ ["--bg-url" as any]: `url(${bg})` }}>
-      <HistoryTracker id={p.id} name={p.sprite} sprite={p.sprite} />
+      <HistoryTracker id={p.id} name={p.frenchName || p.name} sprite={p.sprite} />
       <div className="pokedex-container">
         
         {/* Hero Section - Identité Principale avec Sprite Centré */}

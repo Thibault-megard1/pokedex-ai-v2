@@ -1137,6 +1137,11 @@ a {
    SPRITE DISPLAY - ENLARGED for Hero Section
     */
 
+/* Sprite Scale Ratio - Adjust to increase/decrease sprite size */
+:root {
+  --sprite-scale: 1.2; /* 1 = normal, 1.2 = 20% larger, 0.8 = 20% smaller */
+}
+
 .pokedex-sprite-display {
   display: flex;
   flex-direction: column;
@@ -1147,8 +1152,8 @@ a {
 
 .pokedex-sprite-frame {
   position: relative;
-  width: var(--sprite-size-mobile);
-  height: var(--sprite-size-mobile);
+  width: calc(var(--sprite-size-mobile) * var(--sprite-scale));
+  height: calc(var(--sprite-size-mobile) * var(--sprite-scale));
   /* Pokédex-style screen with gradient from light blue-cyan */
   background: linear-gradient(135deg, #98D8E8 0%, #7BC4D8 100%);
   border-radius: 24px;
@@ -1187,22 +1192,22 @@ a {
 
 @media (min-width: 640px) {
   .pokedex-sprite-frame {
-    width: 280px;
-    height: 280px;
+    width: calc(280px * var(--sprite-scale));
+    height: calc(280px * var(--sprite-scale));
   }
 }
 
 @media (min-width: 768px) {
   .pokedex-sprite-frame {
-    width: var(--sprite-size);
-    height: var(--sprite-size);
+    width: calc(var(--sprite-size) * var(--sprite-scale));
+    height: calc(var(--sprite-size) * var(--sprite-scale));
   }
 }
 
 @media (min-width: 1024px) {
   .pokedex-sprite-frame {
-    width: var(--sprite-size);
-    height: var(--sprite-size);
+    width: calc(var(--sprite-size) * var(--sprite-scale));
+    height: calc(var(--sprite-size) * var(--sprite-scale));
   }
 }
 
