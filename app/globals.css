@@ -65,8 +65,8 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   
-  /* Header */
-  --header-height: 72px;
+  /* Header - Updated for new design */
+  --header-height: auto; /* Dynamic height based on content */
   
   /* Overlays and Content Containers */
   --overlay-bg: rgba(255, 255, 255, 0.95);
@@ -121,8 +121,8 @@ body {
 
 /* Main content spacing to account for fixed header */
 main {
-  padding-top: var(--header-height);
-  min-height: calc(100vh - var(--header-height));
+  padding-top: 88px; /* Increased for new header height */
+  min-height: calc(100vh - 88px);
 }
 
 /* Content containers with blur and proper backgrounds */

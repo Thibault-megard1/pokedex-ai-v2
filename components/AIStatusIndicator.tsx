@@ -102,54 +102,58 @@ export default function AIStatusIndicator() {
       </button>
 
       {expanded && (
-        <div className="absolute bottom-full mb-2 right-0 bg-white border-2 border-gray-300 rounded-lg shadow-lg p-4 min-w-[280px] z-50">
+        <div 
+          className="absolute top-full mt-2 right-0 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl p-4 min-w-[280px] z-50"
+          style={{ backgroundColor: 'var(--overlay-bg)' }}
+        >
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center">
-              <span className="font-bold text-gray-700">Statut IA</span>
+              <span className="font-bold" style={{ color: 'var(--text-primary)' }}>Statut IA</span>
               <button
                 onClick={() => setExpanded(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="font-bold text-lg transition-opacity hover:opacity-70"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 ✕
               </button>
             </div>
 
-            <hr className="border-gray-200" />
+            <hr className="border-gray-300 dark:border-gray-600" />
 
-            <div>
-              <span className="text-gray-600">Provider:</span>{" "}
+            <div style={{ color: 'var(--text-primary)' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Provider:</span>{" "}
               <span className="font-semibold">{providerName}</span>
             </div>
 
-            <div>
-              <span className="text-gray-600">Statut:</span>{" "}
-              <span className={`font-semibold ${color.split(" ")[1]}`}>
+            <div style={{ color: 'var(--text-primary)' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Statut:</span>{" "}
+              <span className={`font-semibold ${healthStatus.status === 'online' ? 'text-green-600 dark:text-green-400' : healthStatus.status === 'offline' ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400'}`}>
                 {label}
               </span>
             </div>
 
             {healthStatus.model && (
-              <div>
-                <span className="text-gray-600">Modèle:</span>{" "}
-                <span className="font-mono text-xs">{healthStatus.model}</span>
+              <div style={{ color: 'var(--text-primary)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Modèle:</span>{" "}
+                <span className="font-mono text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">{healthStatus.model}</span>
               </div>
             )}
 
             {healthStatus.response_time_ms !== undefined && (
-              <div>
-                <span className="text-gray-600">Ping:</span>{" "}
-                <span className="font-mono text-xs">
+              <div style={{ color: 'var(--text-primary)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Ping:</span>{" "}
+                <span className="font-mono text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">
                   {healthStatus.response_time_ms}ms
                 </span>
               </div>
             )}
 
-            <div className="pt-2 text-xs text-gray-500 border-t border-gray-200">
+            <div className="pt-2 text-xs border-t border-gray-300 dark:border-gray-600" style={{ color: 'var(--text-secondary)' }}>
               {healthStatus.message_fr}
             </div>
 
             {healthStatus.status === "offline" && provider === "ollama" && (
-              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+              <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded text-xs" style={{ color: 'var(--text-primary)' }}>
                 💡 <b>Astuce:</b> Lance Ollama pour utiliser l'IA locale
                 gratuitement.
               </div>
@@ -157,7 +161,7 @@ export default function AIStatusIndicator() {
 
             <button
               onClick={checkStatus}
-              className="w-full mt-2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
+              className="w-full mt-2 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded transition-colors shadow-md hover:shadow-lg"
             >
               🔄 Actualiser
             </button>
