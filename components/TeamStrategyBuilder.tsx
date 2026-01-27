@@ -23,7 +23,7 @@ export default function TeamStrategyBuilder({ team }: Props) {
   if (!analysis) {
     return (
       <div className="card p-4">
-        <p className="text-gray-500 text-sm">Ajoutez des Pokémon à votre équipe pour voir l'analyse</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Ajoutez des Pokémon à votre équipe pour voir l'analyse</p>
       </div>
     );
   }
@@ -53,7 +53,7 @@ export default function TeamStrategyBuilder({ team }: Props) {
         <h3 className="font-bold text-lg mb-3">📋 Recommandations</h3>
         <div className="space-y-2">
           {analysis.recommendations.map((rec, i) => (
-            <div key={i} className="p-2 bg-gray-50 rounded text-sm">
+            <div key={i} className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
               {rec}
             </div>
           ))}
@@ -68,7 +68,7 @@ export default function TeamStrategyBuilder({ team }: Props) {
             <TypeBadge key={type} kind={type as BadgeKey} width={85} />
           ))}
         </div>
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
           {analysis.coverages.length}/18 types couverts
         </p>
       </div>

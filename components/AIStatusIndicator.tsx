@@ -48,8 +48,8 @@ export default function AIStatusIndicator() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"></div>
         <span>IA...</span>
       </div>
     );

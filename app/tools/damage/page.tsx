@@ -361,14 +361,14 @@ export default function DamageCalculatorPage() {
                     }`}
                   >
                     <p className="font-bold capitalize">{m.name.replace('-', ' ')}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {m.type} • {m.category} • {m.power} BP
                     </p>
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-600">Aucune capacité chargée</p>
+              <p className="text-gray-600 dark:text-gray-300">Aucune capacité chargée</p>
             )}
           </div>
         )}

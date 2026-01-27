@@ -57,7 +57,7 @@ export default function PokemonNotes({ pokemonId, pokemonName }: Props) {
     }
   }
 
-  if (loading) return <div className="text-sm text-gray-500">Chargement...</div>;
+  if (loading) return <div className="text-sm text-gray-500 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div className="space-y-4">

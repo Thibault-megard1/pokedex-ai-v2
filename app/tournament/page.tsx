@@ -249,7 +249,7 @@ export default function TournamentPage() {
             <img src="/icons/ui/ic-success.png" alt="Tournoi" className="w-8 h-8" />
             <h1 className="text-3xl font-bold">Tournoi Pokémon</h1>
           </div>
-          <p className="text-gray-600">Affrontez l'IA dans un combat 6 vs 6 avec système d'évolution</p>
+          <p className="text-gray-600 dark:text-gray-300">Affrontez l'IA dans un combat 6 vs 6 avec système d'évolution</p>
         </div>
 
         {!battleState ? (
@@ -263,8 +263,8 @@ export default function TournamentPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {playerTeam.map((pokemon, index) => (
-                  <div key={index} className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="font-semibold text-sm text-gray-600 mb-2">Slot {index + 1}</div>
+                  <div key={index} className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                    <div className="font-semibold text-sm text-gray-600 dark:text-gray-300 mb-2">Slot {index + 1}</div>
                     
                     {pokemon ? (
                       <div className="space-y-3">
@@ -281,7 +281,7 @@ export default function TournamentPage() {
                         </div>
 
                         {/* Evolution Points */}
-                        <div className="bg-white rounded p-2 border">
+                        <div className="bg-white dark:bg-gray-700 rounded p-2 border border-gray-200 dark:border-gray-600">
                           <div className="text-xs font-semibold mb-1">Points d'évolution ({evolutionPoints[index]})</div>
                           <div className="flex items-center gap-2">
                             <button
@@ -300,7 +300,7 @@ export default function TournamentPage() {
                               +
                             </button>
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Max: {pokemon.evolutionChain.length - 1}
                           </div>
                         </div>

@@ -120,8 +120,8 @@ export default function HomePage() {
         <div className="pokedex-panel max-w-6xl mx-auto mb-12 pokedex-open-animation">
           <div className="pokedex-panel-content p-8 text-center">
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg pokeball-bounce">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-3 border-white"></div>
+              <div className="w-16 h-16 flex items-center justify-center pokeball-bounce">
+                <img src="/icons/icon-192x192.png" alt="Pokéball" className="w-16 h-16" />
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-pokemon text-shadow-strong">
                 POKÉDEX AI

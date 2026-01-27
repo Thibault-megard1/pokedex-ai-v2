@@ -29,9 +29,9 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
   };
 
   const cardAccent = (node: EvolutionNode) => {
-    if (node.formType === "mega") return "border-purple-500 bg-purple-50 ring-purple-200";
-    if (node.formType === "gmax") return "border-red-500 bg-red-50 ring-red-200";
-    return "border-gray-300 bg-white hover:border-blue-400 hover:shadow-md";
+    if (node.formType === "mega") return "border-purple-500 bg-purple-50 dark:bg-purple-950 dark:border-purple-700 ring-purple-200 dark:ring-purple-800";
+    if (node.formType === "gmax") return "border-red-500 bg-red-50 dark:bg-red-950 dark:border-red-700 ring-red-200 dark:ring-red-800";
+    return "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md dark:hover:shadow-blue-500/20";
   };
 
   const renderNode = (node: EvolutionNode, depth: number = 0) => {
@@ -46,7 +46,7 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
           href={`/pokemon/${node.name}`}
           className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer group min-w-[120px] ${
             isCurrent 
-              ? "border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-300" 
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-700 shadow-lg ring-2 ring-blue-300 dark:ring-blue-800" 
               : cardAccent(node)
           }`}
           title={`Voir ${displayName}`}
@@ -64,22 +64,22 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
             )}
           </div>
           
-          <div className="text-sm font-bold text-center mt-2">
+          <div className="text-sm font-bold text-center mt-2 text-gray-800 dark:text-gray-100">
             {displayName}
           </div>
           
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             #{node.id}
           </div>
 
           {node.formType && (
-            <div className="mt-2 px-2 py-1 bg-gray-800 text-white text-[11px] rounded-full font-semibold uppercase tracking-wide">
+            <div className="mt-2 px-2 py-1 bg-gray-700 dark:bg-gray-600 text-white text-[11px] rounded-full font-semibold uppercase tracking-wide">
               {node.formType === "mega" ? "Méga" : node.formType === "gmax" ? "Gigamax" : node.formType}
             </div>
           )}
 
           {node.requiredItem && (
-            <div className="mt-1 text-[11px] text-gray-700 text-center max-w-[140px] leading-tight">
+            <div className="mt-1 text-[11px] text-gray-600 dark:text-gray-300 text-center max-w-[140px] leading-tight">
               Objet: {node.requiredItem}
             </div>
           )}
@@ -97,11 +97,11 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
             {hasMultipleEvolutions ? (
               // Affichage en éventail pour les évolutions multiples
               <div className="flex flex-col items-center">
-                <div className="text-2xl text-gray-400 mb-2">↓</div>
+                <div className="text-2xl text-gray-400 dark:text-gray-600 mb-2">↓</div>
                 <div className="flex flex-wrap justify-center gap-6 max-w-5xl">
                   {node.evolvesTo.map((evolution) => (
                     <div key={evolution.id} className="flex flex-col items-center">
-                      <div className="text-xs text-center text-gray-600 mb-2 max-w-[100px] px-2 py-1 bg-gray-100 rounded-lg font-medium">
+                      <div className="text-xs text-center text-gray-700 dark:text-gray-300 mb-2 max-w-[100px] px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium">
                         {getEvolutionMethod(evolution)}
                       </div>
                       {renderNode(evolution, depth + 1)}
@@ -112,8 +112,8 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
             ) : (
               // Affichage linéaire pour une seule évolution
               <div className="flex flex-col items-center">
-                <div className="text-2xl text-gray-400 my-2">↓</div>
-                <div className="text-xs text-center text-gray-600 mb-2 max-w-[120px] px-3 py-1 bg-gray-100 rounded-lg font-medium">
+                <div className="text-2xl text-gray-400 dark:text-gray-600 my-2">↓</div>
+                <div className="text-xs text-center text-gray-700 dark:text-gray-300 mb-2 max-w-[120px] px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium">
                   {getEvolutionMethod(node.evolvesTo[0])}
                 </div>
                 {renderNode(node.evolvesTo[0], depth + 1)}
@@ -141,8 +141,8 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
   const isFinalForm = currentNode && (!currentNode.evolvesTo || currentNode.evolvesTo.length === 0);
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-      <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
+    <div className="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
         Chaîne d'évolution
       </h3>
 
@@ -151,16 +151,16 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
       </div>
 
       {isFinalForm && (
-        <div className="mt-6 p-4 bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-300 rounded-xl text-center">
-          <p className="text-sm font-bold text-purple-800">
+        <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-950 border border-purple-300 dark:border-purple-700 rounded-xl text-center">
+          <p className="text-sm font-bold text-purple-900 dark:text-purple-200">
             ✨ Forme finale atteinte !
           </p>
         </div>
       )}
 
       {currentNode && currentNode.evolvesTo && currentNode.evolvesTo.length > 0 && (
-        <div className="mt-6 p-4 bg-gradient-to-r from-green-100 to-emerald-100 border border-green-300 rounded-xl">
-          <p className="text-sm font-bold text-green-800 mb-2">
+        <div className="mt-6 p-4 bg-green-50 dark:bg-green-950 border border-green-300 dark:border-green-700 rounded-xl">
+          <p className="text-sm font-bold text-green-900 dark:text-green-200 mb-2">
             🌟 {currentNode.evolvesTo.length > 1 ? "Évolutions possibles :" : "Prochaine évolution :"}
           </p>
           <div className="flex flex-wrap gap-3">
@@ -168,11 +168,11 @@ export default function EvolutionTree({ evolutionTree, currentPokemonId }: Props
               <div key={evo.id} className="flex items-center gap-2 text-sm">
                 <Link 
                   href={`/pokemon/${evo.name}`}
-                  className="text-green-700 font-semibold hover:underline capitalize"
+                  className="text-green-700 dark:text-green-300 font-semibold hover:underline capitalize"
                 >
                   {evo.name}
                 </Link>
-                <span className="text-green-600 text-xs">
+                <span className="text-green-600 dark:text-green-400 text-xs">
                   ({getEvolutionMethod(evo)})
                 </span>
               </div>

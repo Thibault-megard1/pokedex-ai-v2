@@ -159,7 +159,7 @@ export default function WeightBalance({
   return (
     <div className="card p-4">
       <div className="font-semibold">Comparaison des poids (balance)</div>
-      <div className="text-xs text-gray-600 mt-1">
+      <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
         Le plus lourd “tombe”, le plus léger est propulsé (avec résistance de l’air).
       </div>
 
@@ -172,7 +172,7 @@ export default function WeightBalance({
       </div>
 
       {/* Zone balance */}
-      <div className="mt-4 relative h-56 overflow-hidden border rounded-xl bg-white">
+      <div className="mt-4 relative h-56 overflow-hidden border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800">
         {/* pivot */}
         <div className="absolute left-1/2 top-24 -translate-x-1/2 w-3 h-3 bg-gray-500 rounded-full" />
         <div className="absolute left-1/2 top-24 -translate-x-1/2 w-2 h-28 bg-gray-300 rounded" />
@@ -213,7 +213,7 @@ export default function WeightBalance({
           </div>
         </div>
 
-        <div className="absolute bottom-2 inset-x-0 text-center text-xs text-gray-600">
+        <div className="absolute bottom-2 inset-x-0 text-center text-xs text-gray-600 dark:text-gray-300">
           Plus lourd = plateau qui descend
         </div>
       </div>

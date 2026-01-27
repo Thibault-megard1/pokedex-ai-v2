@@ -82,17 +82,17 @@ export default function QuizPage() {
   const renderIntro = () => (
     <div className="card p-8 max-w-2xl mx-auto text-center">
       <h1 className="text-4xl font-bold mb-4">🔮 Quel Pokémon êtes-vous ?</h1>
-      <p className="text-lg text-gray-600 mb-6">
+      <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
         Répondez à quelques questions personnelles et découvrez quel Pokémon correspond le mieux à votre personnalité !
       </p>
-      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
-        <p className="text-sm text-gray-700">
+      <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
+        <p className="text-sm text-gray-700 dark:text-gray-200">
           ✨ <strong>Propulsé par l'IA</strong> - Notre système utilise l'intelligence artificielle Mistral 
           pour analyser vos réponses et trouver le Pokémon qui vous correspond le mieux.
         </p>
       </div>
-      <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
-        <p className="text-sm text-gray-700">
+      <div className="bg-green-50 dark:bg-green-900/30 border-2 border-green-200 dark:border-green-700 rounded-lg p-4 mb-6">
+        <p className="text-sm text-gray-700 dark:text-gray-200">
           🔒 <strong>Confidentialité</strong> - Vos réponses ne sont pas stockées de manière permanente. 
           Elles sont uniquement utilisées pour générer votre résultat.
         </p>
@@ -111,28 +111,28 @@ export default function QuizPage() {
       <div className="card p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">📝 Questionnaire de personnalité</h2>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-300">
             {Object.keys(answers).length} / {quizQuestions.length} réponses
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-100 border-2 border-red-300 rounded-lg p-4 mb-6">
-            <p className="text-red-700">{error}</p>
+          <div className="bg-red-100 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 rounded-lg p-4 mb-6">
+            <p className="text-red-700 dark:text-red-200">{error}</p>
           </div>
         )}
 
         <div className="space-y-8">
           {quizQuestions.map((question, index) => (
-            <div key={question.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+            <div key={question.id} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0">
               <div className="flex items-start gap-3 mb-3">
-                <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
+                <div className="bg-blue-500 dark:bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
                   {index + 1}
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-lg">{question.question}</p>
                   {question.type === "text" && (
-                    <p className="text-sm text-gray-500 mt-1">(Optionnel)</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">(Optionnel)</p>
                   )}
                 </div>
               </div>
@@ -143,11 +143,11 @@ export default function QuizPage() {
                     {question.options.map((option, optionIndex) => (
                       <label
                         key={optionIndex}
-                        className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                        style={{
-                          borderColor: answers[question.id] === option ? "#3b82f6" : "#e5e7eb",
-                          backgroundColor: answers[question.id] === option ? "#eff6ff" : "transparent"
-                        }}
+                        className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                          answers[question.id] === option 
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+                            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
                       >
                         <input
                           type="radio"
@@ -171,11 +171,11 @@ export default function QuizPage() {
                       max={question.max}
                       value={answers[question.id] || 3}
                       onChange={(e) => updateAnswer(question.id, parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="flex justify-between text-sm text-gray-600">
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                       <span>{question.min}</span>
-                      <span className="font-bold text-lg text-blue-600">{answers[question.id] || 3}</span>
+                      <span className="font-bold text-lg text-blue-600 dark:text-blue-400">{answers[question.id] || 3}</span>
                       <span>{question.max}</span>
                     </div>
                   </div>
@@ -216,9 +216,9 @@ export default function QuizPage() {
 
   const renderLoading = () => (
     <div className="card p-12 max-w-2xl mx-auto text-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-6"></div>
+      <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 dark:border-blue-400 mx-auto mb-6"></div>
       <h2 className="text-2xl font-bold mb-2">Analyse en cours...</h2>
-      <p className="text-gray-600">
+      <p className="text-gray-600 dark:text-gray-300">
         L'IA analyse votre personnalité pour trouver votre Pokémon parfait
       </p>
     </div>
@@ -253,14 +253,14 @@ export default function QuizPage() {
             )}
           </div>
 
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
-            <div className="text-sm text-gray-600 mb-2">Confiance du match</div>
-            <div className="text-3xl font-bold text-blue-600">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-6 mb-6">
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">Confiance du match</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
               {Math.round(primary.confidence * 100)}%
             </div>
           </div>
 
-          <div className="bg-white border-2 border-gray-200 rounded-lg p-6 text-left">
+          <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 text-left">
             <h3 className="font-bold text-lg mb-3">💡 Pourquoi ce Pokémon ?</h3>
             <ul className="space-y-2">
               {primary.reasons.map((reason, i) => (
@@ -280,7 +280,7 @@ export default function QuizPage() {
             {traits_inferred.map((trait, i) => (
               <span
                 key={i}
-                className="px-4 py-2 bg-purple-100 text-purple-800 rounded-full font-medium"
+                className="px-4 py-2 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 rounded-full font-medium"
               >
                 {trait}
               </span>
@@ -294,7 +294,7 @@ export default function QuizPage() {
             <h3 className="font-bold text-xl mb-4">🔀 Autres correspondances possibles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {alternatives.map((alt, i) => (
-                <div key={i} className="border-2 border-gray-200 rounded-lg p-4">
+                <div key={i} className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <img 
                       src={alt.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${alt.id}.png`}
@@ -303,7 +303,7 @@ export default function QuizPage() {
                     />
                     <div className="flex-1">
                       <h4 className="font-bold text-lg capitalize">{alt.name_fr || alt.name}</h4>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-gray-300">
                         {Math.round(alt.confidence * 100)}% de correspondance
                       </span>
                     </div>
@@ -312,7 +312,7 @@ export default function QuizPage() {
                     {alt.reasons.map((reason, j) => (
                       <li key={j} className="flex items-start gap-2">
                         <span className="text-gray-400">•</span>
-                        <span className="text-gray-700">{reason}</span>
+                        <span className="text-gray-700 dark:text-gray-300">{reason}</span>
                       </li>
                     ))}
                   </ul>

@@ -38,8 +38,8 @@ export default function LoginPage() {
             
             {/* Header */}
             <div className="text-center mb-6">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white flex items-center justify-center shadow-lg pokeball-bounce">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700"></div>
+              <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center pokeball-bounce">
+                <img src="/icons/icon-192x192.png" alt="Pokéball" className="w-20 h-20" />
               </div>
               <h1 className="text-3xl font-bold text-pokemon mb-2">{t(lang, "auth.login.title").toUpperCase()}</h1>
               <p className="text-sm text-gray-600">{t(lang, "nav.trainer")}</p>

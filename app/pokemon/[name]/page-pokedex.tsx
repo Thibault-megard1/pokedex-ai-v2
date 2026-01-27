@@ -35,84 +35,75 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
 
   return (
     <div className="pokedex-page" style={{ ["--bg-url" as any]: `url(${bg})` }}>
-      <HistoryTracker id={p.id} name={p.sprite} sprite={p.sprite} />
+      <HistoryTracker id={p.id} name={p.name} sprite={p.sprite} />
       <div className="pokedex-container">
-        
-        {/* Hero Section - Identité Principale avec Sprite Centré */}
-        <section className="pokedex-hero-section">
-          {/* Navigation */}
+        {/* Section Identité du Pokémon */}
+        <section className="pokedex-identity-section">
           <div className="pokedex-nav-buttons">
             <Link className="pokedex-nav-button" href={`/pokemon/${prevId}`}>
-              ← Précédent
+              <span>←</span>
             </Link>
             <Link className="pokedex-nav-button" href={`/pokemon/${nextId}`}>
-              Suivant →
+              <span>→</span>
             </Link>
           </div>
 
-          {/* Titre et Numéro Centrés */}
-          <div className="pokedex-hero-header">
-            <div className="pokedex-number-badge">N° {String(p.id).padStart(3, '0')}</div>
-            <h1 className="pokedex-hero-title">{formatPokemonName(p.name, p.frenchName).primary}</h1>
+          <div className="pokedex-header">
+            <h1 className="pokedex-title">{formatPokemonName(p.name, p.frenchName).primary}</h1>
             {formatPokemonName(p.name, p.frenchName).secondary && (
-              <p className="pokedex-hero-subtitle">{formatPokemonName(p.name, p.frenchName).secondary}</p>
+              <p className="pokedex-subtitle">{formatPokemonName(p.name, p.frenchName).secondary}</p>
             )}
+            <p className="pokedex-id">N° {String(p.id).padStart(3, '0')}</p>
           </div>
 
-          {/* Sprite Agrandi et Centré */}
-          <div className="pokedex-hero-sprite">
-            <PokemonSpriteDisplay 
-              sprite={p.sprite}
-              shinySprite={p.shinySprite ?? null}
-              name={p.name}
-              pokemonId={p.id}
-            />
-          </div>
-
-          {/* Types et Infos de Base - Compact et Centré */}
-          <div className="pokedex-hero-info">
-            <div className="pokedex-hero-types">
-              {p.types.map(t => (
-                <TypeBadge key={t} kind={t as BadgeKey} width={120} />
-              ))}
-            </div>
-            
-            <div className="pokedex-hero-stats">
-              <div className="pokedex-hero-stat">
-                <span className="label">Taille</span>
-                <span className="value">{heightM} m</span>
-              </div>
-              <div className="pokedex-hero-stat-divider"></div>
-              <div className="pokedex-hero-stat">
-                <span className="label">Poids</span>
-                <span className="value">{weightKg} kg</span>
-              </div>
-              {p.generation && (
-                <>
-                  <div className="pokedex-hero-stat-divider"></div>
-                  <div className="pokedex-hero-stat">
-                    <span className="label">Génération</span>
-                    <span className="value capitalize">{p.generation}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Actions Rapides */}
-          <div className="pokedex-hero-actions">
+          <div className="pokedex-favorite-wrapper">
             <FavoriteButton pokemonId={p.id} pokemonName={p.name} size="lg" />
-            {cryUrl && (
-              <div className="pokedex-cry-player">
-                <audio controls src={cryUrl} className="pokedex-audio" />
+          </div>
+        </section>
+
+        {/* Section Sprite avec toggle shiny */}
+        <section className="pokedex-sprite-section">
+          <PokemonSpriteDisplay 
+            sprite={p.sprite}
+            shinySprite={p.shinySprite ?? null}
+            name={p.name}
+            pokemonId={p.id}
+          />
+          {cryUrl && (
+            <div className="pokedex-cry-player">
+              <audio controls src={cryUrl} className="pokedex-audio" />
+            </div>
+          )}
+        </section>
+
+        {/* Section Types et Infos */}
+        <section className="pokedex-info-section">
+          <div className="pokedex-types-wrapper">
+            {p.types.map(t => (
+              <TypeBadge key={t} kind={t as BadgeKey} width={110} />
+            ))}
+          </div>
+          <div className="pokedex-physical-info">
+            <div className="pokedex-info-item">
+              <span className="pokedex-info-label">Taille</span>
+              <span className="pokedex-info-value">{heightM} m</span>
+            </div>
+            <div className="pokedex-info-item">
+              <span className="pokedex-info-label">Poids</span>
+              <span className="pokedex-info-value">{weightKg} kg</span>
+            </div>
+            {p.generation && (
+              <div className="pokedex-info-item">
+                <span className="pokedex-info-label">Génération</span>
+                <span className="pokedex-info-value capitalize">{p.generation}</span>
               </div>
             )}
           </div>
         </section>
 
-        {/* Section Stats - Optimisée */}
+        {/* Section Stats */}
         <section className="pokedex-stats-section">
-          <h2 className="pokedex-section-title">📊 Statistiques</h2>
+          <h2 className="pokedex-section-title">Statistiques</h2>
           <div className="pokedex-stats-grid">
             {p.stats.map((s, index) => {
               const percentage = Math.min(100, (s.value / 255) * 100);
@@ -124,31 +115,32 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
               return (
                 <div 
                   key={s.name} 
-                  className="pokedex-stat-row"
-                  style={{ animationDelay: `${index * 0.08}s` }}
+                  className="pokedex-stat-item"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <span className="pokedex-stat-name">{s.name}</span>
+                  <div className="pokedex-stat-header">
+                    <span className="pokedex-stat-name">{s.name}</span>
+                    <span className="pokedex-stat-value">{s.value}</span>
+                  </div>
                   <div className="pokedex-stat-bar-container">
                     <div 
                       className={`pokedex-stat-bar ${statColor}`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <span className="pokedex-stat-number">{s.value}</span>
                 </div>
               );
             })}
             <div className="pokedex-stat-total">
               <span className="pokedex-stat-name">TOTAL</span>
-              <div></div>
-              <span className="pokedex-stat-total-value">{totalStats}</span>
+              <span className="pokedex-stat-value">{totalStats}</span>
             </div>
           </div>
         </section>
 
-        {/* Section Relations de types - Optimisée */}
-        <section className="pokedex-effectiveness-section">
-          <h2 className="pokedex-section-title">⚔️ Efficacité des types</h2>
+        {/* Section Relations de types */}
+        <section className="pokedex-section">
+          <h2 className="pokedex-section-title">Efficacité des types</h2>
           <TypeRelations
             weakTo={typeRelations.weakTo}
             resistantTo={typeRelations.resistantTo}
@@ -158,9 +150,9 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
           />
         </section>
 
-        {/* Section Évolutions - Optimisée */}
+        {/* Section Évolutions */}
         {evolutionTree && (
-          <section className="pokedex-evolution-section">
+          <section className="pokedex-section">
             <EvolutionTree
               evolutionTree={evolutionTree}
               currentPokemonId={p.id}
@@ -170,43 +162,43 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
 
         {/* Section Formes alternatives */}
         {p.forms && p.forms.filter(f => !f.isMega && !f.isGmax).length > 0 && (
-          <section className="pokedex-forms-section">
+          <section className="pokedex-section">
             <PokemonForms forms={p.forms} pokemonName={p.name} />
           </section>
         )}
 
         {/* Section Attaques */}
         {p.moves && p.moves.length > 0 && (
-          <section className="pokedex-moves-section">
-            <h2 className="pokedex-section-title">⚡ Attaques</h2>
+          <section className="pokedex-section">
+            <h2 className="pokedex-section-title">Attaques</h2>
             <MovesList moves={p.moves} />
           </section>
         )}
 
         {/* Section Natures */}
         {p.natures && p.natures.length > 0 && (
-          <section className="pokedex-natures-section">
-            <h2 className="pokedex-section-title">🎭 Natures possibles</h2>
+          <section className="pokedex-section">
+            <h2 className="pokedex-section-title">Natures possibles</h2>
             <NaturesList natures={p.natures} />
           </section>
         )}
 
         {/* Section Notes Personnelles */}
-        <section className="pokedex-notes-section">
+        <section className="pokedex-section">
           <h2 className="pokedex-section-title">📝 Mes Notes</h2>
           <PokemonNotes pokemonId={p.id} pokemonName={p.name} />
         </section>
 
-        {/* Section Actions - Optimisée */}
+        {/* Section Actions */}
         <section className="pokedex-actions-section">
-          <form action="/team" method="GET" className="pokedex-action-form">
+          <form action="/team" method="GET">
             <input type="hidden" name="add" value={p.name} />
             <button className="pokedex-action-button primary" type="submit">
-              ➕ Ajouter à mon équipe
+              Ajouter à mon équipe
             </button>
           </form>
           <a className="pokedex-action-button secondary" href="/pokemon">
-            ← Retour à la liste
+            Retour
           </a>
         </section>
       </div>

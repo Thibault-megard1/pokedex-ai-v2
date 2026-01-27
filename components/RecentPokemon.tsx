@@ -58,7 +58,7 @@ export default function RecentPokemon() {
 
   return (
     <div className="card p-4">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">🕒 Récemment consultés</h3>
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">🕒 Récemment consultés</h3>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {history.slice(0, 8).map((p) => (
           <Link

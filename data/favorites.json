@@ -4,5 +4,11 @@
     "pokemonId": 4,
     "pokemonName": "charmander",
     "addedAt": "2026-01-26T20:32:47.747Z"
+  },
+  {
+    "userId": "4e5a6578-ccc5-4032-8956-2a89d54357f0",
+    "pokemonId": 2,
+    "pokemonName": "ivysaur",
+    "addedAt": "2026-01-27T18:03:36.415Z"
   }
 ]

@@ -156,9 +156,11 @@ export default function NavBar() {
           <Link
             href="/pokemon"
             className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all no-underline group shrink-0">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-2 border-white"></div>
-            </div>
+            <img 
+              src="/icons/icon-192x192.png" 
+              alt="Pokéball" 
+              className="w-12 h-12 group-hover:scale-110 transition-transform"
+            />
             <span className="text-white font-bold text-xl pokemon-text hidden sm:block">
               POKÉDEX AI
             </span>
@@ -175,7 +177,7 @@ export default function NavBar() {
                 <span>{t(lang, "nav.home")}</span>
               </Link>
               
-              {menuGroups.slice(0, 3).map(group => (
+              {menuGroups.map(group => (
                 <div 
                   key={group.id} 
                   className="relative"
