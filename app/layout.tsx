@@ -2,6 +2,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import { ensurePokemonNames } from "@/lib/pokemonNames";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { LanguageProvider } from "@/components/LanguageProvider";
 import { Inter } from 'next/font/google';
 
 // Load Inter font for body text
@@ -52,12 +53,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-screen">
         <ThemeProvider>
-          <div className="flex flex-col min-h-screen">
-            <NavBar />
-            <main className="flex-1">
-              {children}
-            </main>
-          </div>
+          <LanguageProvider>
+            <div className="flex flex-col min-h-screen">
+              <NavBar />
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

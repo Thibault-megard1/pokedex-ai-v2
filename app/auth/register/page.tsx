@@ -1,9 +1,12 @@
 "use client";
 import { BACKGROUNDS } from "@/lib/backgrounds";
+import { useLanguage } from "@/components/LanguageProvider";
+import { t } from "@/lib/i18n";
 
 import { useState } from "react";
 
 export default function RegisterPage() {
+  const { lang } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,28 +42,28 @@ export default function RegisterPage() {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white flex items-center justify-center shadow-lg pokeball-bounce">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600"></div>
               </div>
-              <h1 className="text-3xl font-bold text-pokemon mb-2">INSCRIPTION</h1>
-              <p className="text-sm text-gray-600">Devenez un Dresseur Pokémon !</p>
+              <h1 className="text-3xl font-bold text-pokemon mb-2">{t(lang, "auth.register.title").toUpperCase()}</h1>
+              <p className="text-sm text-gray-600">{t(lang, "nav.trainer")}</p>
             </div>
 
             {/* Form */}
             <form className="space-y-4" onSubmit={onSubmit}>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
-                  PSEUDO
+                  {t(lang, "auth.username").toUpperCase()}
                 </label>
                 <input 
                   className="pokedex-input w-full" 
                   name="username" 
                   required 
                   minLength={3}
-                  placeholder="Min. 3 caractères"
+                  placeholder={t(lang, "auth.username")}
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
-                  MOT DE PASSE
+                  {t(lang, "auth.password").toUpperCase()}
                 </label>
                 <input 
                   className="pokedex-input w-full" 
@@ -68,13 +71,13 @@ export default function RegisterPage() {
                   type="password" 
                   required 
                   minLength={6}
-                  placeholder="Min. 6 caractères"
+                  placeholder="Min. 6"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
-                  CONFIRMER
+                  {t(lang, "auth.password").toUpperCase()}
                 </label>
                 <input 
                   className="pokedex-input w-full" 
@@ -82,7 +85,7 @@ export default function RegisterPage() {
                   type="password" 
                   required 
                   minLength={6}
-                  placeholder="Retapez le mot de passe"
+                  placeholder="••••••••"
                 />
               </div>
 
@@ -97,13 +100,13 @@ export default function RegisterPage() {
               </div>
 
               <button className="pokedex-button-yellow w-full text-base" type="submit">
-                Créer mon compte
+                {t(lang, "auth.register.submit")}
               </button>
               
               <div className="text-center mt-4">
-                <p className="text-sm text-gray-600 mb-2">Déjà un compte ?</p>
+                <p className="text-sm text-gray-600 mb-2">{t(lang, "auth.have.account")}</p>
                 <a className="pokedex-button w-full" href="/auth/login">
-                  Se connecter
+                  {t(lang, "auth.submit")}
                 </a>
               </div>
             </form>

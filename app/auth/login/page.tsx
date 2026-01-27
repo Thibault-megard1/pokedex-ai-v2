@@ -1,9 +1,12 @@
 "use client";
 import { BACKGROUNDS } from "@/lib/backgrounds";
+import { useLanguage } from "@/components/LanguageProvider";
+import { t } from "@/lib/i18n";
 
 import { useState } from "react";
 
 export default function LoginPage() {
+  const { lang } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,27 +41,27 @@ export default function LoginPage() {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white flex items-center justify-center shadow-lg pokeball-bounce">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-red-700"></div>
               </div>
-              <h1 className="text-3xl font-bold text-pokemon mb-2">CONNEXION</h1>
-              <p className="text-sm text-gray-600">Bienvenue, Dresseur !</p>
+              <h1 className="text-3xl font-bold text-pokemon mb-2">{t(lang, "auth.login.title").toUpperCase()}</h1>
+              <p className="text-sm text-gray-600">{t(lang, "nav.trainer")}</p>
             </div>
 
             {/* Form */}
             <form className="space-y-4" onSubmit={onSubmit}>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
-                  PSEUDO
+                  {t(lang, "auth.username").toUpperCase()}
                 </label>
                 <input 
                   className="pokedex-input w-full" 
                   name="username" 
                   required 
-                  placeholder="Votre pseudo"
+                  placeholder={t(lang, "auth.username")}
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 pokemon-text">
-                  MOT DE PASSE
+                  {t(lang, "auth.password").toUpperCase()}
                 </label>
                 <input 
                   className="pokedex-input w-full" 
@@ -77,13 +80,13 @@ export default function LoginPage() {
               ) : null}
 
               <button className="pokedex-button-yellow w-full text-base" type="submit">
-                Se connecter
+                {t(lang, "auth.submit")}
               </button>
               
               <div className="text-center mt-4">
-                <p className="text-sm text-gray-600 mb-2">Pas encore de compte ?</p>
+                <p className="text-sm text-gray-600 mb-2">{t(lang, "auth.no.account")}</p>
                 <a className="pokedex-button w-full" href="/auth/register">
-                  Créer un compte
+                  {t(lang, "auth.register.submit")}
                 </a>
               </div>
             </form>

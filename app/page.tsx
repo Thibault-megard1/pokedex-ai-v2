@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 import { SectionMenu } from "@/components/SectionMenu";
+import { useLanguage } from "@/components/LanguageProvider";
+import { t } from "@/lib/i18n";
 
 type Me = { username: string } | null;
 
 export default function HomePage() {
+  const { lang } = useLanguage();
   const [me, setMe] = useState<Me>(null);
 
   async function refresh() {
@@ -22,25 +25,25 @@ export default function HomePage() {
   const primaryActions = [
     {
       href: "/pokemon",
-      label: "POKÉDEX",
+      label: t(lang, "home.pokedex.label"),
       icon: "/icons/ui/nav-pokedex.png",
-      description: "Explorer tous les Pokémon",
+      description: t(lang, "home.pokedex.desc"),
       color: "bg-gradient-to-r from-red-500 to-red-600",
       requireAuth: false
     },
     {
       href: "/team",
-      label: "ÉQUIPE",
+      label: t(lang, "home.team.label"),
       icon: "/icons/ui/nav-team.png",
-      description: "Créer et gérer votre équipe",
+      description: t(lang, "home.team.desc"),
       color: "bg-gradient-to-r from-blue-500 to-blue-600",
       requireAuth: true
     },
     {
       href: "/battle",
-      label: "COMBAT",
+      label: t(lang, "home.battle.label"),
       icon: "/icons/ui/nav-battle.png",
-      description: "Affronter l'IA en combat 1v1",
+      description: t(lang, "home.battle.desc"),
       color: "bg-gradient-to-r from-purple-500 to-purple-600",
       requireAuth: true
     }
@@ -126,22 +129,21 @@ export default function HomePage() {
             </div>
             
             <p className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-4">
-              Bienvenue dans le Pokédex ultime ! Explorez tous les Pokémon, 
-              créez votre équipe de rêve, et affrontez l'IA.
+              {t(lang, "home.join")}
             </p>
             
             {!me ? (
               <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4 inline-block">
                 <p className="text-sm text-gray-700 dark:text-gray-200 mb-3 flex items-center justify-center gap-2">
                   <img src="/icons/ui/ic-search.png" alt="Info" className="w-4 h-4" />
-                  <strong>Connectez-vous</strong> pour débloquer toutes les fonctionnalités !
+                  <strong>{t(lang, "auth.login.title")}</strong> {t(lang, "home.auth.required")}
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Link href="/auth/login" className="pokedex-button text-xs">
-                    Connexion
+                    {t(lang, "nav.login")}
                   </Link>
                   <Link href="/auth/register" className="pokedex-button-yellow text-xs">
-                    Inscription
+                    {t(lang, "nav.register")}
                   </Link>
                 </div>
               </div>
@@ -149,10 +151,10 @@ export default function HomePage() {
               <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 border-2 border-green-400 dark:border-green-600 rounded-lg p-4 inline-block">
                 <p className="text-sm text-gray-700 dark:text-gray-200 flex items-center justify-center gap-2">
                   <img src="/icons/ui/ic-success.png" alt="Success" className="w-4 h-4" />
-                  Bienvenue, <strong className="text-pokemon text-lg">{me.username}</strong> !
+                  {t(lang, "home.get.started")}, <strong className="text-pokemon text-lg">{me.username}</strong> !
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                  Prêt pour l'aventure ?
+                  {t(lang, "home.join")}
                 </p>
               </div>
             )}
@@ -199,7 +201,7 @@ export default function HomePage() {
                     {isLocked && (
                       <p className="text-xs text-red-600 dark:text-red-400 text-center mt-3 font-semibold flex items-center justify-center gap-1">
                         <img src="/icons/ui/ic-error.png" alt="Locked" className="w-3 h-3" />
-                        Connexion requise
+                        {t(lang, "home.auth.required")}
                       </p>
                     )}
                   </div>

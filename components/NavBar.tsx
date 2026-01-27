@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { ThemeToggle } from "./ThemeProvider";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useLanguage } from "./LanguageProvider";
+import { t } from "@/lib/i18n";
 import { MenuGroup } from "./MenuGroup";
 
 type Me = { username: string } | null;
 
 export default function NavBar() {
+  const { lang } = useLanguage();
   const [me, setMe] = useState<Me>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -39,32 +43,32 @@ export default function NavBar() {
   const menuGroups = [
     {
       id: "pokedex",
-      title: "Pokédex",
+      title: t(lang, "nav.pokedex"),
       icon: "/icons/ui/nav-pokedex.png",
       items: [
-        { href: "/pokemon", label: "Liste", icon: "/icons/ui/ic-pokemon.png" },
-        { href: "/favorites", label: "Favoris", icon: "/icons/ui/ic-success.png" },
-        { href: "/compare", label: "Comparer", icon: "/icons/ui/ic-filter.png" },
-        { href: "/stats", label: "Statistiques", icon: "/icons/ui/ic-search.png" },
+        { href: "/pokemon", label: t(lang, "nav.list"), icon: "/icons/ui/ic-pokemon.png" },
+        { href: "/favorites", label: t(lang, "nav.favorites"), icon: "/icons/ui/ic-success.png" },
+        { href: "/compare", label: t(lang, "nav.compare"), icon: "/icons/ui/ic-filter.png" },
+        { href: "/stats", label: t(lang, "nav.stats"), icon: "/icons/ui/ic-search.png" },
       ]
     },
     {
       id: "battle",
-      title: "Combat",
+      title: t(lang, "nav.battle"),
       icon: "/icons/ui/nav-battle.png",
       items: [
-        { href: "/battle", label: "1v1", icon: "/icons/ui/nav-battle.png" },
-        { href: "/tournament", label: "Tournoi 6v6", icon: "/icons/ui/ic-success.png" },
-        { href: "/damage-calculator", label: "Calculateur", icon: "/icons/ui/ic-filter.png" },
+        { href: "/battle", label: t(lang, "nav.battle.1v1"), icon: "/icons/ui/nav-battle.png" },
+        { href: "/tournament", label: t(lang, "nav.battle.tournament"), icon: "/icons/ui/ic-success.png" },
+        { href: "/damage-calculator", label: t(lang, "nav.battle.calculator"), icon: "/icons/ui/ic-filter.png" },
       ]
     },
     {
       id: "trainer",
-      title: "Dresseur",
+      title: t(lang, "nav.trainer"),
       icon: "/icons/ui/ic-trainer.png",
       items: [
-        { href: "/team", label: "Mon Équipe", icon: "/icons/ui/nav-team.png" },
-        { href: "/quiz", label: "Quiz", icon: "/icons/ui/nav-quiz.png" },
+        { href: "/team", label: t(lang, "nav.team"), icon: "/icons/ui/nav-team.png" },
+        { href: "/quiz", label: t(lang, "nav.quiz"), icon: "/icons/ui/nav-quiz.png" },
       ]
     }
   ];
@@ -95,7 +99,7 @@ export default function NavBar() {
                 className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2"
               >
                 <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5" />
-                <span>Accueil</span>
+                <span>{t(lang, "nav.home")}</span>
               </Link>
               
               {menuGroups.map(group => (
@@ -128,19 +132,20 @@ export default function NavBar() {
 
           {/* Auth Section */}
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <ThemeToggle />
             
             {me ? (
               <div className="flex items-center gap-2">
                 <span className="hidden sm:block text-sm text-white/90 bg-white/10 px-3 py-1.5 rounded-lg">
-                  <span className="hidden md:inline">Dresseur: </span>
+                  <span className="hidden md:inline">{t(lang, "nav.trainer.label")} </span>
                   <b>{me.username}</b>
                 </span>
                 <button 
                   onClick={logout}
                   className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium text-sm transition-all"
                 >
-                  Déconnexion
+                  {t(lang, "nav.logout")}
                 </button>
               </div>
             ) : (
@@ -149,13 +154,13 @@ export default function NavBar() {
                   className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium text-sm transition-all no-underline" 
                   href="/auth/login"
                 >
-                  Connexion
+                  {t(lang, "nav.login")}
                 </Link>
                 <Link 
                   className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-sm transition-all no-underline shadow-lg" 
                   href="/auth/register"
                 >
-                  Inscription
+                  {t(lang, "nav.register")}
                 </Link>
               </div>
             )}
@@ -182,7 +187,7 @@ export default function NavBar() {
                 className="px-4 py-2 rounded-lg text-white hover:bg-white/20 transition-all no-underline flex items-center gap-3"
               >
                 <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5" />
-                <span>Accueil</span>
+                <span>{t(lang, "nav.home")}</span>
               </Link>
               
               {menuGroups.map(group => (

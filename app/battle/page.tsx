@@ -5,6 +5,8 @@ import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import TypeLogo from "@/components/TypeLogo";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 import { getPokemonCategory } from "@/lib/pokemonCategories";
+import { useLanguage } from "@/components/LanguageProvider";
+import { t } from "@/lib/i18n";
 
 // Types for team building
 type TeamMember = {
@@ -35,6 +37,8 @@ const INITIAL_EVOLUTION_POINTS = 6;
 const LEGENDARY_COST = 3;
 
 export default function BattlePage() {
+  const { lang } = useLanguage();
+  
   // Team A (Player)
   const [teamA, setTeamA] = useState<(TeamMember | null)[]>(Array(6).fill(null));
   const [currentInputA, setCurrentInputA] = useState<number>(0);
@@ -249,7 +253,7 @@ export default function BattlePage() {
     const team = isTeamA ? teamA : teamB;
     const points = isTeamA ? evolutionPointsA : evolutionPointsB;
     const legendaryUnlocked = isTeamA ? legendaryUnlockedA : legendaryUnlockedB;
-    const teamLabel = isTeamA ? "Team A (Player)" : "Team B (Opponent)";
+    const teamLabel = isTeamA ? t(lang, "battle.team.1") : t(lang, "battle.team.2");
 
     return (
       <div className="card p-6">
@@ -257,7 +261,7 @@ export default function BattlePage() {
           <h2 className="text-lg font-semibold">{teamLabel}</h2>
           <div className="flex items-center gap-4">
             <div className="text-sm">
-              <span className="font-semibold">Evolution Points:</span> {points}
+              <span className="font-semibold">{t(lang, "battle.evolution.points")}:</span> {points}
             </div>
             {!legendaryUnlocked && (
               <button
@@ -265,11 +269,11 @@ export default function BattlePage() {
                 onClick={() => unlockLegendary(isTeamA)}
                 disabled={points < LEGENDARY_COST}
               >
-                Unlock Legendary ({LEGENDARY_COST} pts)
+                {t(lang, "battle.unlock.legendary")} ({LEGENDARY_COST} pts)
               </button>
             )}
             {legendaryUnlocked && (
-              <span className="text-xs text-green-600 font-semibold">✓ Legendary Unlocked</span>
+              <span className="text-xs text-green-600 font-semibold">✓ {t(lang, "battle.unlock.legendary")}</span>
             )}
           </div>
         </div>
@@ -284,7 +288,7 @@ export default function BattlePage() {
                     className="text-xs text-red-600 hover:text-red-800"
                     onClick={() => removePokemon(isTeamA, index)}
                   >
-                    Remove
+                    {t(lang, "team.remove")}
                   </button>
                 )}
               </div>
@@ -342,7 +346,7 @@ export default function BattlePage() {
                         setInputValueB(v);
                       }
                     }}
-                    placeholder="Search Pokemon..."
+                    placeholder={t(lang, "common.search")}
                   />
                   <button
                     className="btn btn-sm w-full"
@@ -353,7 +357,7 @@ export default function BattlePage() {
                       }
                     }}
                   >
-                    Add Pokemon
+                    {t(lang, "team.add.pokemon")}
                   </button>
                 </div>
               )}
@@ -391,7 +395,7 @@ export default function BattlePage() {
             onClick={startBattle}
             disabled={loading || teamA.every(m => m === null) || teamB.every(m => m === null)}
           >
-            {loading ? "Starting Battle..." : "Lancer le combat"}
+            {loading ? t(lang, "common.loading") : t(lang, "battle.start")}
           </button>
         </div>
 
@@ -401,7 +405,7 @@ export default function BattlePage() {
             
             <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 border-2 border-yellow-400 rounded-lg p-4 mb-6">
               <div className="text-center text-2xl font-bold">
-                Winner: {battleResult.winner === "A" ? "Team A (Player)" : "Team B (Opponent)"}
+                {t(lang, "battle.winner")}: {battleResult.winner === "A" ? t(lang, "battle.team.1") : t(lang, "battle.team.2")}
               </div>
             </div>
 
