@@ -81,15 +81,15 @@ export default async function PokemonListPage({
           <div className="pokedex-panel-content p-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-pokemon mb-2">POKÉDEX NATIONAL</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <h1 className="text-3xl font-bold text-pokemon mb-2 text-shadow">POKÉDEX NATIONAL</h1>
+                <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
                   {result.total} Pokémon trouvés — Page {page}/{totalPages}
                 </p>
               </div>
               
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-xs text-gray-600 dark:text-gray-300 pokemon-text">SYSTÈME ACTIF</span>
+                <span className="text-xs text-gray-700 dark:text-gray-200 pokemon-text font-semibold">SYSTÈME ACTIF</span>
               </div>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default async function PokemonListPage({
 
         {/* Search & Filters */}
         <div className="pokedex-screen max-w-7xl mx-auto mb-6 p-6">
-          <h2 className="text-pokemon text-lg mb-4">🔍 RECHERCHE & FILTRES</h2>
+          <h2 className="text-pokemon text-lg mb-4 text-shadow">🔍 RECHERCHE & FILTRES</h2>
           <PokedexSearchBar
             initialQ={q}
             initialSize={String(pageSize)}
@@ -124,8 +124,8 @@ export default async function PokemonListPage({
             <div className="pokedex-panel">
               <div className="pokedex-panel-content p-12 text-center">
                 <div className="text-6xl mb-4">❌</div>
-                <h3 className="text-pokemon text-xl mb-2">AUCUN RÉSULTAT</h3>
-                <p className="text-gray-600 dark:text-gray-300">Essayez de modifier vos filtres de recherche.</p>
+                <h3 className="text-pokemon text-xl mb-2 text-shadow">AUCUN RÉSULTAT</h3>
+                <p className="text-gray-800 dark:text-gray-200 font-medium">Essayez de modifier vos filtres de recherche.</p>
               </div>
             </div>
           )}

@@ -65,6 +65,11 @@ export default function TeamPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importCode, setImportCode] = useState("");
   const [importSuccess, setImportSuccess] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
+  const [selectedSlotForSuggestion, setSelectedSlotForSuggestion] = useState<number | null>(null);
+  const [optimizingOrder, setOptimizingOrder] = useState(false);
   const sortedTeam = useMemo(() => [...team].sort((a, b) => a.slot - b.slot), [team]);
   
   async function load() {
@@ -84,6 +89,204 @@ export default function TeamPage() {
       setDetails(prev => ({ ...prev, [slot]: data.pokemon as PokeLite }));
     } else {
       setDetails(prev => ({ ...prev, [slot]: null }));
+    }
+  }
+
+  async function getAISuggestions(forSlot: number) {
+    setLoadingSuggestions(true);
+    setSelectedSlotForSuggestion(forSlot);
+    setError(null);
+
+    try {
+      // Prepare team data with details
+      const teamWithDetails = await Promise.all(
+        sortedTeam.map(async (member) => {
+          const detail = details[member.slot];
+          if (detail) {
+            return {
+              pokemonId: member.pokemonId,
+              pokemonName: member.pokemonName,
+              types: detail.types,
+              stats: detail.stats
+            };
+          }
+          return {
+            pokemonId: member.pokemonId,
+            pokemonName: member.pokemonName
+          };
+        })
+      );
+
+      const res = await fetch('/api/team/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team: teamWithDetails })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erreur lors de la génération de suggestions');
+        setLoadingSuggestions(false);
+        return;
+      }
+
+      setAiSuggestions(data.suggestions || []);
+      setShowSuggestionsModal(true);
+    } catch (err) {
+      console.error('AI suggestion error:', err);
+      setError('Erreur lors de la génération de suggestions');
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }
+
+  async function addSuggestedPokemon(pokemonName: string) {
+    if (selectedSlotForSuggestion === null) return;
+    
+    const res = await fetch("/api/team", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slot: selectedSlotForSuggestion, pokemonName })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setTeam(data.team);
+      setShowSuggestionsModal(false);
+      setAiSuggestions([]);
+      setSelectedSlotForSuggestion(null);
+    } else {
+      setError(data.error ?? "Erreur lors de l'ajout");
+    }
+  }
+
+  async function moveSlot(fromSlot: number, direction: 'up' | 'down') {
+    const toSlot = direction === 'up' ? fromSlot - 1 : fromSlot + 1;
+    if (toSlot < 1 || toSlot > 6) return;
+
+    const fromMember = team.find(t => t.slot === fromSlot);
+    const toMember = team.find(t => t.slot === toSlot);
+
+    // Swap slots
+    const updatedTeam = team.map(member => {
+      if (member.slot === fromSlot) {
+        return { ...member, slot: toSlot };
+      }
+      if (member.slot === toSlot) {
+        return { ...member, slot: fromSlot };
+      }
+      return member;
+    });
+
+    // Update on server
+    const res = await fetch("/api/team", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ team: updatedTeam })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      setTeam(data.team);
+      // Swap details
+      setDetails(prev => {
+        const newDetails = { ...prev };
+        const fromDetail = newDetails[fromSlot];
+        const toDetail = newDetails[toSlot];
+        newDetails[fromSlot] = toDetail || null;
+        newDetails[toSlot] = fromDetail || null;
+        return newDetails;
+      });
+    } else {
+      setError(data.error ?? "Erreur lors du déplacement");
+    }
+  }
+
+  async function optimizeTeamOrder() {
+    if (sortedTeam.length === 0) return;
+    
+    setOptimizingOrder(true);
+    setError(null);
+
+    try {
+      // Calculate optimal order based on stats and roles
+      const teamWithStats = sortedTeam.map(member => {
+        const detail = details[member.slot];
+        if (!detail) return null;
+        
+        const stats = detail.stats;
+        const hp = stats.find(s => s.name === 'hp')?.value || 0;
+        const attack = stats.find(s => s.name === 'attack')?.value || 0;
+        const defense = stats.find(s => s.name === 'defense')?.value || 0;
+        const spAtk = stats.find(s => s.name === 'special-attack')?.value || 0;
+        const spDef = stats.find(s => s.name === 'special-defense')?.value || 0;
+        const speed = stats.find(s => s.name === 'speed')?.value || 0;
+
+        // Calculate role scores
+        const tankScore = (hp + defense + spDef) / 3;
+        const attackerScore = Math.max(attack, spAtk);
+        const speedScore = speed;
+        const totalDefense = (defense + spDef) / 2;
+
+        return {
+          member,
+          detail,
+          tankScore,
+          attackerScore,
+          speedScore,
+          totalDefense,
+          hp
+        };
+      }).filter(Boolean);
+
+      if (teamWithStats.length === 0) {
+        setError("Aucune statistique disponible pour optimiser");
+        setOptimizingOrder(false);
+        return;
+      }
+
+      // Sort by optimal battle order:
+      // 1. Fast sweepers first (high speed + attack)
+      // 2. Balanced attackers middle
+      // 3. Tanks/walls last (high defense/hp)
+      const optimized = teamWithStats.sort((a, b) => {
+        // Priority to fast sweepers
+        const aSweeperScore = (a!.speedScore * 2 + a!.attackerScore) / 3;
+        const bSweeperScore = (b!.speedScore * 2 + b!.attackerScore) / 3;
+        
+        return bSweeperScore - aSweeperScore;
+      });
+
+      // Reassign slots
+      const reorderedTeam = optimized.map((item, index) => ({
+        ...item!.member,
+        slot: index + 1
+      }));
+
+      // Update on server
+      const res = await fetch("/api/team", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team: reorderedTeam })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setTeam(data.team);
+        
+        // Reorganize details
+        const newDetails: Record<number, PokeLite | null> = {};
+        optimized.forEach((item, index) => {
+          newDetails[index + 1] = item!.detail;
+        });
+        setDetails(newDetails);
+      } else {
+        setError(data.error ?? "Erreur lors de l'optimisation");
+      }
+    } catch (err) {
+      console.error('Optimize error:', err);
+      setError('Erreur lors de l\'optimisation de l\'ordre');
+    } finally {
+      setOptimizingOrder(false);
     }
   }
 
@@ -286,6 +489,15 @@ export default function TeamPage() {
                   <div className="text-2xl font-bold text-blue-900">{sortedTeam.length}/6</div>
                 </div>
                 
+                {/* Optimize Order Button */}
+                <button
+                  onClick={optimizeTeamOrder}
+                  disabled={sortedTeam.length < 2 || optimizingOrder}
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm transition-all shadow-lg"
+                >
+                  {optimizingOrder ? "⏳ Optimisation..." : "⚡ Optimiser l'ordre"}
+                </button>
+                
                 {/* Share and Import Buttons */}
                 <button
                   onClick={() => setShowShareModal(true)}
@@ -343,14 +555,37 @@ export default function TeamPage() {
                       <span className="text-white font-bold pokemon-text text-sm">
                         SLOT {slot}
                       </span>
-                      {s && (
-                        <button 
-                          className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full pokemon-text transition-colors" 
-                          onClick={() => removeSlot(slot)}
-                        >
-                          ✕
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Reorder buttons */}
+                        {s && (
+                          <>
+                            <button
+                              onClick={() => moveSlot(slot, 'up')}
+                              disabled={slot === 1}
+                              className="bg-blue-400 hover:bg-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-xs font-bold px-2 py-1 rounded transition-colors"
+                              title="Monter"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              onClick={() => moveSlot(slot, 'down')}
+                              disabled={slot === 6}
+                              className="bg-blue-400 hover:bg-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-xs font-bold px-2 py-1 rounded transition-colors"
+                              title="Descendre"
+                            >
+                              ▼
+                            </button>
+                          </>
+                        )}
+                        {s && (
+                          <button 
+                            className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full pokemon-text transition-colors" 
+                            onClick={() => removeSlot(slot)}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -427,11 +662,32 @@ export default function TeamPage() {
                         <p className="text-sm text-gray-600 mt-3">Chargement...</p>
                       </div>
                     ) : (
-                      <div className="py-12 text-center">
+                      <div className="py-8 text-center">
                         <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
                           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-500 to-red-700 opacity-30"></div>
                         </div>
-                        <p className="text-gray-500 text-sm pokemon-text">SLOT VIDE</p>
+                        <p className="text-gray-500 text-sm pokemon-text mb-4">SLOT VIDE</p>
+                        
+                        {/* AI Suggestion Button - only show if team has at least 1 Pokemon */}
+                        {sortedTeam.length > 0 && (
+                          <button
+                            onClick={() => getAISuggestions(slot)}
+                            disabled={loadingSuggestions}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold text-xs transition-colors flex items-center gap-2 mx-auto"
+                          >
+                            {loadingSuggestions ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                <span>Analyse...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>🤖</span>
+                                <span>Suggestion IA</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -530,6 +786,80 @@ export default function TeamPage() {
                     Annuler
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Suggestions Modal */}
+        {showSuggestionsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-6 rounded-t-lg sticky top-0">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">🤖 Suggestions IA</h2>
+                  <button
+                    onClick={() => {
+                      setShowSuggestionsModal(false);
+                      setAiSuggestions([]);
+                      setSelectedSlotForSuggestion(null);
+                    }}
+                    className="text-white hover:text-gray-200 text-2xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {aiSuggestions.length > 0 ? (
+                  <>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Voici les meilleurs Pokémon suggérés pour compléter votre équipe :
+                    </p>
+                    
+                    <div className="space-y-4">
+                      {aiSuggestions.map((pokemon, idx) => (
+                        <div 
+                          key={pokemon.id}
+                          className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-purple-500 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="text-2xl font-bold text-purple-600">
+                              #{idx + 1}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold capitalize text-gray-900 dark:text-gray-100">
+                                {pokemon.name}
+                              </h3>
+                              <div className="flex gap-2 mt-2">
+                                {pokemon.types.map((type: string) => (
+                                  <TypeLogo key={type} type={type} size={20} />
+                                ))}
+                              </div>
+                              {pokemon.stats && (
+                                <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                  Total Stats: <strong>{pokemon.stats.reduce((sum: number, s: any) => sum + s.value, 0)}</strong>
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => addSuggestedPokemon(pokemon.name)}
+                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-sm transition-colors"
+                            >
+                              ➕ Ajouter
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-purple-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">Analyse de votre équipe en cours...</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

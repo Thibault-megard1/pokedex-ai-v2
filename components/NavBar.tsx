@@ -7,6 +7,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "./LanguageProvider";
 import { t } from "@/lib/i18n";
 import { MenuGroup } from "./MenuGroup";
+import AIStatusIndicator from "./AIStatusIndicator";
 
 type Me = { username: string } | null;
 
@@ -95,17 +96,17 @@ export default function NavBar() {
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 shadow-lg">
+    <header className="fixed top-0 left-0 w-full z-50 shadow-lg" style={{ height: 'var(--header-height)' }}>
       {/* Pokédex Header Bar */}
-      <div className="bg-gradient-to-b from-red-600 to-red-700 border-b-4 border-red-800">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+      <div className="bg-gradient-to-b from-red-600 to-red-700 border-b-4 border-red-800 h-full">
+        <div className="mx-auto max-w-7xl px-4 h-full flex items-center justify-between">
           
           {/* Logo / Brand */}
           <Link
             href="/pokemon"
             className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all no-underline group">
             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700"></div>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-2 border-white"></div>
             </div>
             <span className="text-white font-bold text-xl pokemon-text hidden sm:block">
               POKÉDEX
@@ -119,14 +120,14 @@ export default function NavBar() {
                 href="/"
                 className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2"
               >
-                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5" />
+                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5 icon-light-mode" />
                 <span>{t(lang, "nav.home")}</span>
               </Link>
               
               {menuGroups.map(group => (
                 <div key={group.id} className="relative group/nav">
                   <button className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-all flex items-center gap-2">
-                    <img src={group.icon} alt={group.title} className="w-5 h-5" />
+                    <img src={group.icon} alt={group.title} className="w-5 h-5 icon-light-mode" />
                     <span>{group.title}</span>
                     <span className="text-xs">▾</span>
                   </button>
@@ -140,7 +141,7 @@ export default function NavBar() {
                           href={item.href}
                           className="px-4 py-2 text-sm text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2 whitespace-nowrap"
                         >
-                          <img src={item.icon} alt={item.label} className="w-4 h-4" />
+                          <img src={item.icon} alt={item.label} className="w-4 h-4 icon-light-mode" />
                           <span>{item.label}</span>
                         </Link>
                       ))}
@@ -152,7 +153,8 @@ export default function NavBar() {
           )}
 
           {/* Auth Section */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <AIStatusIndicator />
             <LanguageSwitcher />
             <ThemeToggle />
             
@@ -207,7 +209,7 @@ export default function NavBar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-4 py-2 rounded-lg text-white hover:bg-white/20 transition-all no-underline flex items-center gap-3"
               >
-                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5" />
+                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5 icon-light-mode" />
                 <span>{t(lang, "nav.home")}</span>
               </Link>
               

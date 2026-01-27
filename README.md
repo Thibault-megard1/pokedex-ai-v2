@@ -5,9 +5,10 @@ A comprehensive Pokédex web application with AI-powered features, team building
 ## ✨ Features
 
 - 📖 **Complete Pokédex** - Browse all Pokémon with detailed stats, types, and evolutions
-- 🤖 **AI-Powered Quiz** - Discover which Pokémon matches your personality (powered by Mistral AI)
+- 🤖 **AI-Powered Quiz** - Discover which Pokémon matches your personality
+- 🧠 **Local AI (FREE)** - Use Ollama for unlimited AI features at no cost
 - ⚔️ **Battle System** - 6v6 battles with evolution mechanics
-- 👥 **Team Builder** - Create and manage your dream team
+- 👥 **Team Builder** - Create and manage your dream team with AI suggestions
 - ⭐ **Favorites** - Save your favorite Pokémon
 - 📊 **Stats & Analytics** - Track your Pokédex progress
 - 🎮 **Trainer Authentication** - Personal accounts with local database
@@ -18,6 +19,7 @@ A comprehensive Pokédex web application with AI-powered features, team building
 ### Prerequisites
 - Node.js (version 18 or higher)
 - npm (Node package manager)
+- **(Optional)** Ollama for FREE local AI features
 
 ### Installation
 
@@ -40,15 +42,25 @@ node scripts/download-assets.mjs
 4. **Set up environment variables:**
 ```bash
 # Copy the example file
-cp .env.local.example .env.local
+cp .env.example .env.local
 
-# Edit .env.local and add your Mistral API key
-# Get your key from: https://console.mistral.ai/
+# Edit .env.local with your configuration
 ```
 
-Example `.env.local`:
+Example `.env.local` for **FREE local AI (Ollama)**:
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=mistral
+JWT_SECRET=your-super-secret-jwt-key
 ```
-MISTRAL_API_KEY=your_actual_api_key_here
+
+Example `.env.local` for **Mistral AI (paid)**:
+```env
+LLM_PROVIDER=mistral
+MISTRAL_API_KEY=your_mistral_api_key_here
+MISTRAL_MODEL=mistral-small-latest
+JWT_SECRET=your-super-secret-jwt-key
 ```
 
 5. **Start the development server:**
@@ -65,6 +77,99 @@ npm run build
 npm start
 ```
 
+## 🧠 AI Configuration (Local LLM - FREE!)
+
+This app supports **FREE local AI** using Ollama - no API keys required!
+
+### Option 1: Ollama (FREE, recommended)
+
+#### Windows Installation
+1. Download Ollama from: https://ollama.ai
+2. Run the installer
+3. Open PowerShell/Terminal and verify:
+```bash
+ollama --version
+```
+
+#### Mac/Linux Installation
+```bash
+# Mac (Homebrew)
+brew install ollama
+
+# Linux
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+#### Download a Model
+```bash
+# Recommended: Mistral (fast, good French support)
+ollama pull mistral
+
+# Alternative: Llama 3 (better reasoning)
+ollama pull llama3
+
+# List installed models
+ollama list
+```
+
+#### Verify Ollama is Running
+```bash
+# Check API endpoint
+curl http://localhost:11434/api/tags
+
+# Expected response: JSON with list of models
+```
+
+#### Configure the App
+In your `.env.local`:
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=mistral
+```
+
+That's it! The app now uses FREE local AI. No usage limits, no API costs.
+
+### Option 2: Mistral AI (Paid)
+
+If you prefer cloud AI:
+
+1. Get an API key from: https://console.mistral.ai
+2. Configure `.env.local`:
+```env
+LLM_PROVIDER=mistral
+MISTRAL_API_KEY=your_api_key_here
+MISTRAL_MODEL=mistral-small-latest
+```
+
+Pricing: ~€0.001-0.003 per 1K tokens (~0.15-0.25€ per 100 quiz analyses)
+
+### Testing AI Status
+
+Once configured, check AI status:
+1. Start the dev server: `npm run dev`
+2. Visit: http://localhost:3000/api/ai/health
+3. Look for the AI status indicator in the navbar (green = online)
+
+### Troubleshooting
+
+**Ollama not connecting?**
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+
+# Start Ollama (if not auto-started)
+ollama serve
+
+# Pull a model if missing
+ollama pull mistral
+```
+
+**AI features not working?**
+- Check the AI status indicator in the navbar
+- Visit `/api/ai/health` to see detailed status
+- The app works WITHOUT AI (quiz disabled gracefully)
+
 ## 🎨 UI Redesign
 
 This application features a **complete Pokémon-themed UI redesign** inspired by official Game Freak Pokédex interfaces.
@@ -78,10 +183,11 @@ This application features a **complete Pokémon-themed UI redesign** inspired by
 - ✅ Type-based color system (18 Pokémon types)
 - ✅ Responsive design (mobile + desktop)
 - ✅ Smooth animations and transitions
+- ✅ AI status indicator in navbar
 
 ### Redesign Status
 - ✅ Global CSS theme system
-- ✅ Navigation bar
+- ✅ Navigation bar with AI status
 - ✅ Pokémon cards
 - ⏳ Remaining pages (see `POKEDEX_REDESIGN_GUIDE.md` for details)
 
@@ -92,10 +198,35 @@ For complete redesign documentation, see: **[POKEDEX_REDESIGN_GUIDE.md](./POKEDE
 ### Directory Structure
 - **app/**: Contains the main application files, including pages and styles.
 - **components/**: Contains reusable React components like `NavBar` and `PokemonCard`.
-- **lib/**: Contains utility functions and API handling.
+- **lib/**: Contains utility functions, API handling, and LLM providers.
+  - **lib/llm/**: Unified LLM system (Ollama, Mistral, OpenAI)
 - **public/**: Contains static assets like images and backgrounds.
+- **data/**: Local database (users, teams, favorites, sessions)
 
 ## Architecture de l'Application
+
+### 🧠 AI System (Multi-Provider)
+
+The app uses a **unified LLM provider system** that supports multiple AI backends:
+
+- **Ollama** (default): FREE local LLM, no API key required
+- **Mistral**: Cloud API (paid)
+- **OpenAI**: Coming soon
+
+**Key files:**
+- `lib/llm/index.ts` - Unified LLM interface
+- `lib/llm/ollama.ts` - Ollama client (local, FREE)
+- `lib/llm/mistral-client.ts` - Mistral API client
+- `app/api/ai/health/route.ts` - AI health check endpoint
+- `components/AIStatusIndicator.tsx` - Real-time AI status UI
+
+**Features:**
+- ✅ Automatic provider selection via env vars
+- ✅ Graceful fallback if AI unavailable
+- ✅ Rate limiting (5 quiz/min, 20 general/min)
+- ✅ Health monitoring with ping times
+- ✅ Structured JSON output validation
+- ✅ French language support
 
 ### 1. 🔐 Système d'Authentification (Onglets: Login / Register)
 
@@ -503,6 +634,30 @@ graph LR
     style DATA fill:#ffe1e1
     style EXTERNAL fill:#fff4e1
 ```
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `/docs` folder:
+
+- **[Quick Start Guide](docs/quick-start.md)** - Get up and running quickly
+- **[Features Overview](docs/FEATURES.md)** - Complete feature list
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - System architecture and design
+- **[Development Checklist](docs/DEV_CHECKLIST.md)** - Testing and verification guide
+
+### AI Integration
+- **[LLM Integration](docs/ai/llm-integration.md)** - Unified AI system documentation
+- **[Ollama Setup](docs/ai/ollama-setup.md)** - Local AI installation guide
+- **[Integration Complete](docs/ai/integration-complete.md)** - Implementation summary
+
+### Design & Features
+- **[Redesign Guide](docs/design/redesign-guide.md)** - UI/UX design system
+- **[Sprites Guide](docs/design/sprites-guide.md)** - Asset management
+- **[Quiz Documentation](docs/features/quiz-documentation.md)** - Quiz feature details
+- **[i18n Guide](docs/features/i18n-guide.md)** - Internationalization
+
+### Utility Docs
+- **[Git Commands](docs/git-commands.md)** - Common Git operations
+- **[Archive](docs/archive/)** - Historical documentation
 
 ## Acknowledgments
 - Thanks to the Pokémon API for providing the data.

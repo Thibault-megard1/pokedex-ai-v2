@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateQuizQuestion, isMistralConfigured } from '@/lib/mistralAI';
+import { callLLM, type LLMMessage, type LLMError } from '@/lib/llm';
 
 export async function POST(req: NextRequest) {
   try {
-    if (!isMistralConfigured()) {
-      return NextResponse.json(
-        { error: 'IA non configurée. Ajoutez MISTRAL_API_KEY dans .env.local' },
-        { status: 503 }
-      );
-    }
-    
     const body = await req.json();
     const { difficulty, previousAnswers } = body;
     
@@ -21,16 +14,60 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    const question = await generateQuizQuestion(
-      difficulty as 'easy' | 'medium' | 'hard',
-      previousAnswers || []
-    );
+    // Generate quiz question using LLM
+    const difficultyText: Record<string, string> = {
+      easy: 'facile - pour débutants',
+      medium: 'moyenne - pour connaisseurs',
+      hard: 'difficile - pour experts'
+    };
     
-    return NextResponse.json(question);
+    const prompt = `Génère une question de quiz Pokémon de difficulté ${difficultyText[difficulty]}.
+
+${previousAnswers && previousAnswers.length > 0 ? `Questions déjà posées: ${previousAnswers.join(', ')}` : ''}
+
+Retourne un JSON avec:
+{
+  "question": "la question en français",
+  "options": ["option1", "option2", "option3", "option4"],
+  "correctAnswer": "l'option correcte",
+  "explanation": "explication de la réponse en français"
+}`;
+
+    const messages: LLMMessage[] = [
+      { role: 'system', content: 'Tu es un expert Pokémon. Génère des questions de quiz intéressantes. Réponds uniquement en JSON valide.' },
+      { role: 'user', content: prompt }
+    ];
+    
+    const llmResponse = await callLLM({
+      messages,
+      temperature: 0.8,
+      max_tokens: 500,
+      response_format: { type: 'json_object' }
+    });
+    
+    const question = JSON.parse(llmResponse.content);
+    
+    return NextResponse.json({
+      ...question,
+      metadata: {
+        provider: llmResponse.provider,
+        model: llmResponse.model
+      }
+    });
+    
   } catch (error: any) {
-    console.error('Quiz AI error:', error);
+    console.error('[Quiz Generator] Error:', error);
+    
+    if (error.code && error.provider) {
+      const llmError = error as LLMError;
+      return NextResponse.json(
+        { error: llmError.message_fr },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de la génération de la question' },
+      { error: 'Erreur lors de la génération de la question' },
       { status: 500 }
     );
   }

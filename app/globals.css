@@ -64,6 +64,14 @@
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
+  
+  /* Header */
+  --header-height: 72px;
+  
+  /* Overlays and Content Containers */
+  --overlay-bg: rgba(255, 255, 255, 0.95);
+  --card-bg: rgba(255, 255, 255, 0.98);
+  --backdrop-blur: 12px;
 }
 
 /* Dark Mode Theme */
@@ -85,6 +93,11 @@
   --panel-dark: #0f172a;
   --border-gray: #475569;
   --shadow-dark: rgba(0, 0, 0, 0.5);
+  
+  /* Overlays and Content Containers */
+  --overlay-bg: rgba(30, 41, 59, 0.95);
+  --card-bg: rgba(30, 41, 59, 0.98);
+  --backdrop-blur: 12px;
 }
 
 html {
@@ -106,6 +119,44 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Main content spacing to account for fixed header */
+main {
+  padding-top: var(--header-height);
+  min-height: calc(100vh - var(--header-height));
+}
+
+/* Content containers with blur and proper backgrounds */
+.content-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.dark .content-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Text shadow for better readability on backgrounds */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.text-shadow-strong {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Icon visibility helpers */
+.icon-light-mode {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.dark .icon-light-mode {
+  filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.2)) brightness(1.1);
+}
+
 /* ============================================================================
    TYPOGRAPHY
    ============================================================================ */
@@ -113,6 +164,51 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-pokemon);
   letter-spacing: 0.05em;
   line-height: 1.4;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+/* Specific heading sizes for consistency */
+h1 {
+  font-size: 2rem; /* 32px */
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  h1 {
+    font-size: 2.5rem; /* 40px */
+  }
+}
+
+h2 {
+  font-size: 1.5rem; /* 24px */
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  h2 {
+    font-size: 1.875rem; /* 30px */
+  }
+}
+
+h3 {
+  font-size: 1.25rem; /* 20px */
+  margin-bottom: 0.5rem;
+}
+
+h4 {
+  font-size: 1.125rem; /* 18px */
+  margin-bottom: 0.5rem;
+}
+
+/* Body text sizing */
+p, li, span {
+  font-size: 1rem; /* 16px */
+  line-height: 1.6;
+}
+
+small {
+  font-size: 0.875rem; /* 14px */
 }
 
 .pokemon-text {
@@ -448,50 +544,39 @@ a {
 .page-bg {
   position: relative;
   min-height: 100vh;
-  border-radius: 0px;
-  overflow: visible;
-  border: 0;
+  background-color: var(--bg-primary);
+  background-image: var(--bg-url, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .page-bg::before {
-  content: "";
-  position: absolute;
+  content: '';
+  position: fixed;
   inset: 0;
-  background-image: var(--bg-url);
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: saturate(1.05);
-  transform: scale(1.02);
-}
-
-.page-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.00);
-  transition: background 0.3s ease;
-}
-
-.dark .page-bg::after {
-  background: rgba(0,0,0,0.4);
+  background: linear-gradient(135deg, 
+    rgba(249, 250, 251, 0.92) 0%, 
+    rgba(249, 250, 251, 0.88) 100%
+  );
+  backdrop-filter: blur(8px);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .dark .page-bg::before {
-  filter: saturate(0.8) brightness(0.6);
+  background: linear-gradient(135deg, 
+    rgba(15, 23, 42, 0.92) 0%, 
+    rgba(15, 23, 42, 0.88) 100%
+  );
 }
 
-
-.page-bg > .page-content {
+.page-content {
   position: relative;
-  z-index: 2;
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+  z-index: 1;
 }
 
-
-.poke-sprite { image-rendering: pixelated; }
+/* Poke Sprite & Animation Utilities */ { image-rendering: pixelated; }
 .pixelated { image-rendering: pixelated; }
 
 @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
@@ -567,6 +652,20 @@ a {
 /* ============================================================================
    UTILITY CLASSES
    ============================================================================ */
+/* Spacing Utilities */
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.space-y-8 > * + * {
+  margin-top: 2rem;
+}
+
+/* Text Utilities */
 .text-pokemon {
   font-family: var(--font-pokemon);
   text-transform: uppercase;

@@ -45,3 +45,81 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: e?.message ?? "Erreur" }, { status: 400 });
   }
 }
+
+export async function POST(req: Request) {
+  // Ajoute un Pokémon à un slot spécifique
+  const session = await getCurrentSession();
+  if (!session) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
+
+  try {
+    const json = await req.json();
+    const { slot, pokemonName } = json;
+
+    if (!slot || !pokemonName) {
+      return NextResponse.json({ error: "Slot et pokemonName requis." }, { status: 400 });
+    }
+
+    if (slot < 1 || slot > 6) {
+      return NextResponse.json({ error: "Slot doit être entre 1 et 6." }, { status: 400 });
+    }
+
+    // Get current team
+    const currentTeam = await getTeam(session.userId);
+
+    // Check if slot is already occupied
+    const existingSlot = currentTeam.find(t => t.slot === slot);
+    if (existingSlot) {
+      return NextResponse.json({ error: "Ce slot est déjà occupé." }, { status: 400 });
+    }
+
+    // Verify Pokemon exists
+    const detail = await getPokemonDetail(pokemonName);
+
+    // Add to team
+    const newMember = {
+      slot,
+      pokemonName: detail.name,
+      pokemonId: detail.id
+    };
+
+    const updatedTeam = [...currentTeam, newMember].sort((a, b) => a.slot - b.slot);
+    await setTeam(session.userId, updatedTeam);
+
+    return NextResponse.json({ ok: true, team: updatedTeam });
+  } catch (e: any) {
+    console.error("POST /api/team error:", e);
+    return NextResponse.json({ error: e?.message ?? "Erreur" }, { status: 400 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  // Supprime un Pokémon d'un slot spécifique
+  const session = await getCurrentSession();
+  if (!session) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const slotParam = searchParams.get("slot");
+    
+    if (!slotParam) {
+      return NextResponse.json({ error: "Slot requis." }, { status: 400 });
+    }
+
+    const slot = parseInt(slotParam, 10);
+    if (isNaN(slot) || slot < 1 || slot > 6) {
+      return NextResponse.json({ error: "Slot doit être entre 1 et 6." }, { status: 400 });
+    }
+
+    // Get current team
+    const currentTeam = await getTeam(session.userId);
+
+    // Remove from team
+    const updatedTeam = currentTeam.filter(t => t.slot !== slot);
+    await setTeam(session.userId, updatedTeam);
+
+    return NextResponse.json({ ok: true, team: updatedTeam });
+  } catch (e: any) {
+    console.error("DELETE /api/team error:", e);
+    return NextResponse.json({ error: e?.message ?? "Erreur" }, { status: 400 });
+  }
+}

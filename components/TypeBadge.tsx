@@ -25,7 +25,7 @@ export default function TypeBadge({
       src={`/icons/types-badges/${typeNormalized}.png`}
       alt={kind}
       title={kind}
-      className={`inline-block ${className}`}
+      className={`inline-block icon-light-mode ${className}`}
       style={{
         width,
         height,

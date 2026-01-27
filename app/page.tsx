@@ -121,21 +121,21 @@ export default function HomePage() {
           <div className="pokedex-panel-content p-8 text-center">
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg pokeball-bounce">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-red-700"></div>
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-3 border-white"></div>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-pokemon">
+              <h1 className="text-4xl md:text-5xl font-bold text-pokemon text-shadow-strong">
                 POKÉDEX AI
               </h1>
             </div>
             
-            <p className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-4">
+            <p className="text-lg text-gray-800 dark:text-gray-200 max-w-2xl mx-auto mb-4 font-medium">
               {t(lang, "home.join")}
             </p>
             
             {!me ? (
               <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4 inline-block">
                 <p className="text-sm text-gray-700 dark:text-gray-200 mb-3 flex items-center justify-center gap-2">
-                  <img src="/icons/ui/ic-search.png" alt="Info" className="w-4 h-4" />
+                  <img src="/icons/ui/ic-search.png" alt="Info" className="w-4 h-4 icon-light-mode" />
                   <strong>{t(lang, "auth.login.title")}</strong> {t(lang, "home.auth.required")}
                 </p>
                 <div className="flex gap-3 justify-center">
@@ -150,7 +150,7 @@ export default function HomePage() {
             ) : (
               <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 border-2 border-green-400 dark:border-green-600 rounded-lg p-4 inline-block">
                 <p className="text-sm text-gray-700 dark:text-gray-200 flex items-center justify-center gap-2">
-                  <img src="/icons/ui/ic-success.png" alt="Success" className="w-4 h-4" />
+                  <img src="/icons/ui/ic-success.png" alt="Success" className="w-4 h-4 icon-light-mode" />
                   {t(lang, "home.get.started")}, <strong className="text-pokemon text-lg">{me.username}</strong> !
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
@@ -163,8 +163,8 @@ export default function HomePage() {
 
         {/* Primary Actions Hub */}
         <div className="max-w-6xl mx-auto mb-12">
-          <h2 className="text-pokemon text-3xl mb-6 text-center flex items-center justify-center gap-3">
-            <img src="/icons/ui/nav-battle.png" alt="Action" className="w-8 h-8" />
+          <h2 className="text-pokemon text-3xl mb-6 text-center flex items-center justify-center gap-3 text-shadow">
+            <img src="/icons/ui/nav-battle.png" alt="Action" className="w-8 h-8 icon-light-mode" />
             ACTIONS PRINCIPALES
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -180,27 +180,27 @@ export default function HomePage() {
                 >
                   {isLocked && (
                     <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 pokemon-text flex items-center gap-1">
-                      <img src="/icons/ui/ic-error.png" alt="Locked" className="w-3 h-3" />
+                      <img src="/icons/ui/ic-error.png" alt="Locked" className="w-3 h-3 icon-light-mode" />
                     </div>
                   )}
                   
                   <div className={`pokedex-card-header ${item.color} py-10`}>
                     <div className="flex flex-col items-center justify-center gap-4">
-                      <img src={item.icon} alt={item.label} className="w-16 h-16 transform group-hover:scale-110 transition-transform" />
-                      <h3 className="text-white font-bold text-2xl pokemon-text text-center">
+                      <img src={item.icon} alt={item.label} className="w-16 h-16 transform group-hover:scale-110 transition-transform icon-light-mode" />
+                      <h3 className="text-white font-bold text-2xl pokemon-text text-center text-shadow-strong">
                         {item.label}
                       </h3>
                     </div>
                   </div>
                   
-                  <div className="p-6 bg-white/90 dark:bg-slate-800/90">
-                    <p className="text-gray-700 dark:text-gray-300 text-center font-medium">
+                  <div className="p-6 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm">
+                    <p className="text-gray-800 dark:text-gray-200 text-center font-medium">
                       {item.description}
                     </p>
                     
                     {isLocked && (
                       <p className="text-xs text-red-600 dark:text-red-400 text-center mt-3 font-semibold flex items-center justify-center gap-1">
-                        <img src="/icons/ui/ic-error.png" alt="Locked" className="w-3 h-3" />
+                        <img src="/icons/ui/ic-error.png" alt="Locked" className="w-3 h-3 icon-light-mode" />
                         {t(lang, "home.auth.required")}
                       </p>
                     )}
@@ -246,21 +246,21 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto mt-12">
             <div className="pokedex-screen p-6">
               <h2 className="text-pokemon text-xl mb-4 flex items-center gap-2">
-                <img src="/icons/ui/ic-search.png" alt="Stats" className="w-6 h-6" />
+                <img src="/icons/ui/ic-search.png" alt="Stats" className="w-6 h-6 icon-light-mode" />
                 <span>VOTRE PROGRESSION</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white/80 dark:bg-slate-800/80 rounded-lg p-4 text-center border-2 border-red-400 dark:border-red-600">
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-lg p-4 text-center border-2 border-red-400 dark:border-red-600">
                   <div className="text-3xl font-bold text-red-600 dark:text-red-400 pokemon-text">???</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">Pokémon découverts</div>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 mt-1 font-medium">Pokémon découverts</div>
                 </div>
-                <div className="bg-white/80 dark:bg-slate-800/80 rounded-lg p-4 text-center border-2 border-blue-400 dark:border-blue-600">
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-lg p-4 text-center border-2 border-blue-400 dark:border-blue-600">
                   <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 pokemon-text">???</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">Combats gagnés</div>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 mt-1 font-medium">Combats gagnés</div>
                 </div>
-                <div className="bg-white/80 dark:bg-slate-800/80 rounded-lg p-4 text-center border-2 border-yellow-400 dark:border-yellow-600">
-                  <img src="/icons/ui/ic-success.png" alt="Star" className="w-12 h-12 mx-auto" />
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">Dresseur actif</div>
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-lg p-4 text-center border-2 border-yellow-400 dark:border-yellow-600">
+                  <img src="/icons/ui/ic-success.png" alt="Star" className="w-12 h-12 mx-auto icon-light-mode" />
+                  <div className="text-sm text-gray-800 dark:text-gray-200 mt-1 font-medium">Dresseur actif</div>
                 </div>
               </div>
             </div>

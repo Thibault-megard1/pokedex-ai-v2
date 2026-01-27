@@ -26,7 +26,7 @@ export default function PokemonCard({ p }: { p: PokemonBasic }) {
       )}
       
       <div className="pokedex-card-header">
-        <div className="text-xs font-bold text-gray-600 pokemon-text">
+        <div className="text-xs font-bold text-gray-800 dark:text-gray-200 pokemon-text">
           #{p.id?.toString().padStart(3, '0')}
         </div>
       </div>
@@ -49,11 +49,11 @@ export default function PokemonCard({ p }: { p: PokemonBasic }) {
           
           {/* Pokemon Info */}
           <div className="w-full text-center">
-            <h3 className="font-bold text-lg truncate capitalize group-hover:text-red-600 transition-colors">
+            <h3 className="font-bold text-lg truncate capitalize group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors text-gray-900 dark:text-gray-100">
               {names.primary}
             </h3>
             {names.secondary && (
-              <div className="text-xs text-gray-500 italic truncate capitalize mt-1">
+              <div className="text-xs text-gray-600 dark:text-gray-400 italic truncate capitalize mt-1">
                 {names.secondary}
               </div>
             )}
