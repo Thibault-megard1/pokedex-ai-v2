@@ -32,7 +32,7 @@ function getTypeEffectiveness(moveType: string, defenderTypes: string[]): number
   let multiplier = 1;
 
   for (const defenderType of defenderTypes) {
-    const effectivenessValue = calculateDefensiveMultiplier(moveType, defenderType);
+    const effectivenessValue = calculateDefensiveMultiplier(moveType, [defenderType]);
     multiplier *= effectivenessValue;
   }
 

@@ -445,7 +445,7 @@ export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQ
     const slice = tmp.slice(start, start + pageSize);
 
     // Si includeForms est activé, ajouter les formes alternatives
-    let finalItems = slice.map(d => ({
+    let finalItems: PokemonBasic[] = slice.map(d => ({
       id: d.id,
       name: d.name,
       frenchName: d.frenchName,
@@ -467,7 +467,7 @@ export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQ
             formItems.push({
               id: form.id,
               name: form.name,
-              frenchName: form.frenchName,
+              frenchName: form.frenchName ?? null,
               sprite: form.sprite,
               backSprite: null,
               types: form.types,

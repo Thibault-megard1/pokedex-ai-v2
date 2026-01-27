@@ -17,7 +17,7 @@ type Note = {
 
 async function getNotes(): Promise<Note[]> {
   try {
-    return await readJsonFile<Note[]>(NOTES_FILE);
+    return await readJsonFile<Note[]>(NOTES_FILE, []);
   } catch {
     return [];
   }

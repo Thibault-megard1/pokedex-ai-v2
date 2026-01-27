@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import HeightScale from "@/components/HeightScale";
-import TypeBadge, { BadgeKey } from "@/components/TypeBadge";
+import TypeBadge from "@/components/TypeBadge";
 import { typeStyle } from "@/lib/typeStyle";
 import { BACKGROUNDS } from "@/lib/backgrounds";
 import { getDisplayName } from "@/lib/pokemonNames.utils";
@@ -230,7 +230,7 @@ export default function ComparePage() {
                       <div className="text-sm text-gray-600 mt-1">#{a.id}</div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {a.types.map(t => (
-                          <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                          <TypeBadge key={t} kind={t} width={85} />
                         ))}
                       </div>
                     </div>
@@ -273,7 +273,7 @@ export default function ComparePage() {
                       <div className="text-sm text-gray-600 mt-1">#{b.id}</div>
                       <div className="flex flex-wrap gap-2 mt-2 justify-end">
                         {b.types.map(t => (
-                          <TypeBadge key={t} kind={t as BadgeKey} width={85} />
+                          <TypeBadge key={t} kind={t} width={85} />
                         ))}
                       </div>
                     </div>
