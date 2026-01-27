@@ -1,307 +1,456 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import TypeLogo from "@/components/TypeLogo";
 import { BACKGROUNDS } from "@/lib/backgrounds";
+import { getPokemonCategory } from "@/lib/pokemonCategories";
 
-// Type pour stocker les données d'un Pokémon (léger)
-type PokeLite = {
-  name: string;
+// Types for team building
+type TeamMember = {
+  baseName: string;
+  currentName: string;
   sprite: string | null;
-  backSprite: string | null;
   types: string[];
   stats: { name: string; value: number }[];
-  cry: string | null;
+  evolutionLevel: number; // 0 = base, 1 = first evo, 2 = second evo
+  category: "starter" | "early-route" | "legendary" | "standard";
+  evolutionChain?: string[]; // Available evolutions
 };
 
-// Type pour un tour de combat
-type Turn = { attacker: "A" | "B"; damage: number; aHp: number; bHp: number; note: string };
-
-// Type pour le résultat du combat simulé
-type Result = {
-  a: PokeLite;           // Pokémon du joueur
-  b: PokeLite;           // Pokémon adversaire
-  chanceA: number;       // Probabilité de victoire du joueur (0-1)
-  winner: "A" | "B";    // Gagnant du combat
-  turns: Turn[];         // Liste de tous les tours du combat
+type BattleResult = {
+  winner: "A" | "B";
+  teamA: TeamMember[];
+  teamB: TeamMember[];
+  rounds: {
+    round: number;
+    pokemonA: string;
+    pokemonB: string;
+    winner: "A" | "B";
+    turnsCount: number;
+  }[];
 };
 
-function stat(p: PokeLite, key: string) {
-  // Récupère la valeur d'une stat (ex: "hp", "attack", etc.) d'un Pokémon
-  return p.stats.find(s => s.name === key)?.value ?? 0;
-}
-function clamp(n: number, a: number, b: number) {
-  // Limite une valeur entre min (a) et max (b)
-  // Utilisé pour: s'assurer que les PV n'affichent pas de valeurs négatives ou > maxHP
-  return Math.max(a, Math.min(b, n));
-}
+const INITIAL_EVOLUTION_POINTS = 6;
+const LEGENDARY_COST = 3;
 
 export default function BattlePage() {
-  // === ÉTATS DE SAISIE ===
-  const [aName, setAName] = useState("");      // Nom du Pokémon du joueur (A)
-  const [bName, setBName] = useState("");      // Nom du Pokémon adversaire (B)
-  
-  // === RÉSULTAT DU COMBAT ===
-  const [res, setRes] = useState<Result | null>(null);  // Données du combat simulé
-  const [error, setError] = useState<string | null>(null);  // Message d'erreur
-  const [loading, setLoading] = useState(false);  // État de chargement
-  
-  // === ANIMATION DU COMBAT ===
-  const [step, setStep] = useState(0);           // Tour actuel de l'animation
-  const [aHpNow, setAHpNow] = useState<number>(0);  // PV actuels du joueur (A)
-  const [bHpNow, setBHpNow] = useState<number>(0);  // PV actuels de l'adversaire (B)
-  const [aAnim, setAAnim] = useState<string>("");  // Animation du joueur (attack-left, hit, etc.)
-  const [bAnim, setBAnim] = useState<string>("");  // Animation de l'adversaire (attack-right, hit, etc.)
+  // Team A (Player)
+  const [teamA, setTeamA] = useState<(TeamMember | null)[]>(Array(6).fill(null));
+  const [currentInputA, setCurrentInputA] = useState<number>(0);
+  const [inputValueA, setInputValueA] = useState("");
+  const [evolutionPointsA, setEvolutionPointsA] = useState(INITIAL_EVOLUTION_POINTS);
+  const [legendaryUnlockedA, setLegendaryUnlockedA] = useState(false);
 
-  // === RÉFÉRENCES POUR CONTRÔLE DE TOKENS ===
-  const playToken = useRef(0);                    // Permet d'annuler l'animation si une nouvelle commence
-  const audioRef = useRef<HTMLAudioElement | null>(null);  // Référence pour jouer les cris
+  // Team B (Opponent)
+  const [teamB, setTeamB] = useState<(TeamMember | null)[]>(Array(6).fill(null));
+  const [currentInputB, setCurrentInputB] = useState<number>(0);
+  const [inputValueB, setInputValueB] = useState("");
+  const [evolutionPointsB, setEvolutionPointsB] = useState(INITIAL_EVOLUTION_POINTS);
+  const [legendaryUnlockedB, setLegendaryUnlockedB] = useState(false);
 
-  const chanceText = useMemo(() => {
-    if (!res) return null;
-    const pctA = Math.round(res.chanceA * 100);
-    const pctB = 100 - pctA;
-    return { pctA, pctB };
-  }, [res]);
+  // Battle state
+  const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // === STATISTIQUES DU COMBAT ===
-  const maxAHp = res ? stat(res.a, "hp") : 1;   // PV max du joueur (A)
-  const maxBHp = res ? stat(res.b, "hp") : 1;   // PV max de l'adversaire (B)
+  // Add Pokemon to team
+  async function addPokemonToTeam(
+    pokemonName: string,
+    isTeamA: boolean,
+    slotIndex: number
+  ) {
+    if (!pokemonName.trim()) return;
 
-  // === VÉRIFICATION KO ===
-  const aKO = res ? aHpNow <= 0 : false;        // Le joueur est KO
-  const bKO = res ? bHpNow <= 0 : false;        // L'adversaire est KO
-
-  // Joue un cri audio d'un Pokémon
-  function playCry(url: string | null) {
-    if (!url) return;
     try {
-      if (!audioRef.current) audioRef.current = new Audio();
-      audioRef.current.src = url;
-      audioRef.current.currentTime = 0;
-      void audioRef.current.play();
-    } catch {
-      // ignore autoplay errors
+      const response = await fetch(`/api/pokemon/${pokemonName.toLowerCase()}`);
+      if (!response.ok) {
+        setError(`Pokemon "${pokemonName}" not found`);
+        return;
+      }
+
+      const data = await response.json();
+      const category = getPokemonCategory(pokemonName);
+
+      // Check if legendary and not unlocked
+      if (category === "legendary") {
+        if (isTeamA && !legendaryUnlockedA) {
+          setError("Legendary Pokemon locked! Unlock with 3 evolution points.");
+          return;
+        }
+        if (!isTeamA && !legendaryUnlockedB) {
+          setError("Legendary Pokemon locked! Unlock with 3 evolution points.");
+          return;
+        }
+      }
+
+      const newMember: TeamMember = {
+        baseName: pokemonName.toLowerCase(),
+        currentName: pokemonName.toLowerCase(),
+        sprite: data.sprite,
+        types: data.types,
+        stats: data.stats,
+        evolutionLevel: 0,
+        category,
+        evolutionChain: data.evolutions?.map((e: any) => e.name) || []
+      };
+
+      if (isTeamA) {
+        const newTeam = [...teamA];
+        newTeam[slotIndex] = newMember;
+        setTeamA(newTeam);
+        setInputValueA("");
+        
+        // Move to next empty slot
+        const nextEmpty = newTeam.findIndex((m, i) => i > slotIndex && m === null);
+        if (nextEmpty !== -1) setCurrentInputA(nextEmpty);
+      } else {
+        const newTeam = [...teamB];
+        newTeam[slotIndex] = newMember;
+        setTeamB(newTeam);
+        setInputValueB("");
+        
+        const nextEmpty = newTeam.findIndex((m, i) => i > slotIndex && m === null);
+        if (nextEmpty !== -1) setCurrentInputB(nextEmpty);
+      }
+
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || "Error loading Pokemon");
     }
   }
 
-  // Lance le combat: appelle l'API, récupère les données, initialise les PV
-  async function fightNow() {
-    setError(null);
-    setRes(null);
-    setLoading(true);
-    setStep(0);
-    setAAnim("");
-    setBAnim("");
+  // Evolve Pokemon
+  async function evolvePokemon(isTeamA: boolean, slotIndex: number) {
+    const team = isTeamA ? teamA : teamB;
+    const member = team[slotIndex];
+    if (!member) return;
+
+    const evolutionPoints = isTeamA ? evolutionPointsA : evolutionPointsB;
+    const evolutionChain = member.evolutionChain || [];
+    
+    if (member.evolutionLevel >= evolutionChain.length) {
+      setError("No more evolutions available");
+      return;
+    }
+
+    const cost = member.evolutionLevel === 0 ? 1 : 2;
+    if (evolutionPoints < cost) {
+      setError(`Not enough evolution points! Need ${cost} points.`);
+      return;
+    }
+
+    const nextEvolution = evolutionChain[member.evolutionLevel];
+    if (!nextEvolution) return;
 
     try {
-      if (!aName.trim() || !bName.trim()) {
-        setError("Choisis 2 Pokémon (nom).");
-        return;
+      const response = await fetch(`/api/pokemon/${nextEvolution.toLowerCase()}`);
+      if (!response.ok) throw new Error("Evolution not found");
+
+      const data = await response.json();
+
+      const updatedMember: TeamMember = {
+        ...member,
+        currentName: nextEvolution.toLowerCase(),
+        sprite: data.sprite,
+        types: data.types,
+        stats: data.stats,
+        evolutionLevel: member.evolutionLevel + 1
+      };
+
+      if (isTeamA) {
+        const newTeam = [...teamA];
+        newTeam[slotIndex] = updatedMember;
+        setTeamA(newTeam);
+        setEvolutionPointsA(evolutionPointsA - cost);
+      } else {
+        const newTeam = [...teamB];
+        newTeam[slotIndex] = updatedMember;
+        setTeamB(newTeam);
+        setEvolutionPointsB(evolutionPointsB - cost);
       }
 
-      const r = await fetch("/api/battle", {
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || "Error evolving Pokemon");
+    }
+  }
+
+  // Unlock legendary slot
+  function unlockLegendary(isTeamA: boolean) {
+    const points = isTeamA ? evolutionPointsA : evolutionPointsB;
+    if (points < LEGENDARY_COST) {
+      setError(`Need ${LEGENDARY_COST} evolution points to unlock legendary Pokemon!`);
+      return;
+    }
+
+    if (isTeamA) {
+      setEvolutionPointsA(evolutionPointsA - LEGENDARY_COST);
+      setLegendaryUnlockedA(true);
+    } else {
+      setEvolutionPointsB(evolutionPointsB - LEGENDARY_COST);
+      setLegendaryUnlockedB(true);
+    }
+    setError(null);
+  }
+
+  // Remove Pokemon from team
+  function removePokemon(isTeamA: boolean, slotIndex: number) {
+    if (isTeamA) {
+      const newTeam = [...teamA];
+      newTeam[slotIndex] = null;
+      setTeamA(newTeam);
+    } else {
+      const newTeam = [...teamB];
+      newTeam[slotIndex] = null;
+      setTeamB(newTeam);
+    }
+  }
+
+  // Start battle
+  async function startBattle() {
+    const validTeamA = teamA.filter(m => m !== null) as TeamMember[];
+    const validTeamB = teamB.filter(m => m !== null) as TeamMember[];
+
+    if (validTeamA.length === 0 || validTeamB.length === 0) {
+      setError("Both teams need at least one Pokemon!");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setBattleResult(null);
+
+    try {
+      const response = await fetch("/api/battle/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ a: aName.trim(), b: bName.trim() })
+        body: JSON.stringify({
+          teamA: validTeamA.map(m => m.currentName),
+          teamB: validTeamB.map(m => m.currentName)
+        })
       });
 
-      const data = await r.json();
-      if (!r.ok) {
-        setError(data.error ?? "Erreur");
-        return;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Battle failed");
       }
 
-      const rr: Result = data.result;
-      setRes(rr);
-
-      const initA = stat(rr.a, "hp");
-      const initB = stat(rr.b, "hp");
-      setAHpNow(initA);
-      setBHpNow(initB);
-      setStep(0);
+      const result = await response.json();
+      setBattleResult(result);
+    } catch (e: any) {
+      setError(e.message || "Error starting battle");
     } finally {
       setLoading(false);
     }
   }
 
-  // Joue l'animation complète du combat
-  // Joue l'animation complète du combat
-  async function playTurns() {
-    if (!res) return;
+  function renderTeamBuilder(isTeamA: boolean) {
+    const team = isTeamA ? teamA : teamB;
+    const points = isTeamA ? evolutionPointsA : evolutionPointsB;
+    const legendaryUnlocked = isTeamA ? legendaryUnlockedA : legendaryUnlockedB;
+    const teamLabel = isTeamA ? "Team A (Player)" : "Team B (Opponent)";
 
-    playToken.current += 1;
-    const token = playToken.current;
-
-    const initA = stat(res.a, "hp");
-    const initB = stat(res.b, "hp");
-    setAHpNow(initA);
-    setBHpNow(initB);
-    setStep(0);
-
-    for (let i = 0; i < res.turns.length; i++) {
-      if (token !== playToken.current) return;
-
-      const t = res.turns[i];
-
-      // Joue le cri du Pokémon qui attaque
-      playCry(t.attacker === "A" ? res.a.cry : res.b.cry);
-
-      // Lance l'animation d'attaque et de coup reçu
-      // Si A attaque : A attaque vers la gauche (attack-left), B prend un coup (hit)
-      // Si B attaque : B attaque vers la droite (attack-right), A prend un coup (hit)
-      if (t.attacker === "A") {
-        setAAnim("attack-left");
-        setBAnim("hit");
-      } else {
-        setBAnim("attack-right");
-        setAAnim("hit");
-      }
-
-      await new Promise(r => setTimeout(r, 380));
-      if (token !== playToken.current) return;
-
-      // Arrête l'animation d'attaque et met à jour les PV
-      setAAnim("");
-      setBAnim("");
-
-      // Met à jour les PV avec les dégâts du tour
-      setAHpNow(t.aHp);
-      setBHpNow(t.bHp);
-      setStep(i + 1);
-
-      await new Promise(r => setTimeout(r, 520));
-      if (token !== playToken.current) return;
-    }
-  }
-
-return (
-  <div className="page-bg" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
-    <div className="page-content space-y-4">
-      <div className="card p-6 mt-24">
-        <h1 className="text-xl font-semibold">Combat</h1>
-
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm">Joueur (A)</label>
-              <PokemonAutocomplete
-                id="a"
-                value={aName}
-                onChange={setAName}
-                placeholder="ex: raichu"
-              />
+    return (
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">{teamLabel}</h2>
+          <div className="flex items-center gap-4">
+            <div className="text-sm">
+              <span className="font-semibold">Evolution Points:</span> {points}
             </div>
-            <div>
-              <label className="text-sm">Adversaire (B)</label>
-              <PokemonAutocomplete
-                id="b"
-                value={bName}
-                onChange={setBName}
-                placeholder="ex: dialga"
-              />
-            </div>
-          </div>
-
-          {error ? <div className="text-sm text-red-600 mt-2">{error}</div> : null}
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button className="btn btn-primary" onClick={fightNow} disabled={loading}>
-              {loading ? "Chargement..." : "Préparer le combat"}
-            </button>
-            <button className="btn" onClick={playTurns} disabled={!res}>
-              Lancer l’animation + cris
-            </button>
+            {!legendaryUnlocked && (
+              <button
+                className="btn btn-sm"
+                onClick={() => unlockLegendary(isTeamA)}
+                disabled={points < LEGENDARY_COST}
+              >
+                Unlock Legendary ({LEGENDARY_COST} pts)
+              </button>
+            )}
+            {legendaryUnlocked && (
+              <span className="text-xs text-green-600 font-semibold">✓ Legendary Unlocked</span>
+            )}
           </div>
         </div>
 
-        {res ? (
-          <>
-            <div className="card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm text-gray-700">
-                  Tour animé: <b>{step}</b> / {res.turns.length} — Gagnant:{" "}
-                  <b className="capitalize">{res.winner === "A" ? res.a.name : res.b.name}</b>
-                </div>
-                {chanceText ? (
-                  <div className="text-sm">
-                    Chances: <b className="capitalize">{res.a.name}</b> {chanceText.pctA}% —{" "}
-                    <b className="capitalize">{res.b.name}</b> {chanceText.pctB}%
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {team.map((member, index) => (
+            <div key={index} className="border rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold">Slot {index + 1}</span>
+                {member && (
+                  <button
+                    className="text-xs text-red-600 hover:text-red-800"
+                    onClick={() => removePokemon(isTeamA, index)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              {member ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={member.sprite || ""}
+                      alt={member.currentName}
+                      className="w-16 h-16 pixelated"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold capitalize text-sm">
+                        {member.currentName}
+                      </div>
+                      <div className="text-xs text-gray-500 capitalize">
+                        {member.category}
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {member.types.map(t => (
+                          <TypeLogo key={t} type={t} size={16} />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                ) : null}
+
+                  {member.evolutionChain && member.evolutionChain.length > member.evolutionLevel && (
+                    <button
+                      className="btn btn-sm w-full"
+                      onClick={() => evolvePokemon(isTeamA, index)}
+                      disabled={points < (member.evolutionLevel === 0 ? 1 : 2)}
+                    >
+                      Evolve ({member.evolutionLevel === 0 ? 1 : 2} pt)
+                    </button>
+                  )}
+
+                  {member.evolutionLevel > 0 && (
+                    <div className="text-xs text-blue-600">
+                      Evolution Level: {member.evolutionLevel}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <PokemonAutocomplete
+                    id={`${isTeamA ? 'a' : 'b'}-${index}`}
+                    value={isTeamA && index === currentInputA ? inputValueA : (!isTeamA && index === currentInputB ? inputValueB : "")}
+                    onChange={(v) => {
+                      if (isTeamA) {
+                        setCurrentInputA(index);
+                        setInputValueA(v);
+                      } else {
+                        setCurrentInputB(index);
+                        setInputValueB(v);
+                      }
+                    }}
+                    placeholder="Search Pokemon..."
+                  />
+                  <button
+                    className="btn btn-sm w-full"
+                    onClick={() => {
+                      const value = isTeamA ? inputValueA : inputValueB;
+                      if (value.trim()) {
+                        addPokemonToTeam(value, isTeamA, index);
+                      }
+                    }}
+                  >
+                    Add Pokemon
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-bg" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
+      <div className="page-content space-y-4">
+        <div className="card p-6 mt-24">
+          <h1 className="text-2xl font-bold mb-2">6v6 Team Battle</h1>
+          <p className="text-sm text-gray-600 mb-4">
+            Build your teams with evolution points. Each team starts with {INITIAL_EVOLUTION_POINTS} points.
+            First evolution costs 1 point, second evolution costs 2 points.
+            Legendary Pokemon cost {LEGENDARY_COST} points to unlock.
+          </p>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+        </div>
+
+        {renderTeamBuilder(true)}
+        {renderTeamBuilder(false)}
+
+        <div className="card p-6">
+          <button
+            className="btn btn-primary w-full"
+            onClick={startBattle}
+            disabled={loading || teamA.every(m => m === null) || teamB.every(m => m === null)}
+          >
+            {loading ? "Starting Battle..." : "Lancer le combat"}
+          </button>
+        </div>
+
+        {battleResult && (
+          <div className="card p-6">
+            <h2 className="text-xl font-bold mb-4">Battle Results</h2>
+            
+            <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 border-2 border-yellow-400 rounded-lg p-4 mb-6">
+              <div className="text-center text-2xl font-bold">
+                Winner: {battleResult.winner === "A" ? "Team A (Player)" : "Team B (Opponent)"}
               </div>
             </div>
 
-            <div className="card p-4 relative overflow-hidden">
-              {/* BARRE DE PV DE L'ADVERSAIRE (B) - HAUT À DROITE */}
-              <div className="flex justify-end">
-                <div className="bg-white/85 rounded-xl border px-4 py-3 w-[280px]">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Battle Rounds</h3>
+              {battleResult.rounds.map((round, i) => (
+                <div key={i} className="border rounded-lg p-4 bg-gray-50">
                   <div className="flex items-center justify-between">
-                    <div className="font-semibold capitalize">{res.b.name}</div>
-                    <div className="text-xs text-gray-600">PV {clamp(bHpNow,0,maxBHp)} / {maxBHp}</div>
+                    <div className="font-semibold">Round {round.round}</div>
+                    <div className={`px-2 py-1 rounded text-sm ${
+                      round.winner === "A" ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
+                    }`}>
+                      Winner: {round.winner === "A" ? "Team A" : "Team B"}
+                    </div>
                   </div>
-                  <div className="hpbar mt-2">
-                    <div className="hpfill" style={{ width: `${clamp((bHpNow / maxBHp) * 100, 0, 100)}%` }} />
+                  <div className="mt-2 text-sm text-gray-600">
+                    <span className="capitalize">{round.pokemonA}</span> vs <span className="capitalize">{round.pokemonB}</span>
+                    <span className="ml-2">({round.turnsCount} turns)</span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {res.b.types.map(t => (
-                      <TypeLogo key={t} type={t} size={24} />
-                    ))}
-                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold mb-2">Team A Remaining</h4>
+                <div className="space-y-2">
+                  {battleResult.teamA.map((member, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <img src={member.sprite || ""} alt={member.currentName} className="w-8 h-8 pixelated" />
+                      <span className="capitalize">{member.currentName}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* ZONE D'ARÈNE - Contient les sprites des deux Pokémon */}
-              <div className="h-[260px] relative">
-                {/* SPRITE DE L'ADVERSAIRE (B) - À DROITE - HAUT */}
-                {/* Position: top-6 right-10 (en haut à droite) */}
-                {/* Animation: ${bAnim} (peut être 'attack-right', 'hit', ou vide) */}
-                {/* Taille: 140x140px */}
-                {/* Classe KO: appliquée si bKO est true (quand PV <= 0) */}
-                <div className={`absolute top-6 right-10 ${bAnim} bob`}>
-                  {/* Nom de l'adversaire au-dessus de son sprite */}
-                  <div className="absolute -top-6 right-0 bg-white/85 border rounded-lg px-2 py-1 text-sm font-semibold capitalize">
-                    {res.b.name}
-                  </div>
-                  {/* Sprite frontal de l'adversaire - applique la classe 'ko' si KO */}
-                  <img className={`poke-sprite w-[140px] h-[140px] ${bKO ? "ko" : ""}`} src={res.b.sprite ?? ""} alt={res.b.name} />
-                </div>
-
-                {/* SPRITE DU JOUEUR (A) - À GAUCHE - BAS */}
-                {/* Position: bottom-2 left-10 (en bas à gauche) */}
-                {/* Animation: ${aAnim} (peut être 'attack-left', 'hit', ou vide) */}
-                {/* Taille: 160x160px (légèrement plus grand) */}
-                {/* Classe KO: appliquée si aKO est true (quand PV <= 0) */}
-                <div className={`absolute bottom-1 left-10 ${aAnim} bob`}>
-                  {/* Nom du joueur au-dessus de son sprite */}
-                  <div className="absolute -top-6 left-0 bg-white/85 border rounded-lg px-2 py-1 text-sm font-semibold capitalize">
-                    {res.a.name}
-                  </div>
-                  {/* Sprite de dos du joueur (ou sprite frontal en fallback) - applique la classe 'ko' si KO */}
-                  <img className={`poke-sprite w-[160px] h-[160px] ${aKO ? "ko" : ""}`} src={res.a.backSprite ?? res.a.sprite ?? ""} alt={res.a.name} />
-                </div>
-              </div>
-
-              {/* BARRE DE PV DU JOUEUR (A) - BAS À GAUCHE */}
-              <div className="flex justify-start">
-                <div className="bg-white/85 rounded-xl border px-4 py-3 w-[320px]">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold capitalize">{res.a.name}</div>
-                    <div className="text-xs text-gray-600">PV {clamp(aHpNow,0,maxAHp)} / {maxAHp}</div>
-                  </div>
-                  <div className="hpbar mt-2">
-                    <div className="hpfill" style={{ width: `${clamp((aHpNow / maxAHp) * 100, 0, 100)}%` }} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {res.a.types.map(t => (
-                      <TypeLogo key={t} type={t} size={24} />
-                    ))}
-                  </div>
+              <div>
+                <h4 className="font-semibold mb-2">Team B Remaining</h4>
+                <div className="space-y-2">
+                  {battleResult.teamB.map((member, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <img src={member.sprite || ""} alt={member.currentName} className="w-8 h-8 pixelated" />
+                      <span className="capitalize">{member.currentName}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          </>
-        ) : null}
+          </div>
+        )}
       </div>
     </div>
   );

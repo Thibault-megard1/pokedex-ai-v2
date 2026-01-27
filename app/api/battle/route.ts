@@ -27,8 +27,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       result: {
-        a: { name: a.name, sprite: a.sprite, backSprite: a.backSprite ?? null, types: a.types, stats: a.stats, cry: aCry },
-        b: { name: b.name, sprite: b.sprite, backSprite: b.backSprite ?? null, types: b.types, stats: b.stats, cry: bCry },
+        a: { name: a.name, frenchName: a.frenchName, sprite: a.sprite, backSprite: a.backSprite ?? null, types: a.types, stats: a.stats, cry: aCry },
+        b: { name: b.name, frenchName: b.frenchName, sprite: b.sprite, backSprite: b.backSprite ?? null, types: b.types, stats: b.stats, cry: bCry },
         chanceA,
         ...result
       }
