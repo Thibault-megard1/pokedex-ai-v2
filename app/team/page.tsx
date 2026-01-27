@@ -6,6 +6,8 @@ import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import EvolutionDisplay from "@/components/EvolutionDisplay";
 import TeamStrategyBuilder from "@/components/TeamStrategyBuilder";
 import TypeLogo from "@/components/TypeLogo";
+import TeamShareModal from "@/components/TeamShareModal";
+import { decodeTeam, validateTeam } from "@/lib/teamSharing";
 
 type TeamSlot = { slot: number; pokemonId: number; pokemonName: string };
 type Me = { username: string } | null;
@@ -59,6 +61,10 @@ export default function TeamPage() {
   const [addName, setAddName] = useState<string>("");
   const [details, setDetails] = useState<Record<number, PokeLite | null>>({});
   const [expandedSlot, setExpandedSlot] = useState<number | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importCode, setImportCode] = useState("");
+  const [importSuccess, setImportSuccess] = useState(false);
   const sortedTeam = useMemo(() => [...team].sort((a, b) => a.slot - b.slot), [team]);
   
   async function load() {
@@ -88,6 +94,14 @@ export default function TeamPage() {
     if (add) {
       setAddName(add);
       url.searchParams.delete("add");
+      window.history.replaceState({}, "", url.toString());
+    }
+    // Show success message if imported
+    const imported = url.searchParams.get("imported");
+    if (imported === "true") {
+      setImportSuccess(true);
+      setTimeout(() => setImportSuccess(false), 5000);
+      url.searchParams.delete("imported");
       window.history.replaceState({}, "", url.toString());
     }
   }, []);
@@ -164,6 +178,60 @@ export default function TeamPage() {
     if (expandedSlot === slot) setExpandedSlot(null);
   }
 
+  async function importTeam() {
+    setError(null);
+    try {
+      let code = importCode.trim();
+      
+      // Extract from URL if full URL provided
+      if (code.includes('/team/share?data=')) {
+        const urlParams = new URL(code).searchParams;
+        code = urlParams.get('data') || '';
+      }
+      
+      if (!code) {
+        setError('Veuillez entrer un code de partage');
+        return;
+      }
+
+      const decoded = decodeTeam(code);
+      const validation = validateTeam(decoded);
+      
+      if (!validation.valid) {
+        setError(`Équipe invalide: ${validation.errors.join(', ')}`);
+        return;
+      }
+
+      // Clear current team and add imported Pokémon
+      const importedTeam: TeamSlot[] = decoded!.pokemon.map((p, idx) => ({
+        slot: idx + 1,
+        pokemonId: p.id,
+        pokemonName: p.name
+      }));
+
+      const res = await fetch("/api/team", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team: importedTeam })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Erreur lors de l'importation");
+        return;
+      }
+
+      setTeam(data.team);
+      setShowImportModal(false);
+      setImportCode('');
+      setImportSuccess(true);
+      setTimeout(() => setImportSuccess(false), 5000);
+    } catch (err) {
+      console.error('Import failed:', err);
+      setError('Code de partage invalide');
+    }
+  }
+
   if (!me) {
     return (
       <div className="page-bg min-h-screen" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
@@ -194,6 +262,13 @@ export default function TeamPage() {
     <div className="page-bg min-h-screen" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
       <div className="page-content py-24 px-4">
         
+        {/* Import Success Message */}
+        {importSuccess && (
+          <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+            ✅ Équipe importée avec succès !
+          </div>
+        )}
+
         {/* Header */}
         <div className="pokedex-panel max-w-6xl mx-auto mb-6 pokedex-open-animation">
           <div className="pokedex-panel-content p-6">
@@ -205,9 +280,26 @@ export default function TeamPage() {
                 </p>
               </div>
               
-              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg px-4 py-2">
-                <div className="text-xs text-blue-600 font-bold pokemon-text">ÉQUIPE</div>
-                <div className="text-2xl font-bold text-blue-900">{sortedTeam.length}/6</div>
+              <div className="flex gap-3 items-center">
+                <div className="bg-blue-50 border-2 border-blue-300 rounded-lg px-4 py-2">
+                  <div className="text-xs text-blue-600 font-bold pokemon-text">ÉQUIPE</div>
+                  <div className="text-2xl font-bold text-blue-900">{sortedTeam.length}/6</div>
+                </div>
+                
+                {/* Share and Import Buttons */}
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  disabled={sortedTeam.length === 0}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm transition-colors"
+                >
+                  🔗 Partager
+                </button>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm transition-colors"
+                >
+                  📥 Importer
+                </button>
               </div>
             </div>
           </div>
@@ -360,6 +452,85 @@ export default function TeamPage() {
                   .filter((d): d is PokeLite => d !== null && d !== undefined)
                 }
               />
+            </div>
+          </div>
+        )}
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <TeamShareModal
+            team={sortedTeam}
+            teamName={me?.username ? `Équipe de ${me.username}` : 'Mon Équipe'}
+            onClose={() => setShowShareModal(false)}
+          />
+        )}
+
+        {/* Import Modal */}
+        {showImportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
+              <div className="bg-gradient-to-r from-green-500 to-teal-600 text-white p-6 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">📥 Importer une équipe</h2>
+                  <button
+                    onClick={() => {
+                      setShowImportModal(false);
+                      setImportCode('');
+                      setError(null);
+                    }}
+                    className="text-white hover:text-gray-200 text-2xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    Code de partage ou URL
+                  </label>
+                  <textarea
+                    value={importCode}
+                    onChange={(e) => setImportCode(e.target.value)}
+                    placeholder="Collez ici le code de partage ou l'URL complète..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono resize-none"
+                    rows={4}
+                  />
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+                    ⚠️ {error}
+                  </div>
+                )}
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>⚠️ Attention :</strong> L'importation remplacera votre équipe actuelle.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={importTeam}
+                    disabled={!importCode.trim()}
+                    className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors"
+                  >
+                    ✅ Importer
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowImportModal(false);
+                      setImportCode('');
+                      setError(null);
+                    }}
+                    className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <circle cx="48" cy="48" r="48" fill="#CC0000"/>
+  
+  <!-- White half -->
+  <path d="M 0,48 A 48,48 0 0,1 96,48 L 96,96 A 48,48 0 0,1 0,96 Z" fill="#FFFFFF"/>
+  
+  <!-- Center line -->
+  <rect x="0" y="43.2" width="96" height="9.600000000000001" fill="#000000"/>
+  
+  <!-- Center button outer -->
+  <circle cx="48" cy="48" r="14.399999999999999" fill="#FFFFFF" stroke="#000000" stroke-width="1.92"/>
+  
+  <!-- Center button inner -->
+  <circle cx="48" cy="48" r="7.68" fill="#000000"/>
+</svg>

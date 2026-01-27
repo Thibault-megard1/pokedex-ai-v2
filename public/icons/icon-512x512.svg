@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <circle cx="256" cy="256" r="256" fill="#CC0000"/>
+  
+  <!-- White half -->
+  <path d="M 0,256 A 256,256 0 0,1 512,256 L 512,512 A 256,256 0 0,1 0,512 Z" fill="#FFFFFF"/>
+  
+  <!-- Center line -->
+  <rect x="0" y="230.4" width="512" height="51.2" fill="#000000"/>
+  
+  <!-- Center button outer -->
+  <circle cx="256" cy="256" r="76.8" fill="#FFFFFF" stroke="#000000" stroke-width="10.24"/>
+  
+  <!-- Center button inner -->
+  <circle cx="256" cy="256" r="40.96" fill="#000000"/>
+</svg>

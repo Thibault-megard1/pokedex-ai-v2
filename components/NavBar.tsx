@@ -70,6 +70,27 @@ export default function NavBar() {
         { href: "/team", label: t(lang, "nav.team"), icon: "/icons/ui/nav-team.png" },
         { href: "/quiz", label: t(lang, "nav.quiz"), icon: "/icons/ui/nav-quiz.png" },
       ]
+    },
+    {
+      id: "tools",
+      title: "🛠️ Outils",
+      icon: "/icons/ui/ic-filter.png",
+      items: [
+        { href: "/tools", label: "📊 Hub Outils", icon: "/icons/ui/ic-search.png" },
+        { href: "/tools/iv-ev", label: "📊 Calculateur IV/EV", icon: "/icons/ui/ic-filter.png" },
+        { href: "/tools/damage", label: "⚔️ Dégâts Pro", icon: "/icons/ui/nav-battle.png" },
+        { href: "/viewer/3d", label: "🎨 Visionneuse 3D", icon: "/icons/ui/ic-pokemon.png" },
+      ]
+    },
+    {
+      id: "ai",
+      title: "🤖 IA",
+      icon: "/icons/ui/ic-success.png",
+      items: [
+        { href: "/ai", label: "🤖 Hub IA", icon: "/icons/ui/ic-success.png" },
+        { href: "/assistant", label: "💬 Assistant IA", icon: "/icons/ui/ic-pokemon.png" },
+        { href: "/team", label: "🧠 Team Builder IA", icon: "/icons/ui/nav-team.png" },
+      ]
     }
   ];
 
