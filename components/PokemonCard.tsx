@@ -34,7 +34,7 @@ export default function PokemonCard({ p }: { p: PokemonBasic }) {
       <div className="p-4">
         <div className="flex flex-col items-center gap-3">
           {/* Pokemon Sprite */}
-          <div className="w-24 h-24 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden relative shadow-inner border-2 border-gray-200">
+          <div className="w-24 h-24 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center overflow-hidden relative shadow-inner border-2 border-gray-200 dark:border-gray-600">
             {p.sprite ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img 
@@ -43,7 +43,13 @@ export default function PokemonCard({ p }: { p: PokemonBasic }) {
                 className="w-full h-full object-contain pixelated group-hover:scale-110 transition-transform"
               />
             ) : (
-              <span className="text-xs text-gray-400">no sprite</span>
+              <div className="pokeball-placeholder" style={{ width: '64px', height: '64px' }}>
+                <div className="pokeball-inner">
+                  <div className="pokeball-top"></div>
+                  <div className="pokeball-button"></div>
+                  <div className="pokeball-bottom"></div>
+                </div>
+              </div>
             )}
           </div>
           

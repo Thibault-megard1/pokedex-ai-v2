@@ -1,1 +1,66 @@
-{}
+{
+  "4e5a6578-ccc5-4032-8956-2a89d54357f0": [
+    {
+      "slot": 1,
+      "pokemonName": "sharpedo",
+      "pokemonId": 319
+    },
+    {
+      "slot": 2,
+      "pokemonName": "gardevoir",
+      "pokemonId": 282
+    },
+    {
+      "slot": 3,
+      "pokemonName": "victreebel",
+      "pokemonId": 71
+    },
+    {
+      "slot": 4,
+      "pokemonName": "groudon",
+      "pokemonId": 383
+    },
+    {
+      "slot": 5,
+      "pokemonName": "blaziken",
+      "pokemonId": 257
+    },
+    {
+      "slot": 6,
+      "pokemonName": "aggron",
+      "pokemonId": 306
+    }
+  ],
+  "104585f3-4600-4efc-88c8-f3c5255edcfd": [
+    {
+      "slot": 1,
+      "pokemonName": "aerodactyl",
+      "pokemonId": 142
+    },
+    {
+      "slot": 2,
+      "pokemonName": "latias",
+      "pokemonId": 380
+    },
+    {
+      "slot": 3,
+      "pokemonName": "celebi",
+      "pokemonId": 251
+    },
+    {
+      "slot": 4,
+      "pokemonName": "lucario",
+      "pokemonId": 448
+    },
+    {
+      "slot": 5,
+      "pokemonName": "swampert",
+      "pokemonId": 260
+    },
+    {
+      "slot": 6,
+      "pokemonName": "sableye",
+      "pokemonId": 302
+    }
+  ]
+}

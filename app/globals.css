@@ -883,6 +883,95 @@ a {
   background: #60a5fa;
 }
 
+/* Pokéball Placeholder pour sprites manquants */
+.pokeball-placeholder {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: inline-block;
+}
+
+.pokeball-placeholder .pokeball-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid #333;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: pokeball-bounce 2s ease-in-out infinite;
+}
+
+.dark .pokeball-placeholder .pokeball-inner {
+  border-color: #60a5fa;
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.5);
+}
+
+.pokeball-placeholder .pokeball-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--pokedex-red);
+  transition: background 0.3s ease;
+}
+
+.dark .pokeball-placeholder .pokeball-top {
+  background: #1e3a5f;
+}
+
+.pokeball-placeholder .pokeball-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: white;
+  transition: background 0.3s ease;
+}
+
+.dark .pokeball-placeholder .pokeball-bottom {
+  background: #0f172a;
+}
+
+.pokeball-placeholder .pokeball-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  background: white;
+  border: 4px solid #333;
+  border-radius: 50%;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.dark .pokeball-placeholder .pokeball-button {
+  background: #60a5fa;
+  border-color: #60a5fa;
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.8);
+}
+
+.pokeball-placeholder .pokeball-inner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #333;
+  transform: translateY(-50%);
+  z-index: 5;
+  transition: background 0.3s ease;
+}
+
+.dark .pokeball-placeholder .pokeball-inner::before {
+  background: #60a5fa;
+}
+
 
 /* 
    POKÉDEX DETAIL PAGE REDESIGN - Immersive Pokédex Experience

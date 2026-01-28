@@ -37,8 +37,6 @@ export default function PokemonSprite({
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`,
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${pokemonId}.png`,
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${pokemonId}.gif`,
-    // Placeholder SVG en dernier recours
-    generatePlaceholderSVG(pokemonName, pokemonId)
   ];
 
   const handleError = () => {
@@ -47,8 +45,24 @@ export default function PokemonSprite({
     if (nextIndex < fallbackSources.length) {
       setFallbackIndex(nextIndex);
       setCurrentSrc(fallbackSources[nextIndex]);
+    } else {
+      // Toutes les sources ont échoué, afficher la pokéball
+      setCurrentSrc(null);
     }
   };
+
+  // Si aucune source n'est disponible, afficher la pokéball animée
+  if (!currentSrc && fallbackIndex >= fallbackSources.length) {
+    return (
+      <div className={`pokeball-placeholder ${className}`} style={{ width, height }}>
+        <div className="pokeball-inner">
+          <div className="pokeball-top"></div>
+          <div className="pokeball-button"></div>
+          <div className="pokeball-bottom"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`}>
@@ -64,13 +78,11 @@ export default function PokemonSprite({
           unoptimized={currentSrc.startsWith('data:') || currentSrc.endsWith('.gif')}
         />
       ) : (
-        <div 
-          className="flex items-center justify-center bg-gray-100 rounded-lg"
-          style={{ width, height }}
-        >
-          <div className="text-center">
-            <div className="text-4xl text-gray-400">?</div>
-            <div className="text-xs text-gray-500">#{pokemonId}</div>
+        <div className="pokeball-placeholder" style={{ width, height }}>
+          <div className="pokeball-inner">
+            <div className="pokeball-top"></div>
+            <div className="pokeball-button"></div>
+            <div className="pokeball-bottom"></div>
           </div>
         </div>
       )}
@@ -78,21 +90,3 @@ export default function PokemonSprite({
   );
 }
 
-function generatePlaceholderSVG(pokemonName: string, pokemonId: number): string {
-  const svg = `
-    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
-      <rect width="96" height="96" fill="#f3f4f6" rx="8"/>
-      <text x="48" y="35" font-family="Arial, sans-serif" font-size="32" text-anchor="middle" fill="#9ca3af">
-        ?
-      </text>
-      <text x="48" y="65" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#6b7280">
-        #${pokemonId}
-      </text>
-      <text x="48" y="80" font-family="Arial, sans-serif" font-size="8" text-anchor="middle" fill="#9ca3af">
-        ${pokemonName.substring(0, 10)}
-      </text>
-    </svg>
-  `;
-  
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-}

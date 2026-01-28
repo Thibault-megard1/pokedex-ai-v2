@@ -1,24 +1,10 @@
 /**
  * Génère un sprite placeholder SVG pour les Pokémon sans sprite
+ * Retourne une classe CSS pour utiliser la pokéball animée
  */
 export function generatePlaceholderSprite(pokemonName: string, pokemonId: number): string {
-  // Créer un SVG en base64 avec le nom/id du Pokémon
-  const svg = `
-    <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
-      <rect width="96" height="96" fill="#f3f4f6" rx="8"/>
-      <text x="48" y="35" font-family="Arial" font-size="32" text-anchor="middle" fill="#9ca3af">
-        ?
-      </text>
-      <text x="48" y="70" font-family="Arial" font-size="10" text-anchor="middle" fill="#6b7280">
-        #${pokemonId}
-      </text>
-      <text x="48" y="85" font-family="Arial" font-size="8" text-anchor="middle" fill="#9ca3af">
-        ${pokemonName}
-      </text>
-    </svg>
-  `;
-  
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+  // Retourne une classe spéciale pour afficher la pokéball CSS
+  return 'pokeball-placeholder';
 }
 
 /**

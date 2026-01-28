@@ -40,17 +40,27 @@ export function getProviderConfig(): LLMProviderConfig {
 
 /**
  * Main LLM call function - routes to appropriate provider
+ * Automatically falls back to Mistral if Ollama is not running
  */
 export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
   const config = getProviderConfig();
-  const provider = config.provider;
+  let provider = config.provider;
 
   console.log(`[LLM] Calling provider: ${provider} with model: ${request.model || "default"}`);
 
   try {
     switch (provider) {
       case "ollama":
-        return await callOllama(request, config);
+        try {
+          return await callOllama(request, config);
+        } catch (ollamaError: any) {
+          // If Ollama is not running, fallback to Mistral
+          if (ollamaError.code === "OLLAMA_NOT_RUNNING" && config.mistralApiKey) {
+            console.log("[LLM] Ollama not available, falling back to Mistral...");
+            return await callMistral(request, config);
+          }
+          throw ollamaError;
+        }
       
       case "mistral":
         return await callMistral(request, config);

@@ -149,31 +149,31 @@ export default function NavBar() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 shadow-xl bg-gradient-to-b from-red-600 to-red-700 border-b-4 border-red-800">
       {/* Main Header Container */}
-      <div className="mx-auto max-w-7xl px-6 py-4">
-        <div className="flex items-center justify-between gap-8">
+      <div className="mx-auto max-w-7xl px-4 py-2">
+        <div className="flex items-center justify-between gap-3">
           
           {/* LEFT: Logo / Brand */}
           <Link
             href="/pokemon"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all no-underline group shrink-0">
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all no-underline group shrink-0">
             <img 
               src="/icons/icon-192x192.png" 
               alt="Pokéball" 
-              className="w-12 h-12 group-hover:scale-110 transition-transform"
+              className="w-8 h-8 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform"
             />
-            <span className="text-white font-bold text-xl pokemon-text hidden sm:block">
+            <span className="text-white font-bold text-sm sm:text-base lg:text-lg pokemon-text hidden sm:block">
               POKÉDEX AI
             </span>
           </Link>
 
           {/* CENTER: Main Navigation */}
           {me && (
-            <nav className="hidden lg:flex items-center gap-2 flex-1 justify-center">
+            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
               <Link
                 href="/"
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2"
+                className="px-2 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/20 transition-all no-underline flex items-center gap-1.5"
               >
-                <img src="/icons/ui/ic-home.png" alt="Home" className="w-5 h-5 icon-light-mode" />
+                <img src="/icons/ui/ic-home.png" alt="Home" className="w-4 h-4 icon-light-mode" />
                 <span>{t(lang, "nav.home")}</span>
               </Link>
               
@@ -186,36 +186,36 @@ export default function NavBar() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button 
-                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white hover:bg-white/20 transition-all flex items-center gap-2"
+                    className="px-2 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/20 transition-all flex items-center gap-1.5"
                     onClick={() => setOpenDesktopDropdown(openDesktopDropdown === group.id ? null : group.id)}
                     onKeyDown={(e) => handleDropdownKeyDown(e, group.id)}
                     aria-expanded={openDesktopDropdown === group.id}
                     aria-controls={`dropdown-${group.id}`}
                     aria-haspopup="true"
                   >
-                    <img src={group.icon} alt={group.title} className="w-5 h-5 icon-light-mode" />
+                    <img src={group.icon} alt={group.title} className="w-4 h-4 icon-light-mode" />
                     <span>{group.title}</span>
-                    <span className="text-xs ml-1">▾</span>
+                    <span className="text-[10px] ml-0.5">▾</span>
                   </button>
                   
                   {/* Dropdown Menu */}
                   {openDesktopDropdown === group.id && (
                     <div 
                       id={`dropdown-${group.id}`}
-                      className="absolute top-full left-0 mt-2 bg-red-700 rounded-lg shadow-xl border-2 border-red-800 min-w-[200px] z-50"
+                      className="absolute top-full left-0 mt-2 bg-red-700 rounded-lg shadow-xl border-2 border-red-800 min-w-[180px] z-50"
                       role="menu"
                       aria-label={`${group.title} menu`}
                     >
-                      <div className="py-2">
+                      <div className="py-1">
                         {group.items.map(item => (
                           <Link
                             key={item.href}
                             href={item.href}
-                            className="px-4 py-2.5 text-sm text-white hover:bg-white/20 transition-all no-underline flex items-center gap-3 whitespace-nowrap"
+                            className="px-3 py-2 text-xs text-white hover:bg-white/20 transition-all no-underline flex items-center gap-2 whitespace-nowrap"
                             role="menuitem"
                             onClick={() => setOpenDesktopDropdown(null)}
                           >
-                            <img src={item.icon} alt={item.label} className="w-4 h-4 icon-light-mode" />
+                            <img src={item.icon} alt={item.label} className="w-3.5 h-3.5 icon-light-mode" />
                             <span>{item.label}</span>
                           </Link>
                         ))}
@@ -243,28 +243,28 @@ export default function NavBar() {
             
             {/* User Actions */}
             {me ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden lg:flex items-center gap-2 text-sm text-white/90 bg-white/10 px-4 py-2 rounded-lg font-medium">
+              <div className="flex items-center gap-1.5">
+                <span className="hidden lg:flex items-center gap-1.5 text-xs text-white/90 bg-white/10 px-2 py-1.5 rounded-lg font-medium">
                   <span className="hidden xl:inline text-white/70">{t(lang, "nav.trainer.label")}</span>
                   <b className="text-white">{me.username}</b>
                 </span>
                 <button 
                   onClick={logout}
-                  className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg"
+                  className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-all shadow-md hover:shadow-lg"
                 >
                   {t(lang, "nav.logout")}
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Link 
-                  className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-sm transition-all no-underline shadow-md" 
+                  className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-all no-underline shadow-md" 
                   href="/auth/login"
                 >
                   {t(lang, "nav.login")}
                 </Link>
                 <Link 
-                  className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-sm transition-all no-underline shadow-lg hover:shadow-xl" 
+                  className="px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs transition-all no-underline shadow-lg hover:shadow-xl" 
                   href="/auth/register"
                 >
                   {t(lang, "nav.register")}
