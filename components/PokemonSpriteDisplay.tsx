@@ -1,25 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface PokemonSpriteDisplayProps {
   sprite: string | null;
   shinySprite: string | null;
   name: string;
   pokemonId: number;
+  cryUrl?: string | null;
 }
 
-export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemonId }: PokemonSpriteDisplayProps) {
+export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemonId, cryUrl }: PokemonSpriteDisplayProps) {
   const [isShiny, setIsShiny] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentSprite = isShiny && shinySprite ? shinySprite : sprite;
   const hasShiny = !!shinySprite;
 
+  const handleSpriteClick = () => {
+    if (cryUrl && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(err => console.log("Audio playback failed:", err));
+    }
+    
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 500);
+  };
+
   return (
     <div className="pokedex-sprite-display">
+      {cryUrl && <audio ref={audioRef} src={cryUrl} preload="auto" />}
+      
       {/* Main Sprite Panel - Pokédex-style device frame */}
-      <div className="pokedex-sprite-frame">
-        <div className="pokedex-sprite-inner">
+      <div 
+        className="pokedex-sprite-frame"
+        onClick={handleSpriteClick}
+        style={{ cursor: cryUrl ? 'pointer' : 'default' }}
+        title={cryUrl ? `Cliquez pour entendre ${name}` : undefined}
+      >
+        <div className={`pokedex-sprite-inner ${isAnimating ? 'sprite-bounce' : ''}`}>
           {currentSprite ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img 

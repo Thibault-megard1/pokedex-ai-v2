@@ -2289,6 +2289,30 @@ a {
   }
 }
 
+/* Sprite bounce animation when clicked */
+@keyframes spriteBounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-15px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(0.95);
+  }
+  75% {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+.sprite-bounce {
+  animation: spriteBounce 0.5s ease-in-out;
+}
+
+.pokedex-sprite-inner.sprite-bounce img {
+  animation: spriteBounce 0.5s ease-in-out;
+}
+
 /* Ensure existing content card styles don't conflict */
 .pokedex-page .card {
   /* Reset card styles within Pok�dex pages */

@@ -122,6 +122,7 @@ export default function NavBar() {
       items: [
         { href: "/team", label: t(lang, "nav.team"), icon: "/icons/ui/nav-team.png" },
         { href: "/quiz", label: t(lang, "nav.quiz"), icon: "/icons/ui/nav-quiz.png" },
+        { href: "/game", label: "🎮 Jeu Pokémon", icon: "/icons/ui/ic-pokemon.png" },
       ]
     },
     {

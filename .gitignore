@@ -28,6 +28,7 @@ Thumbs.db
 
 # Data and generated files
 /data/pokemon-cache/
+/data/game-saves/*.json
 
 # Misc
 npm-debug.log*

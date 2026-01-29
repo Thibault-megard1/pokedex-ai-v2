@@ -401,55 +401,140 @@ export default function BattlePage() {
 
         {battleResult && (
           <div className="card p-6">
-            <h2 className="text-xl font-bold mb-4">Battle Results</h2>
+            <h2 className="text-xl font-bold mb-4">⚔️ {t(lang, "battle.results")}</h2>
             
-            <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 border-2 border-yellow-400 rounded-lg p-4 mb-6">
-              <div className="text-center text-2xl font-bold">
-                {t(lang, "battle.winner")}: {battleResult.winner === "A" ? t(lang, "battle.team.1") : t(lang, "battle.team.2")}
+            {/* Winner Announcement */}
+            <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/30 dark:to-yellow-800/30 border-4 border-yellow-400 dark:border-yellow-600 rounded-lg p-6 mb-6 text-center shadow-xl">
+              <div className="text-3xl font-bold text-yellow-900 dark:text-yellow-100 pokemon-text">
+                🏆 {t(lang, "battle.winner")}: {battleResult.winner === "A" ? t(lang, "battle.team.1") : t(lang, "battle.team.2")} 🏆
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Battle Rounds</h3>
+            {/* Battle Log */}
+            <div className="space-y-3 mb-6">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <img src="/icons/ui/nav-battle.png" alt="Battle" className="w-5 h-5" />
+                Journal de Combat
+              </h3>
               {battleResult.rounds.map((round, i) => (
-                <div key={i} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold">Round {round.round}</div>
-                    <div className={`px-2 py-1 rounded text-sm ${
-                      round.winner === "A" ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
+                <div 
+                  key={i} 
+                  className="border-2 rounded-lg p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 transition-all hover:shadow-md"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-bold text-lg">⚔️ Round {round.round}</div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                      round.winner === "A" 
+                        ? "bg-blue-500 text-white" 
+                        : "bg-red-500 text-white"
                     }`}>
-                      Winner: {round.winner === "A" ? "Team A" : "Team B"}
+                      {round.winner === "A" ? "Team A" : "Team B"} Wins!
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <span className="capitalize">{round.pokemonA}</span> vs <span className="capitalize">{round.pokemonB}</span>
-                    <span className="ml-2">({round.turnsCount} turns)</span>
+                  
+                  <div className="flex items-center justify-center gap-4 mt-3">
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-1">Team A</div>
+                      <div className="capitalize font-bold text-gray-900 dark:text-white">
+                        {round.pokemonA}
+                      </div>
+                    </div>
+                    
+                    <div className="text-2xl font-bold text-gray-400">VS</div>
+                    
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Team B</div>
+                      <div className="capitalize font-bold text-gray-900 dark:text-white">
+                        {round.pokemonB}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+                    Combat terminé en {round.turnsCount} tour{round.turnsCount > 1 ? "s" : ""}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold mb-2">Team A Remaining</h4>
+            {/* Surviving Pokémon */}
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+              <div className="border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                <h4 className="font-bold text-lg mb-3 text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                  <img src="/icons/ui/ic-success.png" alt="Team A" className="w-5 h-5" />
+                  Team A - Survivants ({battleResult.teamA.length})
+                </h4>
                 <div className="space-y-2">
-                  {battleResult.teamA.map((member, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <img src={member.sprite || ""} alt={member.currentName} className="w-8 h-8 pixelated" />
-                      <span className="capitalize">{member.currentName}</span>
+                  {battleResult.teamA.length > 0 ? (
+                    battleResult.teamA.map((member, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
+                        <img 
+                          src={member.sprite || ""} 
+                          alt={member.currentName} 
+                          className="w-12 h-12 pixelated" 
+                        />
+                        <div className="flex-1">
+                          <div className="font-semibold capitalize text-gray-900 dark:text-white">
+                            {member.currentName}
+                          </div>
+                          <div className="flex gap-1 mt-1">
+                            {member.types.map(type => (
+                              <span 
+                                key={type}
+                                className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                              >
+                                {type}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                      Tous les Pokémon ont été vaincus
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
-              <div>
-                <h4 className="font-semibold mb-2">Team B Remaining</h4>
+
+              <div className="border-2 border-red-300 dark:border-red-700 rounded-lg p-4 bg-red-50 dark:bg-red-900/20">
+                <h4 className="font-bold text-lg mb-3 text-red-700 dark:text-red-300 flex items-center gap-2">
+                  <img src="/icons/ui/ic-success.png" alt="Team B" className="w-5 h-5" />
+                  Team B - Survivants ({battleResult.teamB.length})
+                </h4>
                 <div className="space-y-2">
-                  {battleResult.teamB.map((member, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <img src={member.sprite || ""} alt={member.currentName} className="w-8 h-8 pixelated" />
-                      <span className="capitalize">{member.currentName}</span>
+                  {battleResult.teamB.length > 0 ? (
+                    battleResult.teamB.map((member, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2 bg-white dark:bg-gray-800 rounded border border-red-200 dark:border-red-800">
+                        <img 
+                          src={member.sprite || ""} 
+                          alt={member.currentName} 
+                          className="w-12 h-12 pixelated" 
+                        />
+                        <div className="flex-1">
+                          <div className="font-semibold capitalize text-gray-900 dark:text-white">
+                            {member.currentName}
+                          </div>
+                          <div className="flex gap-1 mt-1">
+                            {member.types.map(type => (
+                              <span 
+                                key={type}
+                                className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                              >
+                                {type}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                      Tous les Pokémon ont été vaincus
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
