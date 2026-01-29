@@ -9,7 +9,7 @@ import { t } from "@/lib/i18n";
 import { MenuGroup } from "./MenuGroup";
 import AIStatusIndicator from "./AIStatusIndicator";
 
-type Me = { username: string } | null;
+type Me = { username: string; isAdmin?: boolean } | null;
 
 export default function NavBar() {
   const { lang } = useLanguage();
@@ -28,6 +28,7 @@ export default function NavBar() {
     try {
       const res = await fetch("/api/me", { cache: "no-store" });
       const data = await res.json();
+      console.log("User data from /api/me:", data); // Debug log
       setMe(data.user ?? null);
     } finally {
       fetchingRef.current = false;
@@ -234,6 +235,18 @@ export default function NavBar() {
               <AIStatusIndicator />
             </div>
             
+            {/* Admin Button - Only show for admin users */}
+            {me?.isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs transition-all no-underline shadow-lg"
+                title="Administration"
+              >
+                <img src="/icons/ui/ic-success.png" alt="Admin" className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
+            )}
+            
             {/* Settings Group */}
             <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/10">
               <LanguageSwitcher />
@@ -294,6 +307,18 @@ export default function NavBar() {
             <div className="mb-3 pb-3 border-b border-white/10">
               <AIStatusIndicator />
             </div>
+            
+            {/* Admin Link - Mobile */}
+            {me?.isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-3 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-300 transition-all no-underline flex items-center gap-3 font-bold"
+              >
+                <img src="/icons/ui/ic-success.png" alt="Admin" className="w-5 h-5" />
+                <span>Admin</span>
+              </Link>
+            )}
             
             <Link
               href="/"

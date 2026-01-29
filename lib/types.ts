@@ -3,6 +3,7 @@ export type User = {
   username: string;
   passwordHash: string;
   createdAt: string;
+  isAdmin?: boolean; // Optional to support existing users
 };
 
 export type TeamSlot = {

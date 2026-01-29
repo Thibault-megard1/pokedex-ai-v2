@@ -1,0 +1,14 @@
+{
+  "light": {
+    "background": "#f3f4f6",
+    "text": "#1f2937",
+    "primary": "#ef4444",
+    "card": "#ffffff"
+  },
+  "dark": {
+    "background": "#111827",
+    "text": "#f9fafb",
+    "primary": "#ef4444",
+    "card": "#1f2937"
+  }
+}

@@ -3,6 +3,14 @@
     "id": "104585f3-4600-4efc-88c8-f3c5255edcfd",
     "username": "Jiz3o",
     "passwordHash": "$2a$10$hR2/Nj2Qc2HtpisIbHTc5OwHRwPi3FAsCMyXpLdIf4dgnYQhxytoG",
-    "createdAt": "2026-01-28T08:19:36.902Z"
+    "createdAt": "2026-01-28T08:19:36.902Z",
+    "isAdmin": true
+  },
+  {
+    "id": "a56eb3ff-9992-4cd8-89e3-763828bda1b5",
+    "username": "Clement",
+    "passwordHash": "$2a$10$jPKv0Vx4gEMBw6fWE7rq0uBkOHLj9PboFK9gmOoA5D7UVkyN.JH2.",
+    "createdAt": "2026-01-29T11:58:24.580Z",
+    "isAdmin": false
   }
 ]

@@ -4,6 +4,7 @@ import { ensurePokemonNames } from "@/lib/pokemonNames";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { PWAInstallBanner } from "@/components/PWAComponents";
+import { DynamicThemeApplier } from "@/components/DynamicThemeApplier";
 import { Inter } from 'next/font/google';
 
 // Load Inter font for body text
@@ -73,6 +74,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <ThemeProvider>
           <LanguageProvider>
+            <DynamicThemeApplier />
             <div className="flex flex-col min-h-screen">
               <NavBar />
               <main className="flex-1">

@@ -40,11 +40,13 @@ export default function PokemonAutocomplete({ id, value, onChange, placeholder }
         const englishNames: string[] = [];
         const map = new Map<string, PokemonName>();
         
-        // Charger les fichiers de cache pour les 151 premiers Pokémon (Génération 1)
+        // Charger les noms français via l'API pour les 151 premiers Pokémon (Génération 1)
+        // Utilise l'API au lieu d'accéder directement aux fichiers cache
         const cachePromises = pokemonNames.slice(0, 151).map(async (name: string, index: number) => {
           const pokemonId = index + 1;
           try {
-            const cacheRes = await fetch(`/data/pokemon-cache/${pokemonId}.json`);
+            // Utiliser l'API /api/pokemon/cache au lieu de /data/pokemon-cache
+            const cacheRes = await fetch(`/api/pokemon/cache?id=${pokemonId}`);
             if (cacheRes.ok) {
               const cacheData = await cacheRes.json();
               englishNames.push(name);

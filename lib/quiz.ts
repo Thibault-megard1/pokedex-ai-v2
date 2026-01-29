@@ -39,189 +39,219 @@ export interface QuizResult {
 }
 
 // ============================================================================
-// QUESTIONS (10-15 personal, non-sensitive questions)
+// SCORING DIMENSIONS (for algorithmic matching)
+// ============================================================================
+
+export interface ScoringDimensions {
+  typeAffinity: { [key: string]: number }; // fire, water, grass, etc.
+  statPreferences: {
+    hp: number;
+    attack: number;
+    defense: number;
+    specialAttack: number;
+    specialDefense: number;
+    speed: number;
+  };
+  temperament: string[]; // brave, calm, hasty, etc.
+  habitat: string[]; // forest, water, mountain, urban, etc.
+  personality: string[]; // social, strategic, protective, etc.
+}
+
+// ============================================================================
+// QUESTIONS (15 comprehensive personality questions)
 // ============================================================================
 
 export const quizQuestions: QuizQuestion[] = [
-  // Social Energy
+  // 1. Energy & Social Style
   {
     id: "social_energy",
     type: "multiple-choice",
-    question: "Comment rechargez-vous votre énergie ?",
+    question: "Comment préférez-vous passer votre temps libre ?",
     options: [
-      "En passant du temps seul(e) dans un endroit calme",
-      "En sortant avec des amis et en rencontrant de nouvelles personnes",
-      "Un équilibre entre moments sociaux et temps seul(e)",
-      "En explorant de nouveaux endroits, peu importe avec qui"
+      "Seul(e), dans un endroit calme et paisible",
+      "Avec quelques amis proches",
+      "En groupe, entouré(e) de monde",
+      "En explorant de nouveaux lieux, peu importe avec qui"
     ]
   },
 
-  // Environment Preference
+  // 2. Environment Preference
   {
     id: "environment",
     type: "multiple-choice",
     question: "Quel environnement vous attire le plus ?",
     options: [
-      "Les montagnes et les hauts sommets",
-      "La mer et les océans",
-      "Les forêts denses et mystérieuses",
-      "Les villes animées et modernes",
-      "Les déserts ou plaines ouvertes",
-      "Les grottes et espaces souterrains"
+      "Les forêts luxuriantes et la nature verdoyante",
+      "Les océans, lacs et rivières",
+      "Les montagnes rocheuses et les grottes",
+      "Les plaines ensoleillées et les déserts",
+      "Les villes modernes et animées",
+      "Les zones mystérieuses et sombres"
     ]
   },
 
-  // Conflict Style
+  // 3. Combat Style
   {
-    id: "conflict_style",
+    id: "combat_style",
     type: "multiple-choice",
-    question: "Face à un conflit, vous préférez généralement :",
+    question: "Face à un défi ou un conflit, vous êtes plutôt :",
     options: [
-      "Éviter la confrontation et trouver une solution pacifique",
-      "Affronter directement le problème avec courage",
-      "Utiliser la stratégie et la réflexion pour résoudre",
-      "Protéger les autres avant tout",
-      "Chercher un compromis créatif"
+      "Offensif - j'attaque directement avec force",
+      "Défensif - je protège et résiste",
+      "Tactique - j'utilise la stratégie et la ruse",
+      "Pacifique - j'évite le conflit autant que possible",
+      "Rapide - j'agis vite avant que l'adversaire ne réagisse"
     ]
   },
 
-  // Planning Style
+  // 4. Emotional Temperament
   {
-    id: "planning",
+    id: "temperament",
+    type: "multiple-choice",
+    question: "Comment décririez-vous votre tempérament général ?",
+    options: [
+      "Calme et posé(e) - rien ne me presse",
+      "Énergique et passionné(e) - je vis intensément",
+      "Timide et prudent(e) - j'observe avant d'agir",
+      "Courageux(se) et audacieux(se) - je fonce sans peur",
+      "Joyeux(se) et optimiste - je vois le positif partout"
+    ]
+  },
+
+  // 5. Speed vs Power
+  {
+    id: "speed_power",
     type: "slider",
-    question: "Entre organisation et spontanéité, où vous situez-vous ?",
+    question: "Préférez-vous la vitesse ou la puissance ? (1 = vitesse, 5 = puissance)",
     min: 1,
     max: 5
   },
 
-  // Motivation
+  // 6. Team Role
+  {
+    id: "team_role",
+    type: "multiple-choice",
+    question: "Dans un groupe ou une équipe, quel est votre rôle naturel ?",
+    options: [
+      "Le leader qui guide et prend les décisions",
+      "Le stratège qui planifie et conseille",
+      "Le protecteur qui veille sur les autres",
+      "Le solitaire qui préfère agir indépendamment",
+      "Le médiateur qui maintient l'harmonie",
+      "L'explorateur qui découvre de nouvelles voies"
+    ]
+  },
+
+  // 7. Motivation & Goals
   {
     id: "motivation",
     type: "multiple-choice",
     question: "Qu'est-ce qui vous motive le plus dans la vie ?",
     options: [
-      "Atteindre l'excellence et être le/la meilleur(e)",
-      "Aider et protéger les autres",
-      "Explorer et découvrir de nouvelles choses",
+      "Devenir le/la meilleur(e) et atteindre l'excellence",
+      "Protéger et aider ceux que j'aime",
+      "Découvrir et apprendre sans cesse",
+      "Trouver la paix et l'harmonie intérieure",
       "Créer et innover",
-      "Trouver l'équilibre et l'harmonie",
-      "Relever des défis excitants"
+      "Vivre des aventures excitantes"
     ]
   },
 
-  // Pace
+  // 8. Resilience & Defense
   {
-    id: "pace",
+    id: "resilience",
     type: "slider",
-    question: "À quel rythme préférez-vous vivre ? (1 = calme et réfléchi, 5 = rapide et intense)",
+    question: "Face aux difficultés, comment êtes-vous ? (1 = sensible, 5 = très résistant)",
     min: 1,
     max: 5
   },
 
-  // Values
+  // 9. Intelligence Style
   {
-    id: "values",
+    id: "intelligence",
     type: "multiple-choice",
-    question: "Quelle valeur est la plus importante pour vous ?",
+    question: "Quelle forme d'intelligence vous représente le mieux ?",
     options: [
-      "La loyauté et la fidélité",
-      "La liberté et l'indépendance",
-      "La curiosité et l'apprentissage",
-      "La force et le courage",
-      "La sagesse et la réflexion",
-      "La créativité et l'originalité"
+      "Logique et analytique - j'aime résoudre des problèmes",
+      "Intuitive et créative - je me fie à mon instinct",
+      "Émotionnelle et empathique - je comprends les autres",
+      "Pratique et concrète - j'apprends en faisant",
+      "Stratégique et visionnaire - je pense à long terme"
     ]
   },
 
-  // Leadership
+  // 10. Activity Level
   {
-    id: "leadership",
-    type: "multiple-choice",
-    question: "Dans un groupe, vous êtes plutôt :",
-    options: [
-      "Le leader qui prend les décisions",
-      "Le conseiller stratégique",
-      "Le protecteur du groupe",
-      "L'explorateur qui ouvre la voie",
-      "Le médiateur qui maintient l'harmonie",
-      "L'indépendant qui préfère agir seul"
-    ]
-  },
-
-  // Adaptability
-  {
-    id: "adaptability",
+    id: "activity_level",
     type: "slider",
-    question: "Face au changement, comment réagissez-vous ? (1 = j'ai besoin de stabilité, 5 = j'adore le changement)",
+    question: "Quel est votre niveau d'énergie au quotidien ? (1 = calme/repos, 5 = très actif)",
     min: 1,
     max: 5
   },
 
-  // Element Affinity
-  {
-    id: "element",
-    type: "multiple-choice",
-    question: "Quel élément vous représente le mieux ?",
-    options: [
-      "Le feu - passion et énergie",
-      "L'eau - calme et adaptabilité",
-      "La terre - stabilité et force",
-      "L'air - liberté et légèreté",
-      "L'électricité - vivacité et innovation",
-      "La glace - contrôle et précision"
-    ]
-  },
-
-  // Emotional Expression
-  {
-    id: "emotions",
-    type: "slider",
-    question: "Exprimez-vous facilement vos émotions ? (1 = réservé(e), 5 = très expressif/ve)",
-    min: 1,
-    max: 5
-  },
-
-  // Problem Solving
-  {
-    id: "problem_solving",
-    type: "multiple-choice",
-    question: "Face à un problème complexe :",
-    options: [
-      "J'analyse méthodiquement toutes les options",
-      "Je fonce et j'apprends en faisant",
-      "Je demande conseil aux autres",
-      "J'utilise mon intuition",
-      "Je cherche une solution créative et originale"
-    ]
-  },
-
-  // Time of Day
+  // 11. Time of Day
   {
     id: "time_preference",
     type: "multiple-choice",
-    question: "À quel moment êtes-vous le/la plus productif/ve ?",
+    question: "À quel moment de la journée vous sentez-vous le mieux ?",
     options: [
-      "Tôt le matin",
-      "En pleine journée",
-      "Le soir ou la nuit",
-      "Ça dépend de mon humeur"
+      "Tôt le matin au lever du soleil",
+      "En pleine journée sous le soleil",
+      "Le soir au crépuscule",
+      "La nuit sous les étoiles"
     ]
   },
 
-  // Free Text - Personal Trait
+  // 12. Elemental Affinity
   {
-    id: "personal_trait",
-    type: "text",
-    question: "Décrivez-vous en 3-5 mots (adjectifs de personnalité) :",
-    placeholder: "Ex: curieux, loyal, calme..."
+    id: "element",
+    type: "multiple-choice",
+    question: "Quel élément résonne le plus avec votre personnalité ?",
+    options: [
+      "Feu - passion, énergie, détermination",
+      "Eau - calme, adaptabilité, fluidité",
+      "Plante - croissance, patience, bienveillance",
+      "Électricité - rapidité, innovation, vivacité",
+      "Roche - stabilité, solidité, endurance",
+      "Glace - contrôle, précision, élégance"
+    ]
   },
 
-  // Free Text - Ideal Day
+  // 13. Decision Making
   {
-    id: "ideal_day",
-    type: "text",
-    question: "Décrivez brièvement votre journée idéale :",
-    placeholder: "Ex: commencer par une balade en forêt, puis..."
+    id: "decision_making",
+    type: "multiple-choice",
+    question: "Comment prenez-vous vos décisions importantes ?",
+    options: [
+      "J'analyse tous les faits et données disponibles",
+      "Je suis mon instinct et mes émotions",
+      "Je demande conseil à mes proches",
+      "Je prends des risques et j'improvise",
+      "Je réfléchis longuement et prudemment"
+    ]
+  },
+
+  // 14. Adaptability
+  {
+    id: "adaptability",
+    type: "slider",
+    question: "Comment réagissez-vous face au changement ? (1 = besoin de routine, 5 = adore le changement)",
+    min: 1,
+    max: 5
+  },
+
+  // 15. Loyalty vs Independence
+  {
+    id: "loyalty",
+    type: "multiple-choice",
+    question: "Dans vos relations, vous êtes plutôt :",
+    options: [
+      "Très loyal(e) - mes liens sont sacrés",
+      "Indépendant(e) - j'aime ma liberté avant tout",
+      "Protecteur(trice) - je veille sur mes proches",
+      "Sélectif(ve) - peu d'amis mais très proches",
+      "Sociable - j'apprécie beaucoup de relations"
+    ]
   }
 ];
 

@@ -88,3 +88,25 @@ export async function getUserFromRequest(): Promise<User | null> {
   const users = await getUsers();
   return users.find(u => u.id === session.userId) ?? null;
 }
+
+/**
+ * Check if current user is admin
+ */
+export async function isAdmin(): Promise<boolean> {
+  const user = await getUserFromRequest();
+  return user?.isAdmin === true;
+}
+
+/**
+ * Require admin access (throws if not admin)
+ */
+export async function requireAdmin(): Promise<User> {
+  const user = await getUserFromRequest();
+  if (!user) {
+    throw new Error("Non authentifié");
+  }
+  if (user.isAdmin !== true) {
+    throw new Error("Accès réservé aux administrateurs");
+  }
+  return user;
+}
