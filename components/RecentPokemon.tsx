@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { formatPokemonName } from "@/lib/pokemonNames.utils";
 
 type RecentPokemon = {
   id: number;
@@ -56,26 +57,46 @@ export default function RecentPokemon() {
 
   if (history.length === 0) return null;
 
+  // Fonction pour supprimer l'historique
+  const handleClearHistory = () => {
+    localStorage.removeItem("recentPokemon");
+    setHistory([]);
+  };
+
   return (
     <div className="card p-4">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">🕒 Récemment consultés</h3>
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {history.slice(0, 8).map((p) => (
-          <Link
-            key={p.id}
-            href={`/pokemon/${p.name}`}
-            className="flex-shrink-0 w-20 flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 transition"
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">🕒 Récemment consultés</h3>
+        {history.length > 0 && (
+          <button
+            onClick={handleClearHistory}
+            className="text-xs text-red-500 hover:underline focus:outline-none ml-2"
+            title="Effacer l'historique"
           >
-            {p.sprite ? (
-              <img src={p.sprite} alt={p.name} className="w-16 h-16 pixelated" />
-            ) : (
-              <div className="w-16 h-16 bg-gray-200 rounded" />
-            )}
-            <span className="text-xs capitalize truncate w-full text-center mt-1">
-              {p.name}
-            </span>
-          </Link>
-        ))}
+            Vider
+          </button>
+        )}
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {history.slice(0, 8).map((p) => {
+          const displayName = formatPokemonName(p.name).primary;
+          return (
+            <Link
+              key={p.id}
+              href={`/pokemon/${p.name}`}
+              className="flex-shrink-0 w-20 flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            >
+              {p.sprite ? (
+                <img src={p.sprite} alt={displayName} className="w-16 h-16 pixelated" />
+              ) : (
+                <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded" />
+              )}
+              <span className="text-xs text-gray-700 dark:text-gray-300 capitalize truncate w-full text-center mt-1">
+                {displayName}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

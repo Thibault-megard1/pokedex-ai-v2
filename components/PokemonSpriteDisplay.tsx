@@ -19,9 +19,12 @@ export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemo
   const hasShiny = !!shinySprite;
 
   const handleSpriteClick = () => {
-    if (cryUrl && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(err => console.log("Audio playback failed:", err));
+    // Play audio if available
+    if (cryUrl) {
+      // Create audio element on demand to ensure it's properly loaded
+      const audio = new Audio(cryUrl);
+      audio.volume = 0.5; // Set volume to 50%
+      audio.play().catch(err => console.log("Audio playback failed:", err));
     }
     
     setIsAnimating(true);
@@ -30,8 +33,6 @@ export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemo
 
   return (
     <div className="pokedex-sprite-display">
-      {cryUrl && <audio ref={audioRef} src={cryUrl} preload="auto" />}
-      
       {/* Main Sprite Panel - Pokédex-style device frame */}
       <div 
         className="pokedex-sprite-frame"

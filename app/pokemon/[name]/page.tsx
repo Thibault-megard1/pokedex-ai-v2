@@ -14,6 +14,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import HistoryTracker from "@/components/HistoryTracker";
 import PokemonNotes from "@/components/PokemonNotes";
 import PokemonSpriteDisplay from "@/components/PokemonSpriteDisplay";
+import PokedexFlavorText from "@/components/PokedexFlavorText";
 
 export default async function PokemonDetailPage({ params }: { params: { name: string } }) {
   const p = await getPokemonDetail(params.name);
@@ -35,80 +36,78 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
 
   return (
     <div className="pokedex-page" style={{ ["--bg-url" as any]: `url(${bg})` }}>
-      <HistoryTracker id={p.id} name={p.frenchName || p.name} sprite={p.sprite} />
+      <HistoryTracker id={p.id} name={p.name} sprite={p.sprite} />
       <div className="pokedex-container">
-        
-        {/* Hero Section - Identité Principale avec Sprite Centré */}
-        <section className="pokedex-hero-section">
-          {/* Navigation */}
-          <div className="pokedex-nav-buttons">
-            <Link className="pokedex-nav-button" href={`/pokemon/${prevId}`}>
-              ← Précédent
-            </Link>
-            <Link className="pokedex-nav-button" href={`/pokemon/${nextId}`}>
-              Suivant →
-            </Link>
-          </div>
-
-          {/* Titre et Numéro Centrés */}
-          <div className="pokedex-hero-header">
-            <div className="pokedex-number-badge">N° {String(p.id).padStart(3, '0')}</div>
-            <h1 className="pokedex-hero-title">{formatPokemonName(p.name, p.frenchName).primary}</h1>
-            {formatPokemonName(p.name, p.frenchName).secondary && (
-              <p className="pokedex-hero-subtitle">{formatPokemonName(p.name, p.frenchName).secondary}</p>
-            )}
-          </div>
-
-          {/* Sprite Agrandi et Centré */}
-          <div className="pokedex-hero-sprite">
-            <PokemonSpriteDisplay 
-              sprite={p.sprite}
-              shinySprite={p.shinySprite ?? null}
-              name={p.name}
-              pokemonId={p.id}
-            />
-          </div>
-
-          {/* Types et Infos de Base - Compact et Centré */}
-          <div className="pokedex-hero-info">
-            <div className="pokedex-hero-types">
-              {p.types.map(t => (
-                <TypeBadge key={t} kind={t as BadgeKey} width={120} />
-              ))}
+        {/* Section principale Pokédex : tout dans la colonne centrale */}
+        <div className="w-full flex flex-col items-center">
+          {/* Hero Section - Identité Principale avec Sprite Centré */}
+          <section className="pokedex-hero-section w-full">
+            {/* Navigation */}
+            <div className="pokedex-nav-buttons">
+              <Link className="pokedex-nav-button" href={`/pokemon/${prevId}`}>
+                ← Précédent
+              </Link>
+              <Link className="pokedex-nav-button" href={`/pokemon/${nextId}`}>
+                Suivant →
+              </Link>
             </div>
-            
-            <div className="pokedex-hero-stats">
-              <div className="pokedex-hero-stat">
-                <span className="label">Taille</span>
-                <span className="value">{heightM} m</span>
+            {/* Titre et Numéro Centrés */}
+            <div className="pokedex-hero-header">
+              <div className="pokedex-number-badge">N° {String(p.id).padStart(3, '0')}</div>
+              <div className="flex items-center justify-center gap-4">
+                <h1 className="pokedex-hero-title">{formatPokemonName(p.name, p.frenchName).primary}</h1>
+                <FavoriteButton pokemonId={p.id} pokemonName={p.name} size="lg" />
               </div>
-              <div className="pokedex-hero-stat-divider"></div>
-              <div className="pokedex-hero-stat">
-                <span className="label">Poids</span>
-                <span className="value">{weightKg} kg</span>
-              </div>
-              {p.generation && (
-                <>
-                  <div className="pokedex-hero-stat-divider"></div>
-                  <div className="pokedex-hero-stat">
-                    <span className="label">Génération</span>
-                    <span className="value capitalize">{p.generation}</span>
-                  </div>
-                </>
+              {formatPokemonName(p.name, p.frenchName).secondary && (
+                <p className="pokedex-hero-subtitle">{formatPokemonName(p.name, p.frenchName).secondary}</p>
               )}
             </div>
-          </div>
-
-          {/* Actions Rapides */}
-          <div className="pokedex-hero-actions">
-            <FavoriteButton pokemonId={p.id} pokemonName={p.name} size="lg" />
-            {cryUrl && (
-              <div className="pokedex-cry-player">
-                <audio controls src={cryUrl} className="pokedex-audio" />
+            {/* Sprite Agrandi et Centré */}
+            <div className="pokedex-hero-sprite">
+              <PokemonSpriteDisplay 
+                sprite={p.sprite}
+                shinySprite={p.shinySprite ?? null}
+                name={p.name}
+                pokemonId={p.id}
+                cryUrl={cryUrl}
+              />
+            </div>
+            {/* Types et Infos de Base - Compact et Centré */}
+            <div className="pokedex-hero-info">
+              <div className="pokedex-hero-types">
+                {p.types.map(t => (
+                  <TypeBadge key={t} kind={t as BadgeKey} width={120} />
+                ))}
               </div>
-            )}
-          </div>
-        </section>
+              <div className="pokedex-hero-stats">
+                <div className="pokedex-hero-stat">
+                  <span className="label">Taille</span>
+                  <span className="value">{heightM} m</span>
+                </div>
+                <div className="pokedex-hero-stat-divider"></div>
+                <div className="pokedex-hero-stat">
+                  <span className="label">Poids</span>
+                  <span className="value">{weightKg} kg</span>
+                </div>
+                {p.generation && (
+                  <>
+                    <div className="pokedex-hero-stat-divider"></div>
+                    <div className="pokedex-hero-stat">
+                      <span className="label">Génération</span>
+                      <span className="value capitalize">{p.generation}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Description Pokédex sous la taille/poids */}
+              <div className="mt-4 w-full">
+                <PokedexFlavorText pokemonId={p.id} pokemonName={p.name} />
+              </div>
+            </div>
+          </section>
+        </div>
+
+
 
         {/* Section Stats - Optimisée */}
         <section className="pokedex-stats-section">

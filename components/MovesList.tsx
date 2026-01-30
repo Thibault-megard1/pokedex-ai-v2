@@ -29,14 +29,36 @@ export default function MovesList({ moves }: Props) {
     );
   }
 
-  // Grouper par méthode d'apprentissage
-  const levelUpMoves = moves
-    .filter(m => m.learnMethod === "level-up")
-    .sort((a, b) => (a.levelLearnedAt ?? 0) - (b.levelLearnedAt ?? 0));
+  // Fonction pour dédupliquer les attaques et garder le niveau le plus bas
+  const deduplicateMoves = (moveList: Move[]): Move[] => {
+    const moveMap = new Map<string, Move>();
+    
+    moveList.forEach(move => {
+      const existing = moveMap.get(move.name);
+      
+      if (!existing) {
+        moveMap.set(move.name, move);
+      } else {
+        // Pour les attaques de niveau, garder le niveau le plus bas
+        if (move.learnMethod === "level-up" && existing.learnMethod === "level-up") {
+          if ((move.levelLearnedAt ?? 0) < (existing.levelLearnedAt ?? 0)) {
+            moveMap.set(move.name, move);
+          }
+        }
+      }
+    });
+    
+    return Array.from(moveMap.values());
+  };
+
+  // Grouper par méthode d'apprentissage et dédupliquer
+  const levelUpMoves = deduplicateMoves(
+    moves.filter(m => m.learnMethod === "level-up")
+  ).sort((a, b) => (a.levelLearnedAt ?? 0) - (b.levelLearnedAt ?? 0));
   
-  const machineMoves = moves.filter(m => m.learnMethod === "machine");
-  const tutorMoves = moves.filter(m => m.learnMethod === "tutor");
-  const eggMoves = moves.filter(m => m.learnMethod === "egg");
+  const machineMoves = deduplicateMoves(moves.filter(m => m.learnMethod === "machine"));
+  const tutorMoves = deduplicateMoves(moves.filter(m => m.learnMethod === "tutor"));
+  const eggMoves = deduplicateMoves(moves.filter(m => m.learnMethod === "egg"));
 
   // Filtrer selon le terme de recherche
   const filterMoves = (moveList: Move[]) => {
@@ -58,11 +80,11 @@ export default function MovesList({ moves }: Props) {
 
   const getMethodColor = (method: string) => {
     switch (method) {
-      case "level-up": return "bg-blue-50 border-blue-200 text-blue-700";
-      case "machine": return "bg-purple-50 border-purple-200 text-purple-700";
-      case "tutor": return "bg-green-50 border-green-200 text-green-700";
-      case "egg": return "bg-orange-50 border-orange-200 text-orange-700";
-      default: return "bg-gray-50 border-gray-200 text-gray-700";
+      case "level-up": return "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300";
+      case "machine": return "bg-purple-50 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300";
+      case "tutor": return "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300";
+      case "egg": return "bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300";
+      default: return "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300";
     }
   };
 
@@ -73,11 +95,11 @@ export default function MovesList({ moves }: Props) {
 
     return (
       <div className="mb-4">
-        <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
           <span className={`px-2 py-1 rounded-full text-xs ${getMethodColor(method)}`}>
             {getMethodLabel(method)}
           </span>
-          <span className="text-gray-500">({filtered.length})</span>
+          <span className="text-gray-500 dark:text-gray-400">({filtered.length})</span>
         </h4>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -117,8 +139,8 @@ export default function MovesList({ moves }: Props) {
   return (
     <div>
       {/* Info */}
-      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
           <span className="font-semibold">{moves.length} attaques</span> disponibles pour ce Pokémon
         </p>
       </div>
@@ -130,8 +152,8 @@ export default function MovesList({ moves }: Props) {
             onClick={() => setFilterMethod("all")}
             className={`px-3 py-1 rounded-full text-sm transition ${
               filterMethod === "all"
-                ? "bg-gray-800 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-gray-800 dark:bg-gray-600 text-white"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             Toutes ({moves.length})
@@ -141,8 +163,8 @@ export default function MovesList({ moves }: Props) {
               onClick={() => setFilterMethod("level-up")}
               className={`px-3 py-1 rounded-full text-sm transition ${
                 filterMethod === "level-up"
-                  ? "bg-blue-600 text-white"
-                  : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  ? "bg-blue-600 dark:bg-blue-700 text-white"
+                  : "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/40"
               }`}
             >
               Niveau ({levelUpMoves.length})
@@ -153,8 +175,8 @@ export default function MovesList({ moves }: Props) {
               onClick={() => setFilterMethod("machine")}
               className={`px-3 py-1 rounded-full text-sm transition ${
                 filterMethod === "machine"
-                  ? "bg-purple-600 text-white"
-                  : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                  ? "bg-purple-600 dark:bg-purple-700 text-white"
+                  : "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-800/40"
               }`}
             >
               CT/CS ({machineMoves.length})
@@ -165,8 +187,8 @@ export default function MovesList({ moves }: Props) {
               onClick={() => setFilterMethod("tutor")}
               className={`px-3 py-1 rounded-full text-sm transition ${
                 filterMethod === "tutor"
-                  ? "bg-green-600 text-white"
-                  : "bg-green-50 text-green-700 hover:bg-green-100"
+                  ? "bg-green-600 dark:bg-green-700 text-white"
+                  : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-800/40"
               }`}
             >
               Tuteur ({tutorMoves.length})
@@ -177,8 +199,8 @@ export default function MovesList({ moves }: Props) {
               onClick={() => setFilterMethod("egg")}
               className={`px-3 py-1 rounded-full text-sm transition ${
                 filterMethod === "egg"
-                  ? "bg-orange-600 text-white"
-                  : "bg-orange-50 text-orange-700 hover:bg-orange-100"
+                  ? "bg-orange-600 dark:bg-orange-700 text-white"
+                  : "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-800/40"
               }`}
             >
               Œuf ({eggMoves.length})
