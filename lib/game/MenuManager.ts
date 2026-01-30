@@ -12,7 +12,8 @@ export class MenuManager {
   private menuState: MenuState = 'none';
   private menuContainer: Phaser.GameObjects.Container | null = null;
   private onClose: (() => void) | null = null;
-  private selectedPokemonIndex: number = 0;
+  private selectedPokemonIndex: number = -1; // -1 means no selection
+  private detailPanelContainer: Phaser.GameObjects.Container | null = null;
   private uiHelper: UIHelper;
   
   constructor(scene: Phaser.Scene) {
@@ -107,22 +108,22 @@ export class MenuManager {
   // =====================
   private createPauseMenu() {
     const config = this.uiHelper.getConfig();
-    const fonts = this.uiHelper.getFonts();
+    const menuScale = this.uiHelper.getMenuScale();
     
     // Container
     this.menuContainer = this.scene.add.container(0, 0);
     this.menuContainer.setDepth(1000);
+    this.menuContainer.setScrollFactor(0); // Fixed to camera
 
-    // Semi-transparent overlay
+    // Semi-transparent overlay (non-interactive to allow clicks through)
     const overlay = this.scene.add.rectangle(0, 0, config.width, config.height, 0x000000, 0.7);
     overlay.setOrigin(0, 0);
-    overlay.setInteractive();
     this.menuContainer.add(overlay);
 
-    // Menu panel - responsive dimensions
-    const panelDims = this.uiHelper.getPanelDimensions(0.7, 0.7);
-    const panelWidth = Math.min(400, panelDims.width);
-    const panelHeight = Math.min(500, panelDims.height);
+    // Menu panel - responsive dimensions with menuScale
+    const panelDims = this.uiHelper.getPanelDimensions(0.65, 0.65);
+    const panelWidth = Math.min(Math.round(350 * menuScale), panelDims.width);
+    const panelHeight = Math.min(Math.round(450 * menuScale), panelDims.height);
 
     const panel = this.scene.add.rectangle(config.centerX, config.centerY, panelWidth, panelHeight, 0xffffff, 1);
     panel.setStrokeStyle(4, 0x333333);
@@ -154,12 +155,6 @@ export class MenuManager {
     const hint = this.uiHelper.createText(config.centerX, config.centerY + panelHeight / 2 - this.uiHelper.scale(30), 'Press ESC to close', 'small', '#666666');
     hint.setOrigin(0.5);
     this.menuContainer.add(hint);
-
-    // ESC to close
-    const escKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    if (escKey) {
-      escKey.once('down', () => this.closeMenu());
-    }
   }
 
   // =====================
@@ -167,304 +162,345 @@ export class MenuManager {
   // =====================
   private createTeamMenu() {
     const config = this.uiHelper.getConfig();
-    const fonts = this.uiHelper.getFonts();
+    const menuScale = this.uiHelper.getMenuScale();
     const save = saveManager.getSave();
     if (!save) return;
 
     // Container
     this.menuContainer = this.scene.add.container(0, 0);
     this.menuContainer.setDepth(1000);
+    this.menuContainer.setScrollFactor(0);
 
-    // Semi-transparent overlay
+    // Semi-transparent overlay (non-interactive to allow clicks through)
     const overlay = this.scene.add.rectangle(0, 0, config.width, config.height, 0x000000, 0.7);
     overlay.setOrigin(0, 0);
-    overlay.setInteractive();
+    // Removed setInteractive to fix click issues
     this.menuContainer.add(overlay);
 
-    // Menu panel - responsive
-    const panelDims = this.uiHelper.getPanelDimensions(0.95, 0.92);
-    const panelWidth = Math.min(900, panelDims.width);
-    const panelHeight = Math.min(700, panelDims.height);
+    // Menu panel - smaller and more compact
+    const panelDims = this.uiHelper.getPanelDimensions(0.85, 0.82);
+    const panelWidth = Math.min(Math.round(750 * menuScale), panelDims.width);
+    const panelHeight = Math.min(Math.round(600 * menuScale), panelDims.height);
 
     const panel = this.scene.add.rectangle(config.centerX, config.centerY, panelWidth, panelHeight, 0xf5f5f5, 1);
-    panel.setStrokeStyle(4, 0x333333);
+    panel.setStrokeStyle(3, 0x333333);
     this.menuContainer.add(panel);
 
     // Title
-    const title = this.uiHelper.createText(config.centerX, config.centerY - panelHeight / 2 + this.uiHelper.scale(30), 'YOUR TEAM', 'large', '#333333', true);
+    const title = this.uiHelper.createText(
+      config.centerX,
+      config.centerY - panelHeight / 2 + this.uiHelper.scale(25),
+      'YOUR TEAM',
+      'large',
+      '#333333',
+      true
+    );
     title.setOrigin(0.5);
     this.menuContainer.add(title);
 
     // Close button
-    const closeBtn = this.createSmallButton(config.centerX + panelWidth / 2 - this.uiHelper.scale(60), config.centerY - panelHeight / 2 + this.uiHelper.scale(30), 'Close', () => this.closeMenu());
+    const closeBtn = this.createSmallButton(
+      config.centerX + panelWidth / 2 - this.uiHelper.scale(50),
+      config.centerY - panelHeight / 2 + this.uiHelper.scale(25),
+      'X',
+      () => this.closeMenu()
+    );
     this.menuContainer.add(closeBtn);
 
-    // Team list (left side)
+    // Team list
     if (save.team.length === 0) {
       const noTeamText = this.uiHelper.createText(config.centerX, config.centerY, 'No Pokémon in your team yet!', 'medium', '#666666');
       noTeamText.setOrigin(0.5);
       this.menuContainer.add(noTeamText);
     } else {
-      const teamListX = config.centerX - panelWidth / 2 + this.uiHelper.scale(40);
-      const startY = config.centerY - panelHeight / 2 + this.uiHelper.scale(80);
-      const cardSpacing = this.uiHelper.getSpacing(90);
-
-      // Adjust for smaller screens - reduce card height if needed
-      const maxCards = Math.floor((panelHeight - this.uiHelper.scale(120)) / cardSpacing);
-      const visibleTeam = save.team.slice(0, Math.min(6, maxCards));
+      // Calculate layout based on screen size
+      const hasDetailPanel = this.selectedPokemonIndex !== -1;
+      const isDesktop = config.width >= 768 && !config.isMobile;
+      
+      // List area dimensions
+      const listWidth = hasDetailPanel && isDesktop ? panelWidth * 0.4 : panelWidth * 0.85;
+      const listX = config.centerX - panelWidth / 2 + (hasDetailPanel && isDesktop ? listWidth * 0.55 : panelWidth * 0.5);
+      const startY = config.centerY - panelHeight / 2 + this.uiHelper.scale(60);
+      
+      // Compact card spacing
+      const cardHeight = Math.round(65 * menuScale);
+      const cardSpacing = Math.round(10 * menuScale);
+      const totalCardHeight = cardHeight + cardSpacing;
+      
+      // Maximum visible cards
+      const availableHeight = panelHeight - this.uiHelper.scale(100);
+      const maxVisibleCards = Math.floor(availableHeight / totalCardHeight);
+      const visibleTeam = save.team.slice(0, Math.min(6, maxVisibleCards));
 
       visibleTeam.forEach((pokemon, index) => {
-        const pokemonCard = this.createPokemonCard(teamListX, startY + index * cardSpacing, pokemon, index);
+        const pokemonCard = this.createCompactPokemonCard(
+          listX,
+          startY + index * totalCardHeight,
+          pokemon,
+          index,
+          Math.round(listWidth * 0.9)
+        );
         this.menuContainer!.add(pokemonCard);
       });
 
-      // Detail panel (right side) - only if screen is wide enough
-      if (panelWidth > 600 && save.team.length > 0) {
-        const detailPanel = this.createPokemonDetailPanel(
-          config.centerX + panelWidth / 4,
-          config.centerY,
-          panelWidth / 2 - this.uiHelper.scale(60),
-          panelHeight - this.uiHelper.scale(100),
-          save.team[this.selectedPokemonIndex]
-        );
-        this.menuContainer.add(detailPanel);
+      // Detail panel (right side on desktop, bottom on mobile)
+      if (hasDetailPanel) {
+        const pokemon = save.team[this.selectedPokemonIndex];
+        if (isDesktop) {
+          // Desktop: right panel
+          const detailX = config.centerX + panelWidth * 0.15;
+          const detailWidth = panelWidth * 0.52;
+          const detailHeight = panelHeight - this.uiHelper.scale(80);
+          this.detailPanelContainer = this.createDetailPanel(detailX, config.centerY, detailWidth, detailHeight, pokemon);
+        } else {
+          // Mobile: bottom panel (scrollable)
+          const detailWidth = panelWidth * 0.9;
+          const detailHeight = Math.min(panelHeight * 0.5, Math.round(350 * menuScale));
+          const detailY = config.centerY + panelHeight / 2 - detailHeight / 2 - this.uiHelper.scale(20);
+          this.detailPanelContainer = this.createDetailPanel(config.centerX, detailY, detailWidth, detailHeight, pokemon);
+        }
+        this.menuContainer.add(this.detailPanelContainer);
       }
     }
 
     // Controls hint
-    const hint = this.uiHelper.createText(config.centerX, config.centerY + panelHeight / 2 - this.uiHelper.scale(20), 'ESC to close | Click Pokémon to view details', 'tiny', '#666666');
+    const hintText = this.selectedPokemonIndex !== -1 ? 'ESC to close | Click Pokémon again to hide details' : 'ESC to close | Click Pokémon to view details';
+    const hint = this.uiHelper.createText(
+      config.centerX,
+      config.centerY + panelHeight / 2 - this.uiHelper.scale(15),
+      hintText,
+      'tiny',
+      '#666666'
+    );
     hint.setOrigin(0.5);
     this.menuContainer.add(hint);
-
-    // ESC to close
-    const escKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    if (escKey) {
-      escKey.once('down', () => this.closeMenu());
-    }
   }
 
-  private createPokemonCard(x: number, y: number, pokemon: PlayerPokemon, index: number): Phaser.GameObjects.Container {
+  private createCompactPokemonCard(x: number, y: number, pokemon: PlayerPokemon, index: number, cardWidth: number): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
+    container.setScrollFactor(0);
+    const menuScale = this.uiHelper.getMenuScale();
+    const cardHeight = Math.round(65 * menuScale);
+    const isSelected = this.selectedPokemonIndex === index;
 
     // Card background
-    const cardBg = this.scene.add.rectangle(0, 0, 380, 80, 0xffffff, 1);
-    cardBg.setStrokeStyle(2, this.selectedPokemonIndex === index ? 0x3b82f6 : 0x999999);
+    const cardBg = this.scene.add.rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 1);
+    cardBg.setStrokeStyle(isSelected ? 3 : 2, isSelected ? 0x3b82f6 : 0xcccccc);
     cardBg.setInteractive({ useHandCursor: true });
-    cardBg.on('pointerdown', () => this.selectPokemon(index));
-    cardBg.on('pointerover', () => cardBg.setStrokeStyle(2, 0x3b82f6));
-    cardBg.on('pointerout', () => cardBg.setStrokeStyle(2, this.selectedPokemonIndex === index ? 0x3b82f6 : 0x999999));
+    cardBg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.selectPokemon(index);
+    });
+    cardBg.on('pointerover', () => {
+      if (!isSelected) cardBg.setStrokeStyle(2, 0x3b82f6);
+    });
+    cardBg.on('pointerout', () => {
+      if (!isSelected) cardBg.setStrokeStyle(2, 0xcccccc);
+    });
     container.add(cardBg);
 
-    // Pokémon sprite (placeholder)
+    // Pokémon sprite (small)
+    const spriteSize = Math.round(50 * menuScale);
     const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
-    const sprite = this.scene.add.image(-160, 0, 'pokemon-sprite');
-    sprite.setDisplaySize(60, 60);
+    const sprite = this.scene.add.image(-cardWidth / 2 + spriteSize / 2 + 8, 0, 'pokemon-sprite');
+    sprite.setDisplaySize(spriteSize, spriteSize);
     
-    // Load sprite dynamically
-    this.scene.load.image(`pokemon-${pokemon.id}`, spriteUrl);
+    this.scene.load.image(`pokemon-compact-${pokemon.id}`, spriteUrl);
     this.scene.load.once('complete', () => {
-      sprite.setTexture(`pokemon-${pokemon.id}`);
+      if (sprite.scene) sprite.setTexture(`pokemon-compact-${pokemon.id}`);
     });
     this.scene.load.start();
     
     container.add(sprite);
 
-    // Name and level
-    const nameText = this.scene.add.text(-120, -20, pokemon.name, {
-      fontSize: '18px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#333333',
-      fontStyle: 'bold',
-    });
+    // Name and level (compact)
+    const nameX = -cardWidth / 2 + spriteSize + 16;
+    const nameText = this.uiHelper.createText(nameX, -cardHeight / 4, pokemon.name, 'base', '#333333', true);
     nameText.setOrigin(0, 0.5);
     container.add(nameText);
 
-    const levelText = this.scene.add.text(-120, 5, `Lv. ${pokemon.level}`, {
-      fontSize: '14px',
-      color: '#666666',
-    });
+    const levelText = this.uiHelper.createText(nameX, cardHeight / 4, `Lv. ${pokemon.level}`, 'small', '#666666');
     levelText.setOrigin(0, 0.5);
     container.add(levelText);
 
-    // HP bar
-    const hpBarBg = this.scene.add.rectangle(-120, 25, 200, 8, 0xdddddd, 1);
+    // HP bar (compact)
+    const hpBarWidth = Math.round(120 * menuScale);
+    const hpBarHeight = Math.round(6 * menuScale);
+    const hpBarX = cardWidth / 2 - hpBarWidth - 8;
+    
+    const hpBarBg = this.scene.add.rectangle(hpBarX, 0, hpBarWidth, hpBarHeight, 0xdddddd, 1);
     hpBarBg.setOrigin(0, 0.5);
     container.add(hpBarBg);
 
     const hpPercent = pokemon.hp / pokemon.maxHp;
-    const hpBarWidth = 200 * hpPercent;
-    let hpColor = 0x22c55e; // Green
-    if (hpPercent < 0.5) hpColor = 0xfbbf24; // Yellow
-    if (hpPercent < 0.25) hpColor = 0xef4444; // Red
+    const hpBarFillWidth = hpBarWidth * hpPercent;
+    let hpColor = 0x22c55e;
+    if (hpPercent < 0.5) hpColor = 0xfbbf24;
+    if (hpPercent < 0.25) hpColor = 0xef4444;
 
-    const hpBar = this.scene.add.rectangle(-120, 25, hpBarWidth, 8, hpColor, 1);
+    const hpBar = this.scene.add.rectangle(hpBarX, 0, hpBarFillWidth, hpBarHeight, hpColor, 1);
     hpBar.setOrigin(0, 0.5);
     container.add(hpBar);
 
-    const hpText = this.scene.add.text(90, 25, `${pokemon.hp}/${pokemon.maxHp}`, {
-      fontSize: '12px',
-      color: '#666666',
-    });
-    hpText.setOrigin(0, 0.5);
+    // HP text (small)
+    const hpText = this.uiHelper.createText(hpBarX + hpBarWidth / 2, hpBarHeight + 8, `${pokemon.hp}/${pokemon.maxHp}`, 'tiny', '#666666');
+    hpText.setOrigin(0.5, 0);
     container.add(hpText);
 
-    // Status condition badge
+    // Status condition badge (if any)
     if (pokemon.statusCondition) {
       const statusName = getStatusName(pokemon.statusCondition);
       const statusColor = getStatusColor(pokemon.statusCondition);
-      const statusBadge = this.scene.add.text(150, -20, statusName, {
-        fontSize: '12px',
-        color: '#ffffff',
-        backgroundColor: `#${statusColor.toString(16).padStart(6, '0')}`,
-        padding: { x: 6, y: 2 },
-      });
-      statusBadge.setOrigin(0, 0.5);
+      const statusBadge = this.uiHelper.createText(
+        cardWidth / 2 - 8,
+        -cardHeight / 4,
+        statusName,
+        'tiny',
+        '#ffffff',
+        true
+      );
+      statusBadge.setOrigin(1, 0.5);
+      statusBadge.setBackgroundColor(`#${statusColor.toString(16).padStart(6, '0')}`);
+      statusBadge.setPadding(4, 2, 4, 2);
       container.add(statusBadge);
     }
 
     return container;
   }
 
-  private createPokemonDetailPanel(x: number, y: number, width: number, height: number, pokemon: PlayerPokemon): Phaser.GameObjects.Container {
+  private createDetailPanel(x: number, y: number, width: number, height: number, pokemon: PlayerPokemon): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
+    const menuScale = this.uiHelper.getMenuScale();
 
     // Panel background
-    const panel = this.scene.add.rectangle(0, 0, width, height, 0xffffff, 1);
-    panel.setStrokeStyle(2, 0x999999);
+    const panel = this.scene.add.rectangle(0, 0, width, height, 0xffffff, 0.98);
+    panel.setStrokeStyle(3, 0x3b82f6);
     container.add(panel);
 
+    let currentY = -height / 2 + this.uiHelper.scale(20);
+
+    // Close button for detail panel
+    const closeDetailBtn = this.createSmallButton(
+      width / 2 - this.uiHelper.scale(25),
+      currentY,
+      'X',
+      () => {
+        this.selectedPokemonIndex = -1;
+        this.refreshTeamMenu();
+      }
+    );
+    container.add(closeDetailBtn);
+
     // Title
-    const title = this.scene.add.text(0, -height / 2 + 30, 'DETAILS', {
-      fontSize: '20px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#333333',
-      fontStyle: 'bold',
-    });
+    const title = this.uiHelper.createText(0, currentY, 'DETAILS', 'medium', '#333333', true);
     title.setOrigin(0.5);
     container.add(title);
-
-    let currentY = -height / 2 + 70;
+    currentY += this.uiHelper.scale(35);
 
     // Pokémon sprite (larger)
+    const spriteSize = Math.round(96 * menuScale);
     const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
-    const sprite = this.scene.add.image(0, currentY + 50, 'pokemon-sprite');
-    sprite.setDisplaySize(100, 100);
+    const sprite = this.scene.add.image(0, currentY + spriteSize / 2, 'pokemon-sprite');
+    sprite.setDisplaySize(spriteSize, spriteSize);
     
     this.scene.load.image(`pokemon-detail-${pokemon.id}`, spriteUrl);
     this.scene.load.once('complete', () => {
-      sprite.setTexture(`pokemon-detail-${pokemon.id}`);
+      if (sprite.scene) sprite.setTexture(`pokemon-detail-${pokemon.id}`);
     });
     this.scene.load.start();
     
     container.add(sprite);
-    currentY += 120;
+    currentY += spriteSize + this.uiHelper.scale(15);
 
     // Name and Level
-    const nameText = this.scene.add.text(0, currentY, `${pokemon.name} - Lv. ${pokemon.level}`, {
-      fontSize: '18px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#333333',
-      fontStyle: 'bold',
-    });
+    const nameText = this.uiHelper.createText(0, currentY, `${pokemon.name}`, 'large', '#333333', true);
     nameText.setOrigin(0.5);
     container.add(nameText);
-    currentY += 35;
+    currentY += this.uiHelper.scale(25);
 
-    // HP
-    const hpText = this.scene.add.text(0, currentY, `HP: ${pokemon.hp}/${pokemon.maxHp}`, {
-      fontSize: '16px',
-      color: '#666666',
-    });
-    hpText.setOrigin(0.5);
-    container.add(hpText);
-    currentY += 30;
+    const levelText = this.uiHelper.createText(0, currentY, `Level ${pokemon.level}`, 'base', '#666666');
+    levelText.setOrigin(0.5);
+    container.add(levelText);
+    currentY += this.uiHelper.scale(25);
 
-    // XP Bar
+    // HP Bar
+    const hpLabel = this.uiHelper.createText(0, currentY, `HP: ${pokemon.hp} / ${pokemon.maxHp}`, 'small', '#666666');
+    hpLabel.setOrigin(0.5);
+    container.add(hpLabel);
+    currentY += this.uiHelper.scale(18);
+
+    const hpBarWidth = width * 0.7;
+    const hpBarHeight = Math.round(10 * menuScale);
+    const hpBarBg = this.scene.add.rectangle(0, currentY, hpBarWidth, hpBarHeight, 0xdddddd, 1);
+    container.add(hpBarBg);
+
+    const hpPercent = pokemon.hp / pokemon.maxHp;
+    const hpBarFillWidth = hpBarWidth * hpPercent;
+    let hpColor = 0x22c55e;
+    if (hpPercent < 0.5) hpColor = 0xfbbf24;
+    if (hpPercent < 0.25) hpColor = 0xef4444;
+
+    const hpBar = this.scene.add.rectangle(-hpBarWidth / 2, currentY, hpBarFillWidth, hpBarHeight, hpColor, 1);
+    hpBar.setOrigin(0, 0.5);
+    container.add(hpBar);
+    currentY += this.uiHelper.scale(25);
+
+    // Stats
+    const statsText = this.uiHelper.createText(
+      0,
+      currentY,
+      `ATK: ${pokemon.attack}  DEF: ${pokemon.defense}  SPD: ${pokemon.speed}`,
+      'small',
+      '#666666'
+    );
+    statsText.setOrigin(0.5);
+    container.add(statsText);
+    currentY += this.uiHelper.scale(25);
+
+    // XP Progress
     const xpTotal = pokemon.xpTotal || pokemon.exp || 0;
     const currentLevelXP = Math.pow(pokemon.level, 3);
     const nextLevelXP = Math.pow(pokemon.level + 1, 3);
     const xpInLevel = xpTotal - currentLevelXP;
     const xpNeeded = nextLevelXP - currentLevelXP;
-    const xpPercent = xpInLevel / xpNeeded;
+    const xpPercent = Math.max(0, Math.min(1, xpInLevel / xpNeeded));
 
-    const xpLabel = this.scene.add.text(0, currentY, 'XP to Next Level', {
-      fontSize: '14px',
-      color: '#666666',
-    });
+    const xpLabel = this.uiHelper.createText(0, currentY, 'XP to Next Level', 'small', '#666666');
     xpLabel.setOrigin(0.5);
     container.add(xpLabel);
-    currentY += 20;
+    currentY += this.uiHelper.scale(16);
 
-    const xpBarBg = this.scene.add.rectangle(0, currentY, width - 40, 12, 0xdddddd, 1);
+    const xpBarWidth = width * 0.7;
+    const xpBarBg = this.scene.add.rectangle(0, currentY, xpBarWidth, hpBarHeight, 0xdddddd, 1);
     container.add(xpBarBg);
 
-    const xpBarWidth = (width - 40) * Math.min(1, xpPercent);
-    const xpBar = this.scene.add.rectangle(-xpBarBg.width / 2, currentY, xpBarWidth, 12, 0x3b82f6, 1);
+    const xpBarFillWidth = xpBarWidth * xpPercent;
+    const xpBar = this.scene.add.rectangle(-xpBarWidth / 2, currentY, xpBarFillWidth, hpBarHeight, 0x3b82f6, 1);
     xpBar.setOrigin(0, 0.5);
     container.add(xpBar);
 
-    const xpPercentText = this.scene.add.text(0, currentY + 15, `${Math.floor(xpPercent * 100)}%`, {
-      fontSize: '12px',
-      color: '#666666',
-    });
-    xpPercentText.setOrigin(0.5);
+    const xpPercentText = this.uiHelper.createText(0, currentY + hpBarHeight + 6, `${Math.floor(xpPercent * 100)}%`, 'tiny', '#666666');
+    xpPercentText.setOrigin(0.5, 0);
     container.add(xpPercentText);
-    currentY += 45;
-
-    // Stats
-    const statsText = this.scene.add.text(0, currentY, 'STATS', {
-      fontSize: '16px',
-      fontStyle: 'bold',
-      color: '#333333',
-    });
-    statsText.setOrigin(0.5);
-    container.add(statsText);
-    currentY += 25;
-
-    const stats = [
-      `ATK: ${pokemon.attack}`,
-      `DEF: ${pokemon.defense}`,
-      `SPD: ${pokemon.speed}`,
-    ];
-
-    stats.forEach(stat => {
-      const statText = this.scene.add.text(0, currentY, stat, {
-        fontSize: '14px',
-        color: '#666666',
-      });
-      statText.setOrigin(0.5);
-      container.add(statText);
-      currentY += 22;
-    });
-
-    currentY += 10;
+    currentY += this.uiHelper.scale(30);
 
     // Moves
-    if (pokemon.battleMoves && pokemon.battleMoves.length > 0) {
-      const movesTitle = this.scene.add.text(0, currentY, 'MOVES', {
-        fontSize: '16px',
-        fontStyle: 'bold',
-        color: '#333333',
-      });
-      movesTitle.setOrigin(0.5);
-      container.add(movesTitle);
-      currentY += 25;
+    const movesTitle = this.uiHelper.createText(0, currentY, 'MOVES', 'small', '#333333', true);
+    movesTitle.setOrigin(0.5);
+    container.add(movesTitle);
+    currentY += this.uiHelper.scale(20);
 
-      pokemon.battleMoves.slice(0, 4).forEach(move => {
-        const moveText = this.scene.add.text(0, currentY, `${move.name} (${move.type.toUpperCase()})`, {
-          fontSize: '13px',
-          color: '#666666',
-        });
-        moveText.setOrigin(0.5);
-        container.add(moveText);
-
-        const ppText = this.scene.add.text(0, currentY + 15, `PP: ${move.pp}/${move.maxPp}`, {
-          fontSize: '11px',
-          color: '#999999',
-        });
-        ppText.setOrigin(0.5);
-        container.add(ppText);
-        currentY += 38;
+    const moves = Array.isArray(pokemon.moves) ? pokemon.moves.slice(0, 4) : [];
+    if (moves.length === 0) {
+      const noMoves = this.uiHelper.createText(0, currentY, 'No moves learned', 'small', '#999999');
+      noMoves.setOrigin(0.5);
+      container.add(noMoves);
+    } else {
+      moves.forEach((move, i) => {
+        const moveText = typeof move === 'string' ? move : move.name || 'Unknown';
+        const moveLine = this.uiHelper.createText(0, currentY + i * this.uiHelper.scale(18), `• ${moveText}`, 'small', '#666666');
+        moveLine.setOrigin(0.5);
+        container.add(moveLine);
       });
     }
 
@@ -472,12 +508,23 @@ export class MenuManager {
   }
 
   private selectPokemon(index: number) {
-    this.selectedPokemonIndex = index;
-    // Recreate team menu to update selection
+    // Toggle selection: if clicking the same Pokémon, deselect it
+    if (this.selectedPokemonIndex === index) {
+      this.selectedPokemonIndex = -1;
+    } else {
+      this.selectedPokemonIndex = index;
+    }
+    this.refreshTeamMenu();
+  }
+
+  private refreshTeamMenu() {
+    // Destroy and recreate team menu to update selection
     if (this.menuContainer) {
       this.menuContainer.destroy();
-      this.createTeamMenu();
+      this.menuContainer = null;
+      this.detailPanelContainer = null;
     }
+    this.createTeamMenu();
   }
 
   // =====================
@@ -485,23 +532,24 @@ export class MenuManager {
   // =====================
   private createInventoryMenu() {
     const config = this.uiHelper.getConfig();
+    const menuScale = this.uiHelper.getMenuScale();
     const save = saveManager.getSave();
     if (!save) return;
 
     // Container
     this.menuContainer = this.scene.add.container(0, 0);
     this.menuContainer.setDepth(1000);
+    this.menuContainer.setScrollFactor(0); // Fixed to camera
 
-    // Semi-transparent overlay
+    // Semi-transparent overlay (non-interactive to allow clicks through)
     const overlay = this.scene.add.rectangle(0, 0, config.width, config.height, 0x000000, 0.7);
     overlay.setOrigin(0, 0);
-    overlay.setInteractive();
     this.menuContainer.add(overlay);
 
-    // Menu panel (responsive dimensions)
-    const panelDims = this.uiHelper.getPanelDimensions(0.9, 0.9);
-    const panelWidth = Math.min(700, panelDims.width);
-    const panelHeight = Math.min(600, panelDims.height);
+    // Menu panel (responsive dimensions with menuScale)
+    const panelDims = this.uiHelper.getPanelDimensions(0.82, 0.82);
+    const panelWidth = Math.min(Math.round(650 * menuScale), panelDims.width);
+    const panelHeight = Math.min(Math.round(550 * menuScale), panelDims.height);
     const panelX = config.centerX;
     const panelY = config.centerY;
 
@@ -548,23 +596,21 @@ export class MenuManager {
     const hint = this.uiHelper.createText(panelX, panelY + panelHeight / 2 - this.uiHelper.scale(20), 'ESC to close | Click item to use', 'small', '#666666');
     hint.setOrigin(0.5);
     this.menuContainer.add(hint);
-
-    // ESC to close
-    const escKey = this.scene.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    if (escKey) {
-      escKey.once('down', () => this.closeMenu());
-    }
   }
 
   private createInventoryItem(x: number, y: number, item: InventoryItem, itemWidth: number): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
+    container.setScrollFactor(0);
 
     // Item background (responsive width)
     const itemHeight = this.uiHelper.scale(45);
     const itemBg = this.scene.add.rectangle(0, 0, itemWidth, itemHeight, 0xffffff, 1);
     itemBg.setStrokeStyle(this.uiHelper.scale(2), 0x999999);
     itemBg.setInteractive({ useHandCursor: true });
-    itemBg.on('pointerdown', () => this.useItem(item));
+    itemBg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.useItem(item);
+    });
     itemBg.on('pointerover', () => itemBg.setFillStyle(0xf0f0f0));
     itemBg.on('pointerout', () => itemBg.setFillStyle(0xffffff));
     container.add(itemBg);
@@ -643,10 +689,9 @@ export class MenuManager {
     const selectorContainer = this.scene.add.container(0, 0);
     selectorContainer.setDepth(1100);
 
-    // Overlay
+    // Overlay (non-interactive to allow clicks through)
     const overlay = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.8);
     overlay.setOrigin(0, 0);
-    overlay.setInteractive();
     selectorContainer.add(overlay);
 
     // Panel
@@ -694,10 +739,9 @@ export class MenuManager {
     const messageContainer = this.scene.add.container(0, 0);
     messageContainer.setDepth(1200);
 
-    // Overlay
+    // Overlay (non-interactive to allow clicks through)
     const overlay = this.scene.add.rectangle(0, 0, width, height, 0x000000, 0.5);
     overlay.setOrigin(0, 0);
-    overlay.setInteractive();
     messageContainer.add(overlay);
 
     // Message box
@@ -734,12 +778,16 @@ export class MenuManager {
   // =====================
   private createButton(x: number, y: number, label: string, onClick: () => void, baseWidth: number = 300, baseHeight: number = 50): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
+    container.setScrollFactor(0);
     const btnSize = this.uiHelper.getButtonSize(baseWidth, baseHeight);
 
     const bg = this.scene.add.rectangle(0, 0, btnSize.width, btnSize.height, 0x3b82f6, 1);
     bg.setStrokeStyle(2, 0x2563eb);
     bg.setInteractive({ useHandCursor: true });
-    bg.on('pointerdown', onClick);
+    bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      onClick();
+    });
     bg.on('pointerover', () => bg.setFillStyle(0x2563eb));
     bg.on('pointerout', () => bg.setFillStyle(0x3b82f6));
     container.add(bg);
@@ -753,12 +801,16 @@ export class MenuManager {
 
   private createSmallButton(x: number, y: number, label: string, onClick: () => void): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
+    container.setScrollFactor(0);
     const btnSize = this.uiHelper.getButtonSize(100, 35);
 
     const bg = this.scene.add.rectangle(0, 0, btnSize.width, btnSize.height, 0xef4444, 1);
     bg.setStrokeStyle(2, 0xdc2626);
     bg.setInteractive({ useHandCursor: true });
-    bg.on('pointerdown', onClick);
+    bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      onClick();
+    });
     bg.on('pointerover', () => bg.setFillStyle(0xdc2626));
     bg.on('pointerout', () => bg.setFillStyle(0xef4444));
     container.add(bg);

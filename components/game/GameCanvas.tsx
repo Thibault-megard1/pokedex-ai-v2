@@ -37,11 +37,14 @@ export default function GameCanvas({ username }: GameCanvasProps) {
       },
       scale: {
         mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        parent: containerRef.current,
       },
       render: {
         pixelArt: true, // Prevent blurry Pokémon sprites
         antialias: false,
+      },
+      input: {
+        windowEvents: false, // Let Phaser manage input events directly from canvas
       },
     };
 
@@ -60,7 +63,7 @@ export default function GameCanvas({ username }: GameCanvasProps) {
 
       // Handle window resize
       const handleResize = () => {
-        if (game) {
+        if (game && game.scale) {
           game.scale.resize(window.innerWidth, window.innerHeight);
         }
       };
@@ -80,11 +83,40 @@ export default function GameCanvas({ username }: GameCanvasProps) {
   }, [username]);
 
   return (
-    <div className="relative w-full h-screen bg-black">
-      <div ref={containerRef} className="w-full h-full" />
+    <div style={{ 
+      position: 'relative', 
+      width: '100vw', 
+      height: '100vh',
+      height: '100dvh',
+      overflow: 'hidden',
+      backgroundColor: '#000000',
+      touchAction: 'none', // Prevent default touch behaviors
+    }}>
+      <div 
+        ref={containerRef} 
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
+      />
       
       {!isReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black">
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#000000'
+        }}>
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-400 mb-4" />
             <p className="text-white text-xl font-mono">Initializing Game...</p>
@@ -92,16 +124,16 @@ export default function GameCanvas({ username }: GameCanvasProps) {
         </div>
       )}
 
-      {/* Game Controls Help */}
-      <div className="absolute top-4 right-4 bg-gray-900 bg-opacity-80 text-white p-4 rounded-lg font-mono text-sm max-w-xs">
-        <h3 className="font-bold mb-2 text-yellow-400">Controls</h3>
-        <ul className="space-y-1">
+      {/* Game Controls Help - hidden on small screens to avoid blocking */}
+      <div className="hidden md:block absolute top-4 right-4 bg-gray-900 bg-opacity-70 text-white px-3 py-2 rounded-lg font-mono text-xs max-w-[160px] pointer-events-none">
+        <h3 className="font-bold mb-1 text-yellow-400 text-sm">Controls</h3>
+        <ul className="space-y-0.5 text-[10px]">
           <li>⬆️⬇️⬅️➡️ Move</li>
           <li>SPACE - Interact</li>
           <li>ESC - Menu</li>
           <li>I - Inventory</li>
           <li>T - Team</li>
-          <li>R - Run (in battle)</li>
+          <li>R - Run</li>
         </ul>
       </div>
     </div>

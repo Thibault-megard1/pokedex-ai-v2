@@ -7,6 +7,7 @@ import { KEYBOARD_CONTROLS } from '../types';
 import { createPlayer, updatePlayer, stopPlayer } from '../player';
 import { MenuManager } from '../MenuManager';
 import { UIHelper } from '../UIHelper';
+import { DebugHelper } from '../DebugHelper';
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
@@ -23,6 +24,7 @@ export class GameScene extends Phaser.Scene {
   private currentNPC: NPCData | null = null;
   private menuManager!: MenuManager;
   private uiHelper!: UIHelper;
+  private debugHelper!: DebugHelper;
   private uiButtons: Phaser.GameObjects.Container[] = [];
   private menuOpen: boolean = false;
   private menuContainer: Phaser.GameObjects.Container | null = null;
@@ -34,6 +36,12 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+  
+  preload() {
+    // Ensure input is enabled
+    this.input.enabled = true;
+    console.log('[GameScene] Input system enabled:', this.input.enabled);
   }
 
   init(data: { save: GameSave }) {
@@ -48,6 +56,20 @@ export class GameScene extends Phaser.Scene {
       this.scene.start('MenuScene');
       return;
     }
+    
+    // Debug: Log pointer events with detailed coordinate info
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const canvas = this.game.canvas;
+      const rect = canvas ? canvas.getBoundingClientRect() : null;
+      console.log('[GameScene] Pointer down:', {
+        screen: `${Math.round(pointer.x)}, ${Math.round(pointer.y)}`,
+        world: `${Math.round(pointer.worldX)}, ${Math.round(pointer.worldY)}`,
+        canvas: `${this.scale.width}x${this.scale.height}`,
+        window: `${window.innerWidth}x${window.innerHeight}`,
+        canvasOffset: rect ? `${Math.round(rect.left)}, ${Math.round(rect.top)}` : 'unknown',
+        scaleMode: this.scale.scaleMode,
+      });
+    });
 
     this.currentMap = save.position.map;
     this.loadMap(this.currentMap);
@@ -59,6 +81,7 @@ export class GameScene extends Phaser.Scene {
     // Initialize UI systems
     this.uiHelper = new UIHelper(this);
     this.menuManager = new MenuManager(this);
+    this.debugHelper = new DebugHelper(this);
     
     // Create UI buttons
     this.createUIButtons();
@@ -173,6 +196,12 @@ export class GameScene extends Phaser.Scene {
     this.shiftKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.shiftKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.setupKeyboardEvents();
+    
+    // Add debug toggle (F3 key)
+    this.input.keyboard?.on('keydown-F3', () => {
+      this.debugHelper.toggle();
+      console.log('[GameScene] Debug mode toggled');
+    });
   }
 
   resetInput() {

@@ -41,16 +41,18 @@ export class UIHelper {
    * Call this on resize events
    */
   recalculate(): void {
-    const { width, height } = this.scene.cameras.main;
+    // Use scale dimensions which are more reliable
+    const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
     
-    // Calculate scale factor (0.75 to 1.25 range)
+    // Calculate scale factor (0.7 to 1.05 range) - reduced from 0.75-1.25
     // Base reference: 1280x720
     const scaleX = width / 1280;
     const scaleY = height / 720;
-    const scale = Math.max(0.75, Math.min(1.25, Math.min(scaleX, scaleY)));
+    const scale = Math.max(0.7, Math.min(1.05, Math.min(scaleX, scaleY)));
     
-    // Calculate padding (scales with screen size)
-    const padding = Math.max(12, Math.round(Math.min(width, height) * 0.03));
+    // Calculate padding (scales with screen size, slightly increased)
+    const padding = Math.max(16, Math.round(Math.min(width, height) * 0.035));
     
     // Determine if mobile-sized
     const isMobile = width < 768 || height < 600;
@@ -87,6 +89,14 @@ export class UIHelper {
    */
   getConfig(): ViewportConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Get menu-specific scale (10% smaller than base scale)
+   * Use this for menu panel sizing to make them more compact
+   */
+  getMenuScale(): number {
+    return this.config.scale * 0.9;
   }
 
   /**

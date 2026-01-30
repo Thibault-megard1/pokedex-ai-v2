@@ -120,6 +120,36 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* ============================================================================
+   PHASER CANVAS - ENSURE POINTER EVENTS WORK
+   ============================================================================ */
+canvas {
+  /* Critical: Ensure canvas receives pointer/touch events */
+  pointer-events: auto !important;
+  touch-action: none !important;
+  
+  /* Let Phaser handle positioning - don't force absolute */
+  display: block;
+  margin: 0 !important;
+  padding: 0 !important;
+  
+  /* Ensure proper sizing without scaling artifacts */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  
+  /* Prevent text selection while clicking */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  
+  /* Prevent context menu on long press (mobile) */
+  -webkit-touch-callout: none;
+  
+  /* Prevent highlighting */
+  -webkit-tap-highlight-color: transparent;
+}
+
 html, body {
   height: 100%;
   margin: 0;

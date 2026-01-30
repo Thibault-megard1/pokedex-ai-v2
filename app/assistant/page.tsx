@@ -13,7 +13,7 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Bonjour ! Je suis votre assistant Pokédex. Posez-moi des questions sur les Pokémon, les types, les stratégies ou l\'utilisation de cette application !',
+      content: 'Bonjour ! Je suis votre assistant Pokédex avec des connaissances précises sur :\n\n✅ Relations de types (forces/faiblesses)\n✅ Statistiques et capacités des Pokémon\n✅ Stratégies de combat\n✅ Mécaniques du jeu (STAB, EVs, IVs, etc.)\n✅ Fonctionnalités de cette application\n\nJe garde en mémoire notre conversation pour des réponses contextuelles. Posez-moi vos questions !',
       timestamp: Date.now(),
     },
   ]);

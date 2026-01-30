@@ -10,5 +10,11 @@
     "pokemonId": 2,
     "pokemonName": "ivysaur",
     "addedAt": "2026-01-27T18:03:36.415Z"
+  },
+  {
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "pokemonId": 1,
+    "pokemonName": "bulbasaur",
+    "addedAt": "2026-01-30T09:34:07.920Z"
   }
 ]

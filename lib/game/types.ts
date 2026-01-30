@@ -10,6 +10,7 @@ export interface GameSave {
     map: string;
   };
   team: PlayerPokemon[];
+  pcBox?: PlayerPokemon[]; // Storage for captured Pokémon when team is full
   inventory: InventoryItem[];
   badges: string[];
   money: number;

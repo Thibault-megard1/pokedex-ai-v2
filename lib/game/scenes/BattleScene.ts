@@ -64,6 +64,12 @@ export class BattleScene extends Phaser.Scene {
   init(data: { enemyId: number; enemyLevel: number; environment?: string }) {
     console.log('[BattleScene] Starting battle with enhanced visuals:', data);
     
+    // Ensure input is enabled
+    if (this.input) {
+      this.input.enabled = true;
+      console.log('[BattleScene] Input system enabled:', this.input.enabled);
+    }
+    
     // Reset battle state
     this.battleActive = true;
     this.keyHandlers = {};
@@ -130,6 +136,18 @@ export class BattleScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+
+    // Ensure input is enabled
+    this.input.enabled = true;
+    
+    // Debug: Log pointer events with coordinate details
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      console.log('[BattleScene] Pointer down:', {
+        screen: `${pointer.x}, ${pointer.y}`,
+        world: `${pointer.worldX}, ${pointer.worldY}`,
+        canvas: `${this.scale.width}x${this.scale.height}`,
+      });
+    });
 
     // Initialize UIHelper
     this.uiHelper = new UIHelper(this);
@@ -431,17 +449,20 @@ export class BattleScene extends Phaser.Scene {
     // Create move buttons (will be populated when moves load)
     this.createMoveButtons(width, height);
     
-    // Run button (always visible)
+    // Action buttons: Run and Capture (for wild battles)
+    const btnSpacing = 90;
+    
+    // Run button
     const runBtn = this.add.text(
       width - 80,
       height - 60,
       'Run',
       {
-        fontSize: '18px',
+        fontSize: '16px',
         fontFamily: 'Arial, sans-serif',
         color: '#ffffff',
         backgroundColor: '#ef4444',
-        padding: { x: 20, y: 10 },
+        padding: { x: 16, y: 8 },
       }
     );
     runBtn.setOrigin(0.5);
@@ -456,7 +477,32 @@ export class BattleScene extends Phaser.Scene {
     });
     runBtn.on('pointerdown', () => this.runAway());
     
-    this.actionButtons = [runBtn];
+    // Capture button (Pokéball)
+    const captureBtn = this.add.text(
+      width - 80,
+      height - 60 - btnSpacing,
+      '⚾ Catch',
+      {
+        fontSize: '16px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#ffffff',
+        backgroundColor: '#3b82f6',
+        padding: { x: 12, y: 8 },
+      }
+    );
+    captureBtn.setOrigin(0.5);
+    captureBtn.setDepth(10);
+    captureBtn.setInteractive({ useHandCursor: true });
+    
+    captureBtn.on('pointerover', () => {
+      captureBtn.setStyle({ backgroundColor: '#2563eb' });
+    });
+    captureBtn.on('pointerout', () => {
+      captureBtn.setStyle({ backgroundColor: '#3b82f6' });
+    });
+    captureBtn.on('pointerdown', () => this.attemptCapture());
+    
+    this.actionButtons = [runBtn, captureBtn];
   }
 
   createMoveButtons(width: number, height: number) {
@@ -1303,6 +1349,128 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
+  attemptCapture() {
+    if (!this.battleActive || !this.enemyPokemon) {
+      return;
+    }
+
+    // Disable all buttons during capture attempt
+    this.battleActive = false;
+    this.actionButtons.forEach((btn) => btn.disableInteractive());
+
+    // Calculate catch rate based on HP percentage
+    const hpPercent = this.enemyPokemon.hp / this.enemyPokemon.maxHp;
+    const baseCatchRate = 50; // Base 50% chance
+    const hpModifier = (1 - hpPercent) * 50; // Up to 50% bonus when HP is low
+    const catchChance = Math.min(95, baseCatchRate + hpModifier); // Cap at 95%
+
+    // Shake animation sequence
+    this.battleLog.setText('Attempting capture...');
+    
+    this.time.delayedCall(500, () => {
+      this.battleLog.setText('1...');
+      this.time.delayedCall(500, () => {
+        this.battleLog.setText('2...');
+        this.time.delayedCall(500, () => {
+          this.battleLog.setText('3...');
+          this.time.delayedCall(500, () => {
+            // Determine capture success
+            const roll = Math.random() * 100;
+            if (roll < catchChance) {
+              this.captureSuccess();
+            } else {
+              this.captureFail();
+            }
+          });
+        });
+      });
+    });
+  }
+
+  captureSuccess() {
+    // Show success message
+    this.battleLog.setText(`Bravo ! ${this.enemyPokemon.name} est capturé !`);
+
+    // Get the save manager
+    const gameScene = this.scene.get('GameScene') as any;
+    const saveManager = gameScene?.saveManager;
+
+    if (!saveManager) {
+      console.error('SaveManager not found!');
+      this.time.delayedCall(1500, () => this.runAway());
+      return;
+    }
+
+    // Create captured Pokémon object
+    const capturedPokemon: PlayerPokemon = {
+      id: this.enemyPokemon.id,
+      name: this.enemyPokemon.name,
+      level: this.enemyPokemon.level,
+      exp: 0,
+      xpTotal: this.enemyPokemon.xpTotal,
+      hp: this.enemyPokemon.maxHp, // Restore to full HP
+      maxHp: this.enemyPokemon.maxHp,
+      attack: this.enemyPokemon.attack,
+      defense: this.enemyPokemon.defense,
+      speed: this.enemyPokemon.speed,
+      baseHp: this.enemyPokemon.baseHp,
+      baseAttack: this.enemyPokemon.baseAttack,
+      baseDefense: this.enemyPokemon.baseDefense,
+      baseSpeed: this.enemyPokemon.baseSpeed,
+      moves: [...this.enemyPokemon.moves], // Copy moves
+    };
+
+    // Check if team has space
+    const currentSave = saveManager.getCurrentSave();
+    if (!currentSave) {
+      console.error('No save found!');
+      this.time.delayedCall(1500, () => this.runAway());
+      return;
+    }
+
+    if (currentSave.team.length < 6) {
+      // Add to team
+      currentSave.team.push(capturedPokemon);
+      saveManager.saveGame(currentSave);
+      this.battleLog.setText(`${this.enemyPokemon.name} rejoint votre équipe !`);
+    } else {
+      // Add to PC box (if PC system exists, otherwise just show message)
+      if (!currentSave.pcBox) {
+        currentSave.pcBox = [];
+      }
+      currentSave.pcBox.push(capturedPokemon);
+      saveManager.saveGame(currentSave);
+      this.battleLog.setText(`${this.enemyPokemon.name} envoyé au PC Box (équipe pleine)`);
+    }
+
+    // Fade out and return to game
+    this.time.delayedCall(2000, () => {
+      this.cameras.main.fadeOut(600, 0, 0, 0);
+      this.time.delayedCall(1000, () => {
+        this.cleanupKeyboardControls();
+        const gameScene = this.scene.get('GameScene');
+        if (gameScene && this.scene.isSleeping('GameScene')) {
+          this.scene.stop();
+          this.scene.wake('GameScene');
+        } else {
+          this.scene.start('GameScene');
+        }
+      });
+    });
+  }
+
+  captureFail() {
+    // Show failure message
+    this.battleLog.setText(`Oh non ! ${this.enemyPokemon.name} s'est libéré !`);
+
+    // Re-enable battle after delay
+    this.time.delayedCall(1500, () => {
+      this.battleActive = true;
+      this.actionButtons.forEach((btn) => btn.setInteractive());
+      this.battleLog.setText('What will you do?');
+    });
+  }
+
   async victory() {
     this.battleLog.setText(`${this.enemyPokemon.name} est K.O. ! Vous avez gagné !`);
 
@@ -1620,11 +1788,19 @@ export class BattleScene extends Phaser.Scene {
       this.battleLog.setPosition(config.centerX, logY);
     }
 
-    // Update Run button position (top-right safe corner)
+    // Update action buttons position (Run and Capture, stacked vertically)
     if (this.actionButtons.length > 0) {
       const btnSize = this.uiHelper.getButtonSize(80, 40);
-      const runBtnPos = this.uiHelper.getSafeCornerPosition('bottom-right', btnSize.width / 2 + config.padding, btnSize.height / 2 + config.padding);
-      this.actionButtons[0].setPosition(runBtnPos.x, runBtnPos.y);
+      const btnSpacing = 90;
+      const basePos = this.uiHelper.getSafeCornerPosition('bottom-right', btnSize.width / 2 + config.padding, btnSize.height / 2 + config.padding);
+      
+      // Run button (bottom)
+      this.actionButtons[0].setPosition(basePos.x, basePos.y);
+      
+      // Capture button (above Run button)
+      if (this.actionButtons.length > 1) {
+        this.actionButtons[1].setPosition(basePos.x, basePos.y - btnSpacing);
+      }
     }
     
     // Update move button positions (responsive grid layout)

@@ -14,6 +14,15 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+    
+    // Ensure input is enabled
+    this.input.enabled = true;
+    console.log('[MenuScene] Input system enabled:', this.input.enabled);
+    
+    // Debug: Log pointer events
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      console.log('[MenuScene] Pointer down at:', pointer.x, pointer.y);
+    });
 
     // Background
     this.add.rectangle(width / 2, height / 2, width, height, 0x1e3a8a);
