@@ -7,6 +7,8 @@ import { BACKGROUNDS } from "@/lib/backgrounds";
 import { getPokemonCategory } from "@/lib/pokemonCategories";
 import { useLanguage } from "@/components/LanguageProvider";
 import { t } from "@/lib/i18n";
+import { useAdminView } from "@/components/AdminViewProvider";
+import { AdminDebugPanel, AdminDebugBox } from "@/components/AdminDebugComponents";
 
 // Types for team building
 type TeamMember = {
@@ -38,7 +40,9 @@ const LEGENDARY_COST = 3;
 
 export default function BattlePage() {
   const { lang } = useLanguage();
-  
+  const { isAdmin, adminViewEnabled } = useAdminView();
+  const [battleDebugData, setBattleDebugData] = useState<any>(null);
+
   // Team A (Player)
   const [teamA, setTeamA] = useState<(TeamMember | null)[]>(Array(6).fill(null));
   const [currentInputA, setCurrentInputA] = useState<number>(0);
@@ -224,6 +228,7 @@ export default function BattlePage() {
     setLoading(true);
     setError(null);
     setBattleResult(null);
+    setBattleDebugData(null);
 
     try {
       const response = await fetch("/api/battle/team", {
@@ -242,6 +247,29 @@ export default function BattlePage() {
 
       const result = await response.json();
       setBattleResult(result);
+
+      // Fetch debug data if admin view is enabled
+      if (isAdmin && adminViewEnabled && result.rounds && result.rounds.length > 0) {
+        try {
+          const firstRound = result.rounds[0];
+          const debugResponse = await fetch("/api/admin/battle-debug", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              attackerName: firstRound.pokemonA,
+              defenderName: firstRound.pokemonB,
+              moveName: "tackle"
+            })
+          });
+          
+          if (debugResponse.ok) {
+            const debugData = await debugResponse.json();
+            setBattleDebugData(debugData);
+          }
+        } catch (debugError) {
+          console.error("Failed to fetch battle debug data:", debugError);
+        }
+      }
     } catch (e: any) {
       setError(e.message || "Error starting battle");
     } finally {
@@ -538,6 +566,25 @@ export default function BattlePage() {
                 </div>
               </div>
             </div>
+
+            {/* Admin Debug Panel for Battle Calculations */}
+            {battleDebugData && (
+              <AdminDebugPanel
+                title="Battle Calculation Debug"
+                data={{
+                  attacker: battleDebugData.attacker,
+                  defender: battleDebugData.defender,
+                  move: battleDebugData.move,
+                  baseDamage: battleDebugData.baseDamage,
+                  typeEffectiveness: battleDebugData.typeEffectiveness,
+                  stab: battleDebugData.stab,
+                  randomFactor: battleDebugData.randomFactor,
+                  finalDamage: battleDebugData.finalDamage,
+                  formula: battleDebugData.formula,
+                  modifiers: battleDebugData.modifiers
+                }}
+              />
+            )}
           </div>
         )}
       </div>

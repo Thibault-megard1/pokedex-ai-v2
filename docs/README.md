@@ -22,6 +22,8 @@ Welcome to the Pokédex AI documentation. This index will help you find what you
 
 ### Development
 - **[DEV_CHECKLIST.md](DEV_CHECKLIST.md)** - Testing and verification procedures
+- **[ADMIN_VIEW_MODE.md](ADMIN_VIEW_MODE.md)** - Admin inspection mode (developer tool)
+- **[ADMIN_VIEW_QUICK_START.md](ADMIN_VIEW_QUICK_START.md)** - Admin View quick reference
 - **[git-commands.md](git-commands.md)** - Common Git operations
 
 ### Technical References

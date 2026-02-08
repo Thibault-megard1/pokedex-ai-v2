@@ -4,6 +4,7 @@ import { useState } from "react";
 import { quizQuestions, type QuizAnswers, type QuizResult } from "@/lib/quiz";
 import TypeBadge from "@/components/TypeBadge";
 import type { BadgeKey } from "@/lib/typeBadgesSprite";
+import { AdminDebugPanel, AdminDebugBox } from "@/components/AdminDebugComponents";
 
 type QuizStep = "intro" | "questions" | "loading" | "results";
 
@@ -157,6 +158,18 @@ export default function QuizPage() {
 
       {/* Current Question */}
       <div className="card p-8 mb-6 animate-fade-in">
+        <AdminDebugPanel 
+          title="Question Debug Info"
+          data={{
+            "Question ID": currentQuestion.id,
+            "Question Type": currentQuestion.type,
+            "Current Answer": answers[currentQuestion.id] || "Not answered yet",
+            "Is Required": true,
+            "Options Count": currentQuestion.options?.length || "N/A",
+            "Has Answer": !!answers[currentQuestion.id]
+          }}
+        />
+        
         <div className="flex items-start gap-4 mb-6">
           <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
             {currentQuestionIndex + 1}
@@ -168,24 +181,25 @@ export default function QuizPage() {
             {currentQuestion.type === "multiple-choice" && currentQuestion.options && (
               <div className="space-y-3">
                 {currentQuestion.options.map((option, idx) => (
-                  <label
-                    key={idx}
-                    className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 ${
-                      answers[currentQuestion.id] === option
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/40 shadow-md scale-[1.02]"
-                        : "border-gray-300 dark:border-gray-600"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={currentQuestion.id}
-                      value={option}
-                      checked={answers[currentQuestion.id] === option}
-                      onChange={(e) => updateAnswer(currentQuestion.id, e.target.value)}
-                      className="w-5 h-5 text-blue-600"
-                    />
-                    <span className="flex-1 font-medium">{option}</span>
-                  </label>
+                  <AdminDebugBox key={idx} label={`Option ${idx + 1}`}>
+                    <label
+                      className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 ${
+                        answers[currentQuestion.id] === option
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/40 shadow-md scale-[1.02]"
+                          : "border-gray-300 dark:border-gray-600"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={currentQuestion.id}
+                        value={option}
+                        checked={answers[currentQuestion.id] === option}
+                        onChange={(e) => updateAnswer(currentQuestion.id, e.target.value)}
+                        className="w-5 h-5 text-blue-600"
+                      />
+                      <span className="flex-1 font-medium">{option}</span>
+                    </label>
+                  </AdminDebugBox>
                 ))}
               </div>
             )}
@@ -285,6 +299,21 @@ export default function QuizPage() {
 
     return (
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Admin Debug Panel for Results */}
+        <AdminDebugPanel 
+          title="Quiz Analysis Results"
+          data={{
+            "Primary Pokemon ID": primary.id,
+            "Primary Pokemon Name": primary.name,
+            "Confidence Score": `${(primary.confidence * 100).toFixed(1)}%`,
+            "Reasons Count": primary.reasons.length,
+            "Alternatives Count": alternatives.length,
+            "Traits Inferred": traits_inferred.length,
+            "Full Reasoning": primary.reasons.join(", "),
+            "Alternative Pokemon": alternatives.map(a => `${a.name} (${(a.confidence * 100).toFixed(1)}%)`).join(", ")
+          }}
+        />
+        
         {/* Primary Match */}
         <div className="card p-8 text-center">
           <h2 className="text-3xl font-bold mb-2">🎉 Votre Pokémon est...</h2>

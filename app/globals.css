@@ -2532,3 +2532,179 @@ a {
   padding: 1rem;
   transition: all 0.3s ease;
 }
+/* ========================================
+   ADMIN VIEW DEBUG STYLES
+   ======================================== */
+
+/* Admin Debug Panel */
+.admin-debug {
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.95), rgba(255, 140, 0, 0.95));
+  border: 2px dashed #ff8c00;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+  font-family: 'Courier New', monospace;
+  color: #1a1a1a;
+  position: relative;
+  z-index: 100;
+}
+
+.dark .admin-debug {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.85), rgba(255, 120, 0, 0.85));
+  color: #fff;
+}
+
+.admin-debug-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dark .admin-debug-header {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.admin-debug-icon {
+  font-size: 16px;
+}
+
+.admin-debug-title {
+  flex: 1;
+}
+
+.admin-debug-toggle {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.admin-debug-content {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.admin-debug-row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.dark .admin-debug-row {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-debug-key {
+  font-weight: bold;
+  color: #2c5282;
+  min-width: 120px;
+}
+
+.dark .admin-debug-key {
+  color: #90cdf4;
+}
+
+.admin-debug-value {
+  flex: 1;
+  word-break: break-word;
+}
+
+.admin-debug-value pre {
+  margin: 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.dark .admin-debug-value pre {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Admin Debug Tooltip */
+.admin-debug-tooltip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  margin-left: 8px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.admin-debug-tooltip-icon {
+  font-size: 12px;
+}
+
+.admin-debug-tooltip-content {
+  white-space: nowrap;
+}
+
+/* Admin Debug Box */
+.admin-debug-box {
+  position: relative;
+  border: 2px dashed rgba(59, 130, 246, 0.6);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dark .admin-debug-box {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(96, 165, 250, 0.6);
+}
+
+.admin-debug-box-label {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+/* Ensure admin panels don't break layout */
+.admin-debug,
+.admin-debug-tooltip,
+.admin-debug-box {
+  pointer-events: auto;
+}
+
+/* Admin debug panels should be easily collapsible */
+.admin-debug.collapsed .admin-debug-content {
+  display: none;
+}
+
+/* Subtle animation for admin panels */
+@keyframes adminPulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(255, 140, 0, 0.5);
+  }
+}
+
+.admin-debug {
+  animation: adminPulse 3s ease-in-out infinite;
+}

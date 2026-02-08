@@ -8,11 +8,13 @@ import { useLanguage } from "./LanguageProvider";
 import { t } from "@/lib/i18n";
 import { MenuGroup } from "./MenuGroup";
 import AIStatusIndicator from "./AIStatusIndicator";
+import { useAdminView } from "./AdminViewProvider";
 
 type Me = { username: string; isAdmin?: boolean } | null;
 
 export default function NavBar() {
   const { lang } = useLanguage();
+  const { adminViewEnabled, toggleAdminView } = useAdminView();
   const [me, setMe] = useState<Me>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -236,7 +238,23 @@ export default function NavBar() {
               <AIStatusIndicator />
             </div>
             
-            {/* Admin Button - Only show for admin users */}
+            {/* Admin View Toggle - Only show for admin users */}
+            {me?.isAdmin && (
+              <button
+                onClick={toggleAdminView}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shadow-lg ${
+                  adminViewEnabled 
+                    ? 'bg-orange-500 hover:bg-orange-400 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-500 text-white'
+                }`}
+                title={adminViewEnabled ? 'Disable Admin View' : 'Enable Admin View'}
+              >
+                <span className="text-base">{adminViewEnabled ? '🔍' : '👁️'}</span>
+                <span className="hidden sm:inline">Admin View</span>
+              </button>
+            )}
+            
+            {/* Admin Dashboard Button - Only show for admin users */}
             {me?.isAdmin && (
               <Link
                 href="/admin"
@@ -293,7 +311,7 @@ export default function NavBar() {
                 className="lg:hidden p-2.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all text-xl"
                 aria-label="Toggle menu"
               >
-                {mobileMenuOpen ? "✕" : "☰"}
+                ☰
               </button>
             )}
           </div>
@@ -301,7 +319,7 @@ export default function NavBar() {
       </div>
 
       {/* Mobile Menu */}
-      {me && mobileMenuOpen && (
+      {mobileMenuOpen && me && (
         <div className="lg:hidden bg-red-700 border-t border-red-800/50">
           <nav className="px-4 py-4 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
             {/* Mobile AI Status */}
@@ -319,6 +337,21 @@ export default function NavBar() {
                 <img src="/icons/ui/ic-success.png" alt="Admin" className="w-5 h-5" />
                 <span>Admin</span>
               </Link>
+            )}
+            
+            {/* Admin View Toggle - Mobile */}
+            {me?.isAdmin && (
+              <button
+                onClick={toggleAdminView}
+                className={`px-4 py-3 rounded-lg transition-all flex items-center gap-3 font-bold w-full ${
+                  adminViewEnabled 
+                    ? 'bg-orange-500 hover:bg-orange-400 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-500 text-white'
+                }`}
+              >
+                <span className="text-lg">{adminViewEnabled ? '🔍' : '👁️'}</span>
+                <span>Admin View {adminViewEnabled ? 'ON' : 'OFF'}</span>
+              </button>
             )}
             
             <Link

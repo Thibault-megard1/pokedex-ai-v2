@@ -3,9 +3,11 @@ import NavBar from "@/components/NavBar";
 import { ensurePokemonNames } from "@/lib/pokemonNames";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { AdminViewProvider } from "@/components/AdminViewProvider";
 import { PWAInstallBanner } from "@/components/PWAComponents";
 import { DynamicThemeApplier } from "@/components/DynamicThemeApplier";
 import { Inter } from 'next/font/google';
+import { getUserFromRequest } from "@/lib/auth";
 
 // Load Inter font for body text
 const inter = Inter({ 
@@ -37,6 +39,10 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   await ensurePokemonNames();
+  
+  // Check if user is admin
+  const user = await getUserFromRequest();
+  const isUserAdmin = user?.isAdmin === true;
 
   return (
     <html lang="fr" className={inter.variable}>
@@ -74,14 +80,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <ThemeProvider>
           <LanguageProvider>
-            <DynamicThemeApplier />
-            <div className="flex flex-col min-h-screen">
-              <NavBar />
-              <main className="flex-1">
-                {children}
-              </main>
-            </div>
-            <PWAInstallBanner />
+            <AdminViewProvider isUserAdmin={isUserAdmin}>
+              <DynamicThemeApplier />
+              <div className="flex flex-col min-h-screen">
+                <NavBar />
+                <main className="flex-1">
+                  {children}
+                </main>
+              </div>
+              <PWAInstallBanner />
+            </AdminViewProvider>
           </LanguageProvider>
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{

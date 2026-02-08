@@ -16,6 +16,7 @@ import PokemonNotes from "@/components/PokemonNotes";
 import PokemonSpriteDisplay from "@/components/PokemonSpriteDisplay";
 import PokedexFlavorText from "@/components/PokedexFlavorText";
 import PokedexInfoPanel from "@/components/PokedexInfoPanel";
+import { AdminDebugPanel } from "@/components/AdminDebugComponents";
 
 export default async function PokemonDetailPage({ params }: { params: { name: string } }) {
   const p = await getPokemonDetail(params.name);
@@ -38,6 +39,25 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
   return (
     <div className="pokedex-page" style={{ ["--bg-url" as any]: `url(${bg})` }}>
       <HistoryTracker id={p.id} name={p.name} sprite={p.sprite} />
+      
+      {/* Admin Debug Panel */}
+      <AdminDebugPanel 
+        title="Pokemon Detail Data"
+        data={{
+          id: p.id,
+          name: p.name,
+          dataSource: 'pokemon-cache',
+          sprite: p.sprite,
+          background: bg,
+          region: p.region,
+          generation: p.generation,
+          cacheStatus: 'loaded',
+          cryUrl: cryUrl,
+          totalStats: totalStats,
+          types: p.types,
+        }}
+      />
+
       <div className="pokedex-container">
         {/* Section principale Pokédex : tout dans la colonne centrale */}
         <div className="w-full flex flex-col items-center">
