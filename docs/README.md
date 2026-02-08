@@ -1,358 +1,174 @@
-# 📚 Pokédex Hero Sprite Panel - Documentation Index
+# 📚 Documentation Index - Pokédex AI
 
-## Quick Navigation
-
-### 🚀 Getting Started
-**Start here if you want a quick overview:**
-- [`SPRITE_PANEL_QUICK_REFERENCE.md`](docs/SPRITE_PANEL_QUICK_REFERENCE.md) - 5 min read, copy-paste tweaks
-
-### 📖 Complete Documentation
-**Read these for detailed information:**
-1. [`POKEDES_SPRITE_PANEL_COMPLETED.md`](POKEDES_SPRITE_PANEL_COMPLETED.md) - **Overall summary (10 min)**
-2. [`SPRITE_PANEL.md`](docs/SPRITE_PANEL.md) - **Full implementation guide (20 min)**
-3. [`SPRITE_PANEL_SUMMARY.md`](docs/SPRITE_PANEL_SUMMARY.md) - **What changed & checklist (10 min)**
-
-### 💡 Examples & Customization
-**See what's possible:**
-- [`SPRITE_PANEL_EXAMPLES.md`](docs/SPRITE_PANEL_EXAMPLES.md) - 6 complete examples you can copy
-
-### 🏗️ Technical Details
-**For developers & architects:**
-- [`SPRITE_PANEL_ARCHITECTURE.md`](docs/SPRITE_PANEL_ARCHITECTURE.md) - Diagrams, flow, performance
+Welcome to the Pokédex AI documentation. This index will help you find what you need quickly.
 
 ---
 
-## What Was Done
+## 🚀 Getting Started
 
-✅ **Pokédex device frame** - rounded corners, glass effect, shadow
-✅ **Floating animation** - subtle vertical float (4s cycle)
-✅ **Scanline overlay** - retro CRT effect (optional)
-✅ **Shiny toggle** - smooth fade/scale transition
-✅ **Shiny badge** - pulsing gold indicator
-✅ **Enhanced button** - shine effect, red glow
-✅ **Light/dark modes** - automatic theme detection
-✅ **Accessibility** - ARIA labels, keyboard nav, focus indicators
-✅ **Responsive design** - mobile (240px) → desktop (320px)
-✅ **Performance** - 60fps, pure CSS, 2.2KB added
+**Start here if you're new:**
+- **[../GETTING_STARTED.md](../GETTING_STARTED.md)** - Installation, configuration, and first steps
+- **[../README.md](../README.md)** - Project overview and features
 
 ---
 
-## Modified Files
+## 📖 Core Documentation
 
-### Code Changes (2 files)
-```
-app/globals.css                     +140 lines (2.2 KB minified)
-components/PokemonSpriteDisplay.tsx +15 lines (accessibility)
-```
+### Essential Guides
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and technology stack
+- **[FEATURES.md](FEATURES.md)** - Complete feature list and descriptions
+- **[GAME_GUIDE.md](GAME_GUIDE.md)** - Pokémon game implementation guide
+- **[BATTLE_SYSTEM.md](BATTLE_SYSTEM.md)** - Battle mechanics (Phaser & Team battles)
 
-### Documentation (6 files)
-```
-docs/SPRITE_PANEL.md                   ← Detailed guide
-docs/SPRITE_PANEL_EXAMPLES.md          ← Customization examples  
-docs/SPRITE_PANEL_SUMMARY.md           ← Implementation summary
-docs/SPRITE_PANEL_QUICK_REFERENCE.md   ← Quick start
-docs/SPRITE_PANEL_ARCHITECTURE.md      ← Technical diagrams
-POKEDES_SPRITE_PANEL_COMPLETED.md      ← Overall completion summary
-```
+### Development
+- **[DEV_CHECKLIST.md](DEV_CHECKLIST.md)** - Testing and verification procedures
+- **[git-commands.md](git-commands.md)** - Common Git operations
 
----
-
-## CSS Variables (Easy Customization)
-
-Located at top of `app/globals.css` `:root` selector:
-
-```css
---sprite-frame-glow: rgba(220, 20, 60, 0.15);      /* Red glow */
---sprite-frame-glow-hover: rgba(220, 20, 60, 0.25);
---sprite-float-distance: 8px;                        /* Float height */
---sprite-float-duration: 4s;                         /* Speed */
---scanline-opacity: 0.03;                            /* Light mode */
---scanline-opacity-dark: 0.15;                       /* Dark mode */
-```
-
-**Change these to customize!**
+### Technical References
+- **[POKEMON_CACHE_API_REFERENCE.md](POKEMON_CACHE_API_REFERENCE.md)** - Caching system API
+- **[MENU_SYSTEM.md](MENU_SYSTEM.md)** - In-game menu system
+- **[QUIZ_REDESIGN.md](QUIZ_REDESIGN.md)** - Quiz feature documentation
 
 ---
 
-## Common Customizations (Copy & Paste)
+## 🤖 AI Integration
 
-### Make It Faster
-```css
---sprite-float-duration: 2s;
-```
-
-### Disable Scanlines
-```css
---scanline-opacity: 0;
---scanline-opacity-dark: 0;
-```
-
-### Make It Bigger
-```css
---sprite-size: 400px;
---sprite-size-mobile: 300px;
-```
-
-### Change Glow Color to Green
-```css
---sprite-frame-glow: rgba(34, 139, 34, 0.2);
---sprite-frame-glow-hover: rgba(34, 139, 34, 0.35);
-```
-
-See `SPRITE_PANEL_EXAMPLES.md` for 6 complete examples!
+Located in `docs/ai/`:
+- **[llm-integration.md](ai/llm-integration.md)** - Unified AI system documentation
+- **[ollama-setup.md](ai/ollama-setup.md)** - Local AI (Ollama) installation guide
 
 ---
 
-## Animations Implemented
+## 🎨 Design & UI
 
-| Name | Where | Duration | Customizable |
-|------|-------|----------|--------------|
-| **floatingSprite** | Frame | 4s (var) | Yes |
-| **shinyTransition** | Sprite | 0.6s | No |
-| **shinyPulse** | Badge | 2s | No |
-| **shine** (hover) | Button | 0.5s | No |
-
-All smooth (60fps), GPU-accelerated!
+Located in `docs/design/`:
+- **[redesign-guide.md](design/redesign-guide.md)** - UI/UX design system
+- **[sprites-guide.md](design/sprites-guide.md)** - Asset management guide
+- **[redesign-progress.md](design/redesign-progress.md)** - Design implementation status
 
 ---
 
-## Testing Checklist
+## ✨ Features
 
-- [ ] Light mode: Frame visible, animation smooth
-- [ ] Dark mode: Colors correct, scanlines visible
-- [ ] Toggle: Works on click, transition smooth
-- [ ] Mobile: Sprite fits (240px), no overflow
-- [ ] Tablet: Good at 280px sizing
-- [ ] Desktop: Full 320px display
-- [ ] Keyboard: Tab/Enter navigation works
-- [ ] Accessibility: Focus indicator visible
-- [ ] No console errors: F12 > Console is clean
+Located in `docs/features/`:
+- **[quiz-documentation.md](features/quiz-documentation.md)** - Quiz system details
+- **[quiz-setup.md](features/quiz-setup.md)** - Quiz implementation
+- **[quiz-update.md](features/quiz-update.md)** - Quiz updates
+- **[i18n-guide.md](features/i18n-guide.md)** - Internationalization (i18n)
 
 ---
 
-## Performance Metrics
+## 📦 Archive
 
-| Metric | Value |
-|--------|-------|
-| CSS added | 2.2 KB minified |
-| JavaScript added | 0 KB |
-| Animation FPS | 60 |
-| CPU usage | <1% |
-| Load time impact | Negligible |
+Located in `docs/archive/`:
 
-**Zero performance degradation!**
-
----
-
-## Browser Support
-
-✅ Chrome
-✅ Firefox
-✅ Safari
-✅ Edge
-✅ Mobile (iOS, Android)
-
-❌ IE11 (not supported, but uses no IE-specific features)
+Historical documentation and completed milestones:
+- **[implementation-complete.md](archive/implementation-complete.md)** - Phase 1 completion
+- **[phase-2-complete.md](archive/phase-2-complete.md)** - Phase 2 completion
+- **[pokedex-plus-ideas.md](archive/pokedex-plus-ideas.md)** - Feature brainstorming
+- **[site-restructure-summary.md](archive/site-restructure-summary.md)** - Restructure notes
+- **[updates.md](archive/updates.md)** - Historical updates
 
 ---
 
-## Accessibility Features
-
-✅ ARIA labels (French translations)
-✅ aria-pressed state
-✅ Keyboard navigation (Tab, Enter)
-✅ Focus indicators (3px red outline)
-✅ Screen reader support
-✅ Status text visible
-✅ Alt text on sprites
-✅ WCAG 2.1 AA compliant
-
----
-
-## File Organization
+## 📁 Project Structure
 
 ```
 pokedex-ai-v2/
-├── app/
-│   └── globals.css              ← Modified (sprites CSS)
+├── README.md                       ← Project overview
+├── GETTING_STARTED.md              ← Quick start guide
 │
-├── components/
-│   └── PokemonSpriteDisplay.tsx ← Modified (accessibility)
+├── docs/                           ← You are here
+│   ├── README.md                   ← This file
+│   ├── ARCHITECTURE.md             ← System architecture
+│   ├── BATTLE_SYSTEM.md            ← Battle mechanics
+│   ├── FEATURES.md                 ← Feature list
+│   ├── GAME_GUIDE.md               ← Game implementation
+│   ├── DEV_CHECKLIST.md            ← Development workflow
+│   ├── MENU_SYSTEM.md              ← Menu system
+│   ├── POKEMON_CACHE_API_REFERENCE.md ← Cache API
+│   ├── QUIZ_REDESIGN.md            ← Quiz documentation
+│   ├── git-commands.md             ← Git reference
+│   │
+│   ├── ai/                         ← AI integration
+│   │   ├── llm-integration.md
+│   │   └── ollama-setup.md
+│   │
+│   ├── design/                     ← UI/UX design
+│   │   ├── redesign-guide.md
+│   │   ├── sprites-guide.md
+│   │   └── redesign-progress.md
+│   │
+│   ├── features/                   ← Feature-specific docs
+│   │   ├── quiz-documentation.md
+│   │   ├── quiz-setup.md
+│   │   ├── quiz-update.md
+│   │   └── i18n-guide.md
+│   │
+│   └── archive/                    ← Historical docs
+│       ├── implementation-complete.md
+│       ├── phase-2-complete.md
+│       ├── pokedex-plus-ideas.md
+│       ├── site-restructure-summary.md
+│       └── updates.md
 │
-├── docs/
-│   ├── SPRITE_PANEL.md          ← Full guide
-│   ├── SPRITE_PANEL_EXAMPLES.md ← Copy-paste examples
-│   ├── SPRITE_PANEL_SUMMARY.md  ← Implementation details
-│   ├── SPRITE_PANEL_QUICK_REFERENCE.md ← Quick start
-│   └── SPRITE_PANEL_ARCHITECTURE.md ← Technical diagrams
-│
-└── POKEDES_SPRITE_PANEL_COMPLETED.md ← This summary
+├── app/                            ← Next.js pages
+├── components/                     ← React components
+├── lib/                            ← Utilities & game logic
+├── data/                           ← Local database
+└── public/                         ← Static assets
 ```
 
 ---
 
-## Where to Find Things
+## 🔍 Quick Reference
 
-### To Customize Colors
-→ `app/globals.css` lines 24-28 (CSS variables)
+### Installation
+```bash
+git clone https://github.com/Thibault-megard1/pokedex-ai-v2.git
+cd pokedex-ai-v2
+npm install
+node scripts/download-assets.mjs
+npm run dev
+```
 
-### To Customize Animation Speed
-→ `app/globals.css` line 26 (`--sprite-float-duration`)
+### Key URLs
+- **Home**: http://localhost:3000
+- **Pokédex**: http://localhost:3000/pokemon
+- **Game**: http://localhost:3000/game
+- **Battle**: http://localhost:3000/battle
+- **Team**: http://localhost:3000/team
+- **Quiz**: http://localhost:3000/quiz
+- **AI Health**: http://localhost:3000/api/ai/health
 
-### To Disable Scanlines
-→ `app/globals.css` line 27 (`--scanline-opacity`)
-
-### To See CSS Styling
-→ `app/globals.css` lines 1140-1385
-
-### To Update Toggle Button
-→ `components/PokemonSpriteDisplay.tsx` lines 49-68
-
-### To Change Frame Size
-→ `app/globals.css` line 20-21 (`--sprite-size` variables)
-
----
-
-## Reading Guide
-
-### If you have **5 minutes**
-→ Read `SPRITE_PANEL_QUICK_REFERENCE.md`
-
-### If you have **15 minutes**
-→ Read `POKEDES_SPRITE_PANEL_COMPLETED.md`
-
-### If you have **30 minutes**
-→ Read `SPRITE_PANEL.md` + `SPRITE_PANEL_EXAMPLES.md`
-
-### If you have **1 hour**
-→ Read all documentation files + review code
-
-### If you need **technical details**
-→ Read `SPRITE_PANEL_ARCHITECTURE.md`
+### Key Technologies
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Game**: Phaser 3
+- **AI**: Ollama (local) or Mistral AI (cloud)
+- **Data**: PokéAPI + local JSON cache
+- **Auth**: JWT sessions
 
 ---
 
-## Implementation Summary
+## 🆘 Need Help?
 
-### What Changed
-- Added floating animation to sprite frame
-- Added scanline overlay for retro feel
-- Enhanced shiny toggle with smooth transition
-- Improved button with shine effect
-- Added full accessibility support
-- Enhanced dark mode styling
-- Added 6 CSS custom variables
-
-### Files Modified
-- `app/globals.css`: +140 lines (CSS)
-- `components/PokemonSpriteDisplay.tsx`: +15 lines (accessibility)
-
-### Files Created
-- 5 comprehensive documentation files (1500+ lines total)
-
-### Impact
-- Code: +155 lines, 2.2 KB minified
-- Performance: No degradation (60fps)
-- Accessibility: WCAG 2.1 AA compliant
-- User Experience: Professional device aesthetic
+1. **Installation issues**: See [GETTING_STARTED.md](../GETTING_STARTED.md#-troubleshooting)
+2. **AI not working**: Check [ai/ollama-setup.md](ai/ollama-setup.md)
+3. **Game issues**: See [GAME_GUIDE.md](GAME_GUIDE.md)
+4. **Battle issues**: See [BATTLE_SYSTEM.md](BATTLE_SYSTEM.md)
+5. **Development workflow**: See [DEV_CHECKLIST.md](DEV_CHECKLIST.md)
 
 ---
 
-## Next Steps
+## 📝 Documentation Guidelines
 
-1. **Review** the implementation (read overview doc)
-2. **Test** in light & dark modes
-3. **Customize** colors/animations if needed (edit CSS variables)
-4. **Deploy** to production (no build changes needed)
-5. **Monitor** for issues (none expected)
-
-**You're done! Everything is production-ready.**
-
----
-
-## Support Resources
-
-### Quick Questions
-→ Check `SPRITE_PANEL_QUICK_REFERENCE.md`
-
-### How to Customize
-→ See `SPRITE_PANEL_EXAMPLES.md`
-
-### Animation Details
-→ Read `SPRITE_PANEL.md` (Animation Details section)
-
-### Troubleshooting
-→ See `SPRITE_PANEL.md` (Troubleshooting section)
-
-### Technical Architecture
-→ Study `SPRITE_PANEL_ARCHITECTURE.md`
+When adding new documentation:
+1. Use clear, descriptive filenames
+2. Include a table of contents for long documents
+3. Add code examples where relevant
+4. Update this index (README.md)
+5. Keep archived docs in `archive/` folder
 
 ---
 
-## All Features Checklist
-
-- ✅ Pokédex device frame
-- ✅ Floating animation
-- ✅ Scanline overlay (retro CRT)
-- ✅ Shiny toggle
-- ✅ Shiny badge
-- ✅ Enhanced button
-- ✅ Light mode support
-- ✅ Dark mode support
-- ✅ Responsive design
-- ✅ Accessibility (WCAG 2.1 AA)
-- ✅ Performance optimized
-- ✅ Comprehensive documentation
-
-**All requirements met! 🎉**
-
----
-
-## Questions & Answers
-
-**Q: Can I customize the colors?**
-A: Yes! Edit CSS variables at top of `globals.css` (lines 24-28)
-
-**Q: Can I disable animations?**
-A: Yes! Set `--sprite-float-duration: 0s` and remove scanlines
-
-**Q: Does it work in dark mode?**
-A: Yes! Automatic theme detection with perfect styling
-
-**Q: Is it accessible?**
-A: Yes! WCAG 2.1 AA compliant with full keyboard/screen reader support
-
-**Q: What about performance?**
-A: Perfect! 60fps, pure CSS, <1% CPU, negligible impact
-
-**Q: Can I change animation speed?**
-A: Yes! Modify `--sprite-float-duration` CSS variable
-
-**Q: Will it work on mobile?**
-A: Yes! Responsive from 240px (mobile) to 320px (desktop)
-
-**Q: Do I need to rebuild?**
-A: No! Just modify CSS variables and refresh
-
----
-
-## Final Checklist
-
-- [ ] Read overview documentation
-- [ ] Review code changes
-- [ ] Test in light mode
-- [ ] Test in dark mode
-- [ ] Test on mobile
-- [ ] Test keyboard navigation
-- [ ] Customize as needed (optional)
-- [ ] Deploy to production
-- [ ] Monitor for issues
-
-**All set! Your Pokédex sprite panel is ready to go! 🎉**
-
----
-
-**Last Updated**: January 2026
-**Status**: ✅ Complete & Production-Ready
-**Documentation**: 1500+ lines across 6 files
-**Code Added**: 155 lines (2.2 KB minified)
+**Happy coding! 🎮⚡**

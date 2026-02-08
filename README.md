@@ -639,15 +639,16 @@ graph LR
 
 Comprehensive documentation is available in the `/docs` folder:
 
-- **[Quick Start Guide](docs/quick-start.md)** - Get up and running quickly
+- **[Getting Started](GETTING_STARTED.md)** - Quick installation and setup guide
 - **[Features Overview](docs/FEATURES.md)** - Complete feature list
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - System architecture and design
+- **[Game Guide](docs/GAME_GUIDE.md)** - Pokémon game implementation
+- **[Battle System](docs/BATTLE_SYSTEM.md)** - Battle mechanics and systems
 - **[Development Checklist](docs/DEV_CHECKLIST.md)** - Testing and verification guide
 
 ### AI Integration
 - **[LLM Integration](docs/ai/llm-integration.md)** - Unified AI system documentation
 - **[Ollama Setup](docs/ai/ollama-setup.md)** - Local AI installation guide
-- **[Integration Complete](docs/ai/integration-complete.md)** - Implementation summary
 
 ### Design & Features
 - **[Redesign Guide](docs/design/redesign-guide.md)** - UI/UX design system
@@ -657,7 +658,7 @@ Comprehensive documentation is available in the `/docs` folder:
 
 ### Utility Docs
 - **[Git Commands](docs/git-commands.md)** - Common Git operations
-- **[Archive](docs/archive/)** - Historical documentation
+- **[Documentation Index](docs/README.md)** - Full documentation index
 
 ## Acknowledgments
 - Thanks to the Pokémon API for providing the data.
