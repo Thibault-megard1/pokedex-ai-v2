@@ -25,6 +25,7 @@ import {
 } from '../levelingSystem';
 import { MenuManager } from '../MenuManager';
 import { UIHelper } from '../UIHelper';
+import { playTypeSfx } from '../audio/sfx';
 
 export class BattleScene extends Phaser.Scene {
   private playerPokemon!: PlayerPokemon;
@@ -975,6 +976,9 @@ export class BattleScene extends Phaser.Scene {
       duration: 150,
       yoyo: true,
       onComplete: () => {
+        // Play type-specific sound effect
+        playTypeSfx(move.type, 0.6);
+        
         // Screen shake
         this.cameras.main.shake(200, 0.01);
 
@@ -1131,6 +1135,9 @@ export class BattleScene extends Phaser.Scene {
       duration: 150,
       yoyo: true,
       onComplete: () => {
+        // Play type-specific sound effect
+        playTypeSfx(move.type, 0.6);
+        
         // Screen shake
         this.cameras.main.shake(200, 0.01);
 
