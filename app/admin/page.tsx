@@ -202,7 +202,7 @@ export default function AdminPage() {
       
       setSaveSuccess(true);
       
-      // Apply theme immediately
+      // Apply theme immediately without page reload
       applyTheme(settings);
       
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -214,19 +214,49 @@ export default function AdminPage() {
   }
 
   function applyTheme(themeSettings: SiteSettings) {
-    // This would need to update CSS variables in the document
-    // For now, just trigger a reload
-    setTimeout(() => window.location.reload(), 1000);
+    // Clear cache so DynamicThemeApplier fetches fresh data
+    localStorage.removeItem("siteThemeCache");
+    
+    // Broadcast event to trigger theme reload globally
+    window.dispatchEvent(new CustomEvent("themeUpdated"));
+    
+    // Also apply directly for instant feedback
+    const isDark = document.documentElement.classList.contains("dark");
+    const theme = isDark ? themeSettings.dark : themeSettings.light;
+    const root = document.documentElement;
+    
+    root.style.setProperty("--bg-primary", theme.background);
+    root.style.setProperty("--bg-secondary", theme.card);
+    root.style.setProperty("--surface", theme.card);
+    root.style.setProperty("--text-primary", theme.text);
+    root.style.setProperty("--pokedex-red", theme.primary);
+    root.style.setProperty("--pokedex-red-dark", theme.primary);
   }
 
-  function resetTheme() {
+  async function resetTheme() {
     if (!confirm("Réinitialiser le thème aux valeurs par défaut ?")) return;
-    
     const defaults: SiteSettings = {
       light: { background: "#f3f4f6", text: "#1f2937", primary: "#ef4444", card: "#ffffff" },
       dark: { background: "#111827", text: "#f9fafb", primary: "#ef4444", card: "#1f2937" }
     };
     setSettings(defaults);
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      const res = await fetch("/api/admin/theme", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: defaults })
+      });
+      if (!res.ok) throw new Error("Erreur de sauvegarde");
+      setSaveSuccess(true);
+      applyTheme(defaults);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function applyPokemonTheme(themeName: keyof typeof pokemonThemes) {

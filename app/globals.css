@@ -2456,3 +2456,79 @@ a {
   padding: 0;
   box-shadow: none;
 }
+
+/* ============================================================================
+   THEME UTILITIES - Use these for dynamic theming
+   ============================================================================ */
+
+/* Background utilities using theme variables */
+.bg-theme-primary {
+  background-color: var(--bg-primary) !important;
+}
+
+.bg-theme-secondary {
+  background-color: var(--bg-secondary) !important;
+}
+
+.bg-theme-surface {
+  background-color: var(--surface) !important;
+}
+
+.bg-theme-card {
+  background-color: var(--surface) !important;
+}
+
+/* Text utilities using theme variables */
+.text-theme-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-theme-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-theme-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Border utilities */
+.border-theme {
+  border-color: var(--border-color) !important;
+}
+
+/* Primary color utilities */
+.bg-theme-accent {
+  background-color: var(--pokedex-red) !important;
+}
+
+.text-theme-accent {
+  color: var(--pokedex-red) !important;
+}
+
+.border-theme-accent {
+  border-color: var(--pokedex-red) !important;
+}
+
+/* Button with theme colors */
+.btn-theme-primary {
+  background-color: var(--pokedex-red);
+  color: white;
+  border: 2px solid var(--pokedex-red);
+  transition: all 0.2s ease;
+}
+
+.btn-theme-primary:hover {
+  background-color: var(--pokedex-red-dark);
+  border-color: var(--pokedex-red-dark);
+  transform: translateY(-1px);
+}
+
+/* Card with theme colors */
+.card-theme {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}

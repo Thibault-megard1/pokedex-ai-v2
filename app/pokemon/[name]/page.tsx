@@ -15,6 +15,7 @@ import HistoryTracker from "@/components/HistoryTracker";
 import PokemonNotes from "@/components/PokemonNotes";
 import PokemonSpriteDisplay from "@/components/PokemonSpriteDisplay";
 import PokedexFlavorText from "@/components/PokedexFlavorText";
+import PokedexInfoPanel from "@/components/PokedexInfoPanel";
 
 export default async function PokemonDetailPage({ params }: { params: { name: string } }) {
   const p = await getPokemonDetail(params.name);
@@ -98,6 +99,10 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
                     </div>
                   </>
                 )}
+              </div>
+              {/* Additional Pokédex Info */}
+              <div className="mt-4 w-full">
+                <PokedexInfoPanel pokemonId={p.id} />
               </div>
               {/* Description Pokédex sous la taille/poids */}
               <div className="mt-4 w-full">

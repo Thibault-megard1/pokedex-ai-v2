@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "pokemonId": 546,
+    "pokemonName": "cottonee",
+    "note": "Pokemon obtenu avec le quizz",
+    "rating": 5,
+    "tags": [],
+    "updatedAt": "2026-01-31T09:39:59.734Z"
+  }
+]

@@ -81,9 +81,6 @@ export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemo
               {isShiny ? "Version normale" : "Version Shiny"}
             </span>
           </button>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {isShiny ? "Shiny" : "Normal"}
-          </span>
         </div>
       )}
     </div>

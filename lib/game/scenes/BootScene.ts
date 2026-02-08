@@ -1,6 +1,6 @@
 // Boot scene - loads assets and initializes game
 import * as Phaser from 'phaser';
-import { loadPlayerSprite, createPlayerFrames, createPlayerAnimations } from '../player';
+import { preloadPlayerSprites } from '../player';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -37,7 +37,7 @@ export class BootScene extends Phaser.Scene {
       loadingText.destroy();
     });
 
-    // Load assets with fallback handling
+    // Load assets
     this.loadPlayerSprite();
     this.loadNPCSprites();
     this.loadTileset();
@@ -45,12 +45,14 @@ export class BootScene extends Phaser.Scene {
   }
 
   loadPlayerSprite() {
-    // Load Diamond & Pearl male trainer sprite
-    loadPlayerSprite(this);
+    console.log('[BootScene] Loading player SVG sprites...');
+    
+    // Preload all SVG player sprites (marcher + courir)
+    preloadPlayerSprites(this);
 
     this.load.on('loaderror', (file: any) => {
-      if (file.key === 'player_spritesheet') {
-        console.warn('[BootScene] Player sprite sheet not found, fallback will be used');
+      if (file.key?.startsWith('player_')) {
+        console.warn('[BootScene] Player sprite failed to load:', file.key);
       }
     });
   }
@@ -76,68 +78,22 @@ export class BootScene extends Phaser.Scene {
     // Create fallback graphics if assets failed to load
     this.createFallbackAssets();
 
-    // Create manual frames from sprite texture
-    this.createPlayerFrames();
-
-    // Create player animations
-    this.createPlayerAnimations();
-
     console.log('[BootScene] Assets loaded, starting MenuScene');
     this.scene.start('MenuScene');
   }
 
   createFallbackAssets() {
-    // Create fallback player sprite if needed
-    if (!this.textures.exists('player_spritesheet')) {
+    // Create fallback player sprite if needed (simple colored circle)
+    if (!this.textures.exists('player_fallback')) {
       console.log('[BootScene] Creating fallback player sprite');
       
-      // Create simple texture matching manual frame layout
-      const frameSize = 32;
-      const canvas = document.createElement('canvas');
-      canvas.width = 112;   // 3 frames wide at x=16,48,80
-      canvas.height = 304;  // Tall enough for all frames
-      const ctx = canvas.getContext('2d')!;
-      
-      // Fill with transparent background
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      const dirColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']; // Blue, Green, Orange, Red
-      const dirLabels = ['D', 'L', 'R', 'U'];
-      
-      // Walk frames (y=32, 64, 96, 128)
-      [32, 64, 96, 128].forEach((y, dirIndex) => {
-        [16, 48, 80].forEach((x) => {
-          ctx.fillStyle = dirColors[dirIndex];
-          ctx.fillRect(x, y, frameSize, frameSize);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 14px monospace';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(dirLabels[dirIndex], x + 16, y + 16);
-        });
-      });
-      
-      // Run frames (y=176, 208, 240, 272)
-      [176, 208, 240, 272].forEach((y, dirIndex) => {
-        [16, 48, 80].forEach((x) => {
-          ctx.fillStyle = dirColors[dirIndex];
-          ctx.fillRect(x, y, frameSize, frameSize);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 12px monospace';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(dirLabels[dirIndex], x + 16, y + 12);
-          ctx.font = '10px monospace';
-          ctx.fillText('R', x + 16, y + 22);
-        });
-      });
-      
-      // Convert canvas to texture using createCanvas
-      const canvasTexture = this.textures.createCanvas('player_spritesheet', canvas.width, canvas.height);
-      const context = canvasTexture!.getContext();
-      context.drawImage(canvas, 0, 0);
-      canvasTexture!.refresh();
-      console.log('[BootScene] Created fallback player sprite (manual frame layout)');
+      const graphics = this.add.graphics();
+      graphics.fillStyle(0x3b82f6, 1);
+      graphics.fillCircle(16, 24, 12);
+      graphics.fillStyle(0x1e3a8a, 1);
+      graphics.fillCircle(16, 16, 10);
+      graphics.generateTexture('player_fallback', 32, 32);
+      graphics.destroy();
     }
 
     // Create fallback NPC sprites
@@ -162,15 +118,5 @@ export class BootScene extends Phaser.Scene {
       graphics.generateTexture('textbox', 400, 100);
       graphics.destroy();
     }
-  }
-
-  createPlayerFrames() {
-    // Create manual texture frames
-    createPlayerFrames(this);
-  }
-
-  createPlayerAnimations() {
-    // Create Pokémon-style animations using manual frames
-    createPlayerAnimations(this);
   }
 }

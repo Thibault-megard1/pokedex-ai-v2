@@ -360,11 +360,11 @@ export class GameScene extends Phaser.Scene {
     this.createUIButtons();
   }
 
-  update() {
+  update(time: number, delta: number) {
+    // Always update player animation (for walking animation during movement)
+    updatePlayer(this.player, this.cursors, this.isMoving, this.shiftKey, delta);
+    
     if (!this.canMove || this.isMoving || this.menuOpen || this.confirmExitContainer) return;
-
-    // Update player animations (includes run detection with shift key)
-    updatePlayer(this.player, this.cursors, this.isMoving, this.shiftKey);
 
     const gridX = this.player.getData('gridX');
     const gridY = this.player.getData('gridY');

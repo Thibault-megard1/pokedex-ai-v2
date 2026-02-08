@@ -16,5 +16,11 @@
     "pokemonId": 1,
     "pokemonName": "bulbasaur",
     "addedAt": "2026-01-30T09:34:07.920Z"
+  },
+  {
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "pokemonId": 546,
+    "pokemonName": "cottonee",
+    "addedAt": "2026-01-31T09:39:37.049Z"
   }
 ]
