@@ -1,0 +1,84 @@
+{
+  "guardrails": {
+    "strictAnswerOnly": true,
+    "noRankingsUnlessAsked": true,
+    "alwaysFrench": true,
+    "admitUncertainty": true,
+    "preferBulletLists": true
+  },
+  "systemRules": [
+    {
+      "id": "rule-1",
+      "enabled": true,
+      "name": "Répondre uniquement à ce qui est demandé",
+      "description": "Ne pas ajouter de commentaires, résumés ou classements non sollicités"
+    },
+    {
+      "id": "rule-2",
+      "enabled": false,
+      "name": "Pas de classements sans demande explicite",
+      "description": "Ne pas dire 'le meilleur', 'le plus fort' sauf si demandé"
+    },
+    {
+      "id": "rule-3",
+      "enabled": true,
+      "name": "Toujours en français",
+      "description": "Toutes les réponses doivent être en français"
+    },
+    {
+      "id": "rule-4",
+      "enabled": true,
+      "name": "Admettre l'incertitude",
+      "description": "Si incertain, dire 'Je ne suis pas sûr' plutôt qu'inventer"
+    },
+    {
+      "id": "rule-5",
+      "enabled": true,
+      "name": "Préférer les listes à puces",
+      "description": "Pour les matchups de types, utiliser des bullet points"
+    }
+  ],
+  "responseValidator": {
+    "enabled": true,
+    "removeUnwantedPhrases": true,
+    "detectExtraCommentary": true,
+    "ensureGrammar": true
+  },
+  "bannedPhrases": [
+    "le type le plus fort",
+    "le meilleur type",
+    "en résumé",
+    "donc",
+    "à retenir",
+    "suivi du",
+    "suivi de"
+  ],
+  "intentDetection": {
+    "enabled": true,
+    "patterns": {
+      "list": [
+        "quels types",
+        "liste",
+        "types super efficaces",
+        "types forts"
+      ],
+      "ranking": [
+        "meilleur",
+        "le plus",
+        "classement",
+        "top"
+      ],
+      "explanation": [
+        "comment",
+        "pourquoi",
+        "explique"
+      ],
+      "comparison": [
+        "différence",
+        "comparer",
+        "versus",
+        "vs"
+      ]
+    }
+  }
+}

@@ -2,14 +2,24 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { MistralMessage } from '@/lib/mistralAI';
+import { useAdminView } from '@/components/AdminViewProvider';
+import { AssistantAdminPanel } from '@/components/AssistantAdminPanel';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+  metadata?: {
+    intent?: string;
+    validated?: boolean;
+    patched?: boolean;
+    patchId?: string;
+  };
 }
 
 export default function AssistantPage() {
+  const { isAdmin, adminViewEnabled } = useAdminView();
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -67,6 +77,7 @@ export default function AssistantPage() {
         role: 'assistant',
         content: data.response,
         timestamp: Date.now(),
+        metadata: data.metadata,
       };
       
       setMessages(prev => [...prev, assistantMessage]);
@@ -118,13 +129,35 @@ export default function AssistantPage() {
                 Posez vos questions sur les Pokémon
               </p>
             </div>
-            <button
-              onClick={clearChat}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold text-sm"
-            >
-              🔄 Réinitialiser
-            </button>
+            <div className="flex gap-2">
+              {/* Admin Button - Only visible to admins */}
+              {isAdmin && (
+                <button
+                  onClick={() => setAdminPanelOpen(true)}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-sm flex items-center gap-2 transition-colors"
+                  title="Panneau d'administration"
+                >
+                  ⚙️ Admin
+                </button>
+              )}
+              <button
+                onClick={clearChat}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold text-sm"
+              >
+                🔄 Réinitialiser
+              </button>
+            </div>
           </div>
+          
+          {/* Admin indicator when admin view is enabled */}
+          {isAdmin && adminViewEnabled && (
+            <div className="mt-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+              <p className="text-sm text-orange-800 dark:text-orange-300 flex items-center gap-2">
+                <span className="text-lg">🔍</span>
+                <strong>Mode Admin actif</strong> – Les métadonnées de validation sont visibles
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Chat Messages */}
@@ -148,6 +181,31 @@ export default function AssistantPage() {
                     </div>
                     <div className="flex-1">
                       <p className="whitespace-pre-wrap">{msg.content}</p>
+                      
+                      {/* Admin metadata display */}
+                      {isAdmin && adminViewEnabled && msg.metadata && msg.role === 'assistant' && (
+                        <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs">
+                          <div className="font-semibold text-orange-800 dark:text-orange-300 mb-1">
+                            📊 Métadonnées de réponse:
+                          </div>
+                          {msg.metadata.intent && (
+                            <div className="text-orange-700 dark:text-orange-400">
+                              Intent détecté: <span className="font-mono">{msg.metadata.intent}</span>
+                            </div>
+                          )}
+                          {msg.metadata.validated !== undefined && (
+                            <div className="text-orange-700 dark:text-orange-400">
+                              Validé: {msg.metadata.validated ? '✓ Oui' : '✗ Non'}
+                            </div>
+                          )}
+                          {msg.metadata.patched && (
+                            <div className="text-orange-700 dark:text-orange-400 font-semibold">
+                              🔧 Patch appliqué: {msg.metadata.patchId}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       <p className={`text-xs mt-2 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
                         {new Date(msg.timestamp).toLocaleTimeString('fr-FR')}
                       </p>
@@ -235,6 +293,12 @@ export default function AssistantPage() {
           </ul>
         </div>
       </div>
+      
+      {/* Admin Panel */}
+      <AssistantAdminPanel 
+        isOpen={adminPanelOpen} 
+        onClose={() => setAdminPanelOpen(false)} 
+      />
     </div>
   );
 }

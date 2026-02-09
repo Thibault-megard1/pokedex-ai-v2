@@ -1,0 +1,34 @@
+{
+  "patches": [
+    {
+      "id": "patch-1",
+      "enabled": true,
+      "trigger": "super efficaces.*contre.*dragon|types forts.*dragon|efficace.*dragon",
+      "triggerType": "regex",
+      "scope": "type-chart",
+      "correctedAnswer": "Contre le type Dragon, les types super efficaces sont :\n• Glace\n• Dragon\n• Fée",
+      "behavior": "replace",
+      "notes": "Fix pour éviter les classements non demandés"
+    },
+    {
+      "id": "patch-2",
+      "enabled": true,
+      "trigger": "super efficaces.*contre.*eau|types forts.*eau|efficace.*eau",
+      "triggerType": "regex",
+      "scope": "type-chart",
+      "correctedAnswer": "Contre le type Eau, les types super efficaces sont :\n• Plante\n• Électrique",
+      "behavior": "replace",
+      "notes": "Fix pour empêcher mention de Feu ou multiplicateurs incorrects"
+    },
+    {
+      "id": "patch-3",
+      "enabled": true,
+      "trigger": "super efficaces.*contre.*feu|types forts.*feu|efficace.*feu",
+      "triggerType": "regex",
+      "scope": "type-chart",
+      "correctedAnswer": "Contre le type Feu, les types super efficaces sont :\n• Eau\n• Sol\n• Roche",
+      "behavior": "replace",
+      "notes": "Réponse standardisée"
+    }
+  ]
+}
