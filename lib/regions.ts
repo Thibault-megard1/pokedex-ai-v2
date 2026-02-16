@@ -1,4 +1,6 @@
 export function generationToRegion(gen: string | null | undefined): string | null {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: nom de generation PokéAPI. Sortie: region ou null.
   if (!gen) return null;
   const g = gen.toLowerCase();
   if (g.includes("generation-i")) return "Kanto";

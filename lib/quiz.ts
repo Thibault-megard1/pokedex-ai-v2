@@ -1,6 +1,7 @@
 /**
- * Quiz System - Questions and Types
- * Personal questions for AI-powered Pokémon matching
+ * Systeme de quiz - Questions et types de reponses.
+ * Cette section ne fait pas d'IA: elle definit le questionnaire.
+ * Liens cours IA: collecte de donnees avant analyse LLM.
  */
 
 // ============================================================================
@@ -61,6 +62,7 @@ export interface ScoringDimensions {
 // QUESTIONS (15 comprehensive personality questions)
 // ============================================================================
 
+// Liste des questions utilisees par le quiz (donnees statiques)
 export const quizQuestions: QuizQuestion[] = [
   // 1. Energy & Social Style
   {

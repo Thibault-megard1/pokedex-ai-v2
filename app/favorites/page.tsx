@@ -23,6 +23,7 @@ export default function FavoritesPage() {
 
   async function loadFavorites() {
     try {
+      // Recupere la liste des favoris puis hydrate avec les infos Pokemon.
       const res = await fetch("/api/favorites");
       if (!res.ok) {
         setError("Non connecté");
@@ -33,7 +34,7 @@ export default function FavoritesPage() {
       const data = await res.json();
       setFavorites(data.favorites);
 
-      // Charger les détails de chaque Pokémon
+      // Charger les details de chaque Pokemon via l'autocomplete.
       const pokemonData: PokemonBasic[] = [];
       for (const fav of data.favorites) {
         try {

@@ -9,12 +9,21 @@ export const dynamic = "force-dynamic";
 const ALLOWED_SIZES = [20, 50, 100] as const;
 type AllowedSize = (typeof ALLOWED_SIZES)[number];
 
+/**
+ * Parse et valide la taille de page.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: valeur string. Sortie: taille autorisee.
+ */
 function parseSize(value: string | undefined): AllowedSize {
   const n = Number(value);
   if ((ALLOWED_SIZES as readonly number[]).includes(n)) return n as AllowedSize;
   return 20;
 }
 
+/**
+ * Construit la pagination (liste de pages avec "…").
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 function pageList(current: number, total: number) {
   const out: (number | "…")[] = [];
   const push = (v: number | "…") => out.push(v);
@@ -29,6 +38,11 @@ function pageList(current: number, total: number) {
   return out.filter((v, i) => v !== out[i - 1]);
 }
 
+/**
+ * Page liste Pokédex.
+ * Cette page n'utilise pas d'intelligence artificielle.
+ * Entree: searchParams. Sortie: UI liste + filtres + pagination.
+ */
 export default async function PokemonListPage({
   searchParams
 }: {
@@ -57,6 +71,7 @@ export default async function PokemonListPage({
 
   const totalPages = result.totalPages;
 
+  // Construit un lien de pagination conservant les filtres.
   const buildLink = (p: number) => {
     const sp = new URLSearchParams();
     sp.set("page", String(p));

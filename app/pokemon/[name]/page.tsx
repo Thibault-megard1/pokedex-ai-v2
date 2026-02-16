@@ -18,6 +18,11 @@ import PokedexFlavorText from "@/components/PokedexFlavorText";
 import PokedexInfoPanel from "@/components/PokedexInfoPanel";
 import { AdminDebugPanel } from "@/components/AdminDebugComponents";
 
+/**
+ * Page detail Pokemon.
+ * Cette page n'utilise pas d'intelligence artificielle.
+ * Entree: params.name. Sortie: UI detail (stats, evolutions, notes).
+ */
 export default async function PokemonDetailPage({ params }: { params: { name: string } }) {
   const p = await getPokemonDetail(params.name);
   const bg = backgroundForPokemonDetail({ id: p.id, region: p.region ?? null, types: p.types });

@@ -34,7 +34,7 @@ export default function IvEvCalculatorPage() {
   const totalEvs = getTotalEVs(evs);
   const remainingEvs = 510 - totalEvs;
 
-  // Recalculate when inputs change
+  // Recalcule les stats finales a chaque modification d'entree.
   useEffect(() => {
     if (!baseStats) return;
     
@@ -53,6 +53,7 @@ export default function IvEvCalculatorPage() {
   }, [baseStats, ivs, evs, level, nature]);
 
   async function loadPokemon() {
+    // Charge les stats de base depuis l'API interne.
     if (!pokemonName.trim()) return;
     
     setLoading(true);
@@ -85,10 +86,12 @@ export default function IvEvCalculatorPage() {
   }
 
   function setIV(stat: keyof IVs, value: number) {
+    // Clamp [0..31] pour respecter les IVs.
     setIvs(prev => ({ ...prev, [stat]: Math.max(0, Math.min(31, value)) }));
   }
 
   function setEV(stat: keyof EVs, value: number) {
+    // Clamp [0..252] et limite globale a 510 EVs.
     const clamped = Math.max(0, Math.min(252, value));
     const newEvs = { ...evs, [stat]: clamped };
     const total = getTotalEVs(newEvs);
@@ -99,6 +102,7 @@ export default function IvEvCalculatorPage() {
   }
 
   function applyEvSpread(spreadKey: string) {
+    // Applique un repartition EV predefinie.
     const spread = COMMON_EV_SPREADS[spreadKey];
     if (spread) {
       setEvs(spread.evs);
@@ -106,10 +110,12 @@ export default function IvEvCalculatorPage() {
   }
 
   function resetIVs() {
+    // Remet les IVs a 31 partout.
     setIvs(createPerfectIVs());
   }
 
   function resetEVs() {
+    // Remet les EVs a 0 partout.
     setEvs(createEmptyEVs());
   }
 

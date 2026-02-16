@@ -26,6 +26,7 @@ type StatKey = "hp" | "attack" | "defense" | "special-attack" | "special-defense
 const STAT_KEYS: StatKey[] = ["hp", "attack", "defense", "special-attack", "special-defense", "speed"];
 
 function StatsRadar({ a, b }: { a: P; b: P }) {
+  // Radar SVG simple: normalise les stats 0-255 sur un rayon fixe.
   const size = 320;
   const cx = size / 2;
   const cy = size / 2;
@@ -102,6 +103,7 @@ function StatsRadar({ a, b }: { a: P; b: P }) {
 }
 
 function stat(p: P, key: string) {
+  // Accès rapide aux stats par nom (fallback 0).
   return p.stats.find(s => s.name === key)?.value ?? 0;
 }
 
@@ -120,6 +122,7 @@ export default function ComparePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Joue le cri du Pokemon si l'URL est dispo.
   const playCry = (url?: string | null) => {
     if (!url) return;
     try {
@@ -131,7 +134,7 @@ export default function ComparePage() {
     }
   };
 
-  // Résout un nom (français ou anglais) en nom anglais
+  // Résout un nom (francais ou anglais) en nom anglais.
   async function resolveName(name: string): Promise<string> {
     try {
       const response = await fetch(`/api/pokemon-names/resolve?name=${encodeURIComponent(name)}`);
@@ -145,7 +148,7 @@ export default function ComparePage() {
     return name;
   }
 
-  // Appelle l'API /api/compare pour récupérer les deux Pokémon
+  // Appelle l'API /api/compare pour récupérer les deux Pokemon.
   async function runCompare() {
     setError(null);
     setLoading(true);
@@ -171,7 +174,7 @@ export default function ComparePage() {
     }
   }
 
-  // Pré-calcul des écarts de stats (A - B) pour affichage
+  // Pre-calcule les ecarts de stats (A - B) pour affichage.
   const diff = useMemo(() => {
     if (!a || !b) return null;
     const keys = ["hp", "attack", "defense", "special-attack", "special-defense", "speed"] as const;

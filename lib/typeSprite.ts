@@ -1,4 +1,6 @@
 // lib/typeSprite.ts
+// Cette section n'utilise pas d'intelligence artificielle.
+// Fournit les coordonnees d'un sprite sheet pour les icones de types.
 export const TYPE_SPRITE = {
   sheet: "/backgrounds/type.png",
   sheetW: 1030,

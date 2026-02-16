@@ -1,7 +1,8 @@
 /**
- * Battle System - Core Engine
- * 
- * Orchestrates battle turns and determines winner
+ * Moteur de combat (coeur).
+ * Cette section n'utilise pas d'intelligence artificielle.
+ * Entree: equipes + moves. Sortie: etat de combat et historique.
+ * Liens cours IA: agent-like behavior (decision) via module AI externe.
  */
 
 import type { BattleState, BattleTeam, BattleTurn, BattlePokemon, BattleMove } from "./types";
@@ -17,7 +18,9 @@ import {
 } from "./effects";
 
 /**
- * Initializes a new battle
+ * Initialise un combat.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Processus: validation, evolution, init des stats et etats.
  */
 export function initializeBattle(
   team1: BattleTeam,
@@ -63,8 +66,8 @@ export function initializeBattle(
 }
 
 /**
- * Gets the next available (non-fainted) Pokémon for a team
- * Returns index or -1 if all fainted
+ * Donne le prochain Pokemon non KO.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function getNextActivePokemon(team: BattleTeam): number {
   for (let i = 0; i < team.pokemon.length; i++) {
@@ -76,15 +79,16 @@ function getNextActivePokemon(team: BattleTeam): number {
 }
 
 /**
- * Checks if a team has any remaining Pokémon
+ * Verifie si une equipe a encore des Pokemon actifs.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function hasRemainingPokemon(team: BattleTeam): boolean {
   return team.pokemon.some(p => !p.isFainted);
 }
 
 /**
- * Determines turn order based on Speed stat
- * Returns [firstTeam, secondTeam] where firstTeam attacks first
+ * Determine l'ordre des attaques selon la vitesse.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function determineTurnOrder(
   team1: BattleTeam,
@@ -101,7 +105,8 @@ function determineTurnOrder(
 }
 
 /**
- * Executes a single attack with effects
+ * Execute une attaque et applique les effets.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function executeAttack(
   attackerTeam: BattleTeam,
@@ -156,8 +161,9 @@ function executeAttack(
 }
 
 /**
- * Executes a single battle turn
- * Both Pokémon attack (unless one faints)
+ * Execute un tour complet.
+ * Cette fonction n'utilise pas d'intelligence artificielle generative.
+ * L'IA rule-based est utilisee via chooseMove (module AI).
  */
 export function executeTurn(
   state: BattleState,

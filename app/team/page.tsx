@@ -32,6 +32,10 @@ type PokeLite = {
   nextEvolutions?: EvolutionNode[];
 };
 
+/**
+ * Ligne d'affichage d'une stat.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 function StatRow({ s }: { s: { name: string; value: number } }) {
   const percentage = Math.min(100, (s.value / 255) * 100);
   const color = s.value >= 120 ? "green" : s.value >= 80 ? "blue" : s.value >= 50 ? "yellow" : "red";
@@ -54,6 +58,11 @@ function StatRow({ s }: { s: { name: string; value: number } }) {
   );
 }
 
+/**
+ * Page de construction d'equipe.
+ * Cette page n'utilise pas d'intelligence artificielle (hors appel API de suggestion).
+ * Entree: interactions utilisateur. Sortie: UI + appels API internes.
+ */
 export default function TeamPage() {
   const [me, setMe] = useState<Me>(null);
   const [team, setTeam] = useState<TeamSlot[]>([]);
@@ -72,6 +81,10 @@ export default function TeamPage() {
   const [optimizingOrder, setOptimizingOrder] = useState(false);
   const sortedTeam = useMemo(() => [...team].sort((a, b) => a.slot - b.slot), [team]);
   
+  /**
+   * Charge l'utilisateur et l'equipe depuis l'API.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   async function load() {
     const meRes = await fetch("/api/me", { cache: "no-store" });
     const meData = await meRes.json();
@@ -81,6 +94,10 @@ export default function TeamPage() {
     if (teamRes.ok) setTeam(teamData.team ?? []);
   }
 
+  /**
+   * Charge les details d'un Pokemon pour un slot.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   async function loadDetailFor(slot: number, name: string) {
     if (details[slot]) return;
     const res = await fetch(`/api/pokemon?name=${encodeURIComponent(name)}`, { cache: "no-store" });
@@ -92,6 +109,11 @@ export default function TeamPage() {
     }
   }
 
+  /**
+   * Demande des suggestions d'equipe a l'API IA.
+   * IA: oui (LLM cote serveur via /api/team/suggest).
+   * Donnees envoyees: equipe courante + stats si dispo.
+   */
   async function getAISuggestions(forSlot: number) {
     setLoadingSuggestions(true);
     setSelectedSlotForSuggestion(forSlot);
@@ -140,6 +162,10 @@ export default function TeamPage() {
     }
   }
 
+  /**
+   * Ajoute un Pokemon suggere a un slot.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   async function addSuggestedPokemon(pokemonName: string) {
     if (selectedSlotForSuggestion === null) return;
     
@@ -159,6 +185,10 @@ export default function TeamPage() {
     }
   }
 
+  /**
+   * Deplace un Pokemon dans l'ordre des slots.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   async function moveSlot(fromSlot: number, direction: 'up' | 'down') {
     const toSlot = direction === 'up' ? fromSlot - 1 : fromSlot + 1;
     if (toSlot < 1 || toSlot > 6) return;
@@ -201,6 +231,10 @@ export default function TeamPage() {
     }
   }
 
+  /**
+   * Optimise l'ordre d'equipe via heuristiques de stats.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   async function optimizeTeamOrder() {
     if (sortedTeam.length === 0) return;
     

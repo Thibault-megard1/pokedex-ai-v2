@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-// Dynamically import the game canvas to avoid SSR issues with Phaser
+// Import dynamique pour eviter les soucis SSR avec Phaser.
 const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
   loading: () => (
@@ -23,8 +23,8 @@ export default function GamePage() {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Hide navbar and prevent scroll - full viewport game
+
+    // Mode plein ecran: cache la navbar et bloque le scroll.
     document.body.style.overflow = 'hidden';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
@@ -40,7 +40,7 @@ export default function GamePage() {
     // Prevent overscroll behavior on mobile
     document.body.style.overscrollBehavior = 'none';
     
-    // Fetch current user
+    // Recupere l'utilisateur courant pour le pseudo du jeu.
     fetch('/api/me')
       .then(res => res.json())
       .then(data => {
@@ -57,6 +57,7 @@ export default function GamePage() {
       });
     
     return () => {
+      // Nettoie les styles globaux a la sortie.
       document.body.style.overflow = '';
       document.body.style.margin = '';
       document.body.style.padding = '';

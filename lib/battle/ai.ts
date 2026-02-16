@@ -1,14 +1,17 @@
 /**
- * Battle System - AI Logic
- * 
- * Decision-making for AI opponents
+ * IA de combat (rule-based).
+ * Cette IA n'utilise pas de LLM: decisions heuristiques.
+ * Entree: etat du combat. Sortie: choix de mouvement.
+ * Liens cours IA: agent heuristique, evaluation de coups.
  */
 
 import type { BattlePokemon, BattleMove, AIDecision } from "./types";
 import { applyStatStageMultiplier } from "./effects";
 
 /**
- * Evaluates move effectiveness against opponent
+ * Evalue un move par un score.
+ * Cette fonction n'utilise pas d'intelligence artificielle generative.
+ * Processus: types, stats, precision, HP adverse, historique.
  */
 function evaluateMoveScore(
   move: BattleMove,
@@ -86,7 +89,9 @@ function evaluateMoveScore(
 }
 
 /**
- * AI chooses best move based on game state with variety
+ * Choisit un move avec un peu de variation.
+ * Cette fonction n'utilise pas d'intelligence artificielle generative.
+ * Sortie: index du move + justification.
  */
 export function chooseMove(
   attacker: BattlePokemon,
@@ -125,8 +130,9 @@ export function chooseMove(
 }
 
 /**
- * AI evaluates if it should switch Pokémon (advanced logic)
- * For now: never switch (always use active Pokémon)
+ * Decide si l'IA doit switcher.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Limite: logique non implemente (toujours false).
  */
 export function shouldSwitch(
   activePokemon: BattlePokemon,
@@ -139,6 +145,8 @@ export function shouldSwitch(
 }
 
 export function calculateDefensiveMultiplier(attackType: string, defenderTypes: string[]): number {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Limite: implementation simplifiee (TODO).
   // Dummy implementation for type multiplier calculation
   // TODO: Replace with real type effectiveness logic
   return defenderTypes.includes(attackType) ? 0.5 : 1;

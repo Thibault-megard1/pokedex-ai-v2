@@ -29,7 +29,7 @@ export default function SharedTeamPage() {
       return;
     }
 
-    // Decode team
+    // Decode et valide l'equipe partagee.
     const decodedTeam = decodeTeam(data);
     const validation = validateTeam(decodedTeam);
     
@@ -41,11 +41,12 @@ export default function SharedTeamPage() {
 
     setTeam(decodedTeam!);
     
-    // Fetch Pokémon details
+    // Charge les details Pokemon pour l'affichage.
     fetchPokemonDetails(decodedTeam!);
   }, [searchParams]);
 
   async function fetchPokemonDetails(team: SharedTeam) {
+    // Hydrate les infos Pokemon a partir de l'API.
     try {
       const promises = team.pokemon.map(async (p) => {
         const res = await fetch(`/api/pokemon/${p.id}`);
@@ -70,6 +71,7 @@ export default function SharedTeamPage() {
   }
 
   function handleImport() {
+    // Importe l'equipe dans le stockage local.
     if (!team) return;
     
     try {

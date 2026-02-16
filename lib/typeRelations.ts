@@ -1,6 +1,7 @@
 /**
- * Calcule les relations de types pour un Pokémon
- * Retourne : super efficace contre lui, peu efficace contre lui, immunités
+ * Relations de types Pokemon.
+ * Cette section n'utilise pas d'intelligence artificielle.
+ * Entree: types d'un Pokemon. Sortie: forces/faiblesses et immunites.
  */
 
 type TypeRelations = {
@@ -73,7 +74,8 @@ const ALL_TYPES = [
 ];
 
 /**
- * Calcule le multiplicateur de dégâts reçus pour un type donné
+ * Calcule le multiplicateur defensif pour un type d'attaque.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 export function calculateDefensiveMultiplier(attackType: string, defenderTypes: string[]): number {
   let mult = 1;
@@ -98,7 +100,8 @@ export function calculateDefensiveMultiplier(attackType: string, defenderTypes: 
 }
 
 /**
- * Calcule toutes les relations de types pour un Pokémon
+ * Calcule toutes les relations de types pour un Pokemon.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 export function getTypeRelations(pokemonTypes: string[]): TypeRelations {
   const weakTo: Set<string> = new Set();

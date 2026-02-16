@@ -86,6 +86,7 @@ export default function AdminPage() {
   }, []);
 
   async function checkAuth() {
+    // Verifie la session et les droits admin avant de charger les donnees.
     try {
       const res = await fetch("/api/me");
       const data = await res.json();
@@ -113,6 +114,7 @@ export default function AdminPage() {
   }
 
   async function loadUsers() {
+    // Charge la liste des utilisateurs (admin uniquement).
     try {
       const res = await fetch("/api/admin/users");
       if (!res.ok) throw new Error("Erreur de chargement");
@@ -124,6 +126,7 @@ export default function AdminPage() {
   }
 
   async function loadUserDetail(userId: string) {
+    // Charge le detail d'un utilisateur pour la vue admin.
     setLoadingUser(true);
     setSelectedUser(null);
     try {
@@ -139,6 +142,7 @@ export default function AdminPage() {
   }
 
   async function toggleAdmin(userId: string, currentStatus: boolean) {
+    // Bascule le statut admin d'un utilisateur.
     if (!confirm(`Changer le statut admin de cet utilisateur ?`)) return;
     
     try {
@@ -160,6 +164,7 @@ export default function AdminPage() {
   }
 
   async function deleteUser(userId: string) {
+    // Suppression definitive d'un compte.
     if (!confirm("Supprimer cet utilisateur ? Cette action est irréversible.")) return;
     
     try {
@@ -180,6 +185,7 @@ export default function AdminPage() {
   }
 
   async function loadTheme() {
+    // Recupere le theme personnalise si disponible.
     try {
       const res = await fetch("/api/admin/theme");
       if (!res.ok) return;
@@ -191,6 +197,7 @@ export default function AdminPage() {
   }
 
   async function saveTheme() {
+    // Sauvegarde et applique le theme en direct.
     setSaving(true);
     setSaveSuccess(false);
     try {
@@ -216,6 +223,7 @@ export default function AdminPage() {
   }
 
   function applyTheme(themeSettings: SiteSettings) {
+    // Applique le theme courant via des variables CSS.
     // Clear cache so DynamicThemeApplier fetches fresh data
     localStorage.removeItem("siteThemeCache");
     
@@ -236,6 +244,7 @@ export default function AdminPage() {
   }
 
   async function resetTheme() {
+    // Reinitialise le theme aux valeurs par defaut.
     if (!confirm("Réinitialiser le thème aux valeurs par défaut ?")) return;
     const defaults: SiteSettings = {
       light: { background: "#f3f4f6", text: "#1f2937", primary: "#ef4444", card: "#ffffff" },

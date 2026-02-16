@@ -8,6 +8,11 @@ import { AdminDebugPanel, AdminDebugBox } from "@/components/AdminDebugComponent
 
 type QuizStep = "intro" | "questions" | "loading" | "results";
 
+/**
+ * Page quiz de personnalite.
+ * IA: oui via l'API /api/quiz/analyze (LLM cote serveur).
+ * Entree: reponses utilisateur. Sortie: UI resultats.
+ */
 export default function QuizPage() {
   const [step, setStep] = useState<QuizStep>("intro");
   const [answers, setAnswers] = useState<QuizAnswers>({});
@@ -16,10 +21,13 @@ export default function QuizPage() {
   const [pokemonData, setPokemonData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Get current question
+  // Question courante (index)
   const currentQuestion = quizQuestions[currentQuestionIndex];
 
-  // Start the quiz
+  /**
+   * Demarre/reinitialise le quiz.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   const startQuiz = () => {
     setStep("questions");
     setAnswers({});
@@ -29,7 +37,7 @@ export default function QuizPage() {
     setError(null);
   };
 
-  // Navigation functions
+  // Navigation entre questions
   const goToNextQuestion = () => {
     if (currentQuestionIndex < quizQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -42,7 +50,10 @@ export default function QuizPage() {
     }
   };
 
-  // Update an answer
+  /**
+   * Met a jour une reponse.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   const updateAnswer = (questionId: string, value: string | number) => {
     setAnswers(prev => ({
       ...prev,
@@ -50,12 +61,19 @@ export default function QuizPage() {
     }));
   };
 
-  // Check if all required questions are answered
+  /**
+   * Verifie si le quiz est complet.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   const isComplete = () => {
     return quizQuestions.every(q => answers[q.id] !== undefined && answers[q.id] !== "");
   };
 
-  // Submit the quiz
+  /**
+   * Soumet le quiz a l'API IA et charge le Pokemon associe.
+   * IA: oui (LLM via /api/quiz/analyze).
+   * Donnees envoyees: reponses utilisateur.
+   */
   const submitQuiz = async () => {
     if (!isComplete()) {
       setError("Veuillez répondre à toutes les questions");

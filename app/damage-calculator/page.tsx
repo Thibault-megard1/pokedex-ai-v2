@@ -35,6 +35,7 @@ export default function DamageCalculatorPage() {
   const [critResult, setCritResult] = useState<ReturnType<typeof calculateCriticalDamage> | null>(null);
 
   async function loadPokemon(name: string, type: "attacker" | "defender") {
+    // Charge un Pokemon (version legere) depuis l'API interne.
     try {
       const res = await fetch(`/api/pokemon?name=${encodeURIComponent(name)}`);
       const data = await res.json();
@@ -52,6 +53,7 @@ export default function DamageCalculatorPage() {
   }
 
   function calculate() {
+    // Assemble les inputs et applique les formules de degats.
     if (!attacker || !defender) return;
 
     const atkStat = isPhysical ? "attack" : "special-attack";

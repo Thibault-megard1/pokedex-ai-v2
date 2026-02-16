@@ -9,6 +9,7 @@ export default function LoginPage() {
   const { lang } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // Authentification via l'API interne, puis redirection.
     e.preventDefault();
     setError(null);
     const form = new FormData(e.currentTarget);

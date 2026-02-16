@@ -34,7 +34,7 @@ type PokemonSlot = {
   evolutionChain: string[];
 };
 
-// Helper function to fetch real moves for a Pokemon at a specific level
+// Helper: recupere des attaques apprises par niveau (PokeAPI).
 async function fetchPokemonMoves(pokemonName: string, targetLevel: number) {
   try {
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`);
@@ -118,12 +118,12 @@ export default function TournamentPage() {
   const [loadingTeam, setLoadingTeam] = useState(true);
   const [teamLoaded, setTeamLoaded] = useState(false);
 
-  // Load user's saved team on mount
+  // Charge l'equipe sauvegardee au montage.
   useEffect(() => {
     loadSavedTeam();
   }, []);
 
-  // Reload team when target level changes (to update moves)
+  // Recharge l'equipe si le niveau cible change (maj des attaques).
   useEffect(() => {
     if (teamLoaded && !battleState) {
       loadSavedTeam();
@@ -181,7 +181,7 @@ export default function TournamentPage() {
     }
   };
 
-  // Auto-play turns
+  // Auto-play: declenche les tours automatiquement avec un timer.
   useEffect(() => {
     if (!autoPlay || !battleState || battleState.isFinished) return;
 
@@ -230,6 +230,7 @@ export default function TournamentPage() {
   const totalPointsUsed = evolutionPoints.reduce((sum, p) => sum + p, 0);
 
   const loadPokemon = async (name: string, slot: number) => {
+    // Charge un Pokemon pour un slot du joueur.
     try {
       const res = await fetch(`/api/pokemon/${name}`);
       if (!res.ok) throw new Error("Failed to fetch");

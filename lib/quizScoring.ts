@@ -1,6 +1,8 @@
 /**
- * Quiz Scoring System - Algorithmic Pokemon Matching
- * Maps personality answers to Pokemon attributes (types, stats, habitat)
+ * Systeme de scoring du quiz (rule-based).
+ * Cette section n'utilise pas d'intelligence artificielle.
+ * Entree: reponses du quiz. Sortie: scores par type/stat/habitat.
+ * Liens cours IA: approche heuristique vs LLM.
  */
 
 import type { QuizAnswers } from "./quiz";
@@ -45,7 +47,9 @@ export interface QuizScores {
 // ============================================================================
 
 /**
- * Calculate personality scores from quiz answers
+ * Calcule les scores a partir des reponses.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Processus: applique des regles par question -> incremente des scores.
  */
 export function calculateScores(answers: QuizAnswers): QuizScores {
   const typeScores: { [key: string]: number } = {

@@ -1,7 +1,7 @@
 /**
- * Battle System - Damage Calculation
- * 
- * Computes damage using Pokémon-style formula
+ * Calcul des degats (formule Pokemon).
+ * Cette section n'utilise pas d'intelligence artificielle.
+ * Entree: attaquant, defenseur, move. Sortie: degats + effet.
  */
 
 import type { BattlePokemon, BattleMove } from "./types";
@@ -26,7 +26,8 @@ interface DamageResult {
 }
 
 /**
- * Calculates type effectiveness multiplier
+ * Calcule le multiplicateur d'efficacite de type.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function getTypeEffectiveness(moveType: string, defenderTypes: string[]): number {
   let multiplier = 1;
@@ -40,28 +41,33 @@ function getTypeEffectiveness(moveType: string, defenderTypes: string[]): number
 }
 
 /**
- * Checks if attacker has STAB (Same Type Attack Bonus)
+ * Verifie le STAB (bonus meme type).
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function hasStab(attacker: BattlePokemon, moveType: string): boolean {
   return attacker.types.includes(moveType);
 }
 
 /**
- * Generates random factor between 0.85 and 1.0
+ * Genere le facteur aleatoire de degats.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function getRandomFactor(): number {
   return 0.85 + Math.random() * 0.15;
 }
 
 /**
- * Determines if attack is critical (5% chance)
+ * Determine un coup critique.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function isCriticalHit(): boolean {
   return Math.random() < 0.05;
 }
 
 /**
- * Main damage calculation function
+ * Calcule les degats d'un move.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Processus: precision -> stats -> multiplicateurs.
  */
 export function calculateDamage(
   attacker: BattlePokemon,
@@ -125,8 +131,8 @@ export function calculateDamage(
 }
 
 /**
- * Applies damage to a Pokémon and updates HP
- * Returns the actual damage dealt (considering remaining HP)
+ * Applique les degats et met a jour les PV.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 export function applyDamage(pokemon: BattlePokemon, damage: number): number {
   const actualDamage = Math.min(damage, pokemon.currentHp);

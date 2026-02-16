@@ -32,6 +32,7 @@ export default function StatsPage() {
 
   async function loadStats() {
     try {
+      // Recupere l'activite utilisateur depuis les endpoints internes.
       // Charger l'équipe
       const teamRes = await fetch("/api/team");
       const teamData = await teamRes.json();
@@ -48,7 +49,7 @@ export default function StatsPage() {
       const quizRes = await fetch("/api/quiz-result");
       const quizData = await quizRes.json();
 
-      // Analyser les types préférés
+      // Analyse simple des types preferes a partir de l'equipe.
       const typeCount: Record<string, number> = {};
 
       if (teamData.team) {

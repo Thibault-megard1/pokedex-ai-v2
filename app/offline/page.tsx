@@ -6,6 +6,7 @@ export default function OfflinePage() {
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    // Observe les changements de connectivite navigateur.
     setIsOnline(navigator.onLine);
 
     const handleOnline = () => setIsOnline(true);
@@ -21,6 +22,7 @@ export default function OfflinePage() {
   }, []);
 
   if (isOnline) {
+    // Si la connexion revient, on renvoie vers l'accueil.
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 export default function AIHubPage() {
+  // Liste des fonctionnalites IA exposees dans le hub.
   const features = [
     {
       title: 'Assistant Pokédex',
@@ -33,7 +34,7 @@ export default function AIHubPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* En-tete */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 bg-clip-text text-transparent">
             🤖 Fonctionnalités IA
@@ -43,7 +44,7 @@ export default function AIHubPage() {
           </p>
         </div>
 
-        {/* Features Grid */}
+        {/* Grille des features IA */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {features.map((feature, idx) => (
             <Link
@@ -72,7 +73,7 @@ export default function AIHubPage() {
           ))}
         </div>
 
-        {/* Configuration Section */}
+        {/* Section de configuration Mistral */}
         <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-2 border-yellow-300 rounded-lg p-8 mb-8">
           <div className="flex items-start gap-4">
             <div className="text-5xl">⚙️</div>
@@ -99,7 +100,7 @@ export default function AIHubPage() {
           </div>
         </div>
 
-        {/* Features Details */}
+        {/* Details des capacites */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <h2 className="text-3xl font-bold mb-6 text-center">Capacités de l'IA</h2>
           
@@ -146,7 +147,7 @@ export default function AIHubPage() {
           </div>
         </div>
 
-        {/* Privacy Notice */}
+        {/* Notice de confidentialite */}
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-lg p-4">
           <p className="text-center text-blue-800 dark:text-blue-300">
             <strong>🔒 Confidentialité:</strong> Vos conversations avec l'IA ne sont pas stockées sur nos serveurs. 

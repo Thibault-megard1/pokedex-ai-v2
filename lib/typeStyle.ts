@@ -26,6 +26,8 @@ const MAP: Record<string, TypeStyle> = {
 };
 
 export function typeStyle(type: string): TypeStyle {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: nom de type. Sortie: style UI (label, classes, icone).
   return MAP[type] ?? { label: type, badgeClass: "bg-gray-100 border-gray-300 text-gray-900", icon: "/icons/ui/ic-pokemon.png" };
 }
 

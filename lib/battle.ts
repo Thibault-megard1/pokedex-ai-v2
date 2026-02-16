@@ -56,6 +56,8 @@ const IMMUNE: Record<string, string[]> = {
 };
 
 function stat(p: PokemonDetail, key: string) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: pokemon + nom de stat. Sortie: valeur de stat.
   return p.stats.find(s => s.name === key)?.value ?? 0;
 }
 
@@ -64,6 +66,8 @@ function stat(p: PokemonDetail, key: string) {
  * Prend en compte : Super efficace (x2), Peu efficace (x0.5), Immunité (x0)
  */
 function typeMultiplier(attackerTypes: string[], defenderTypes: string[]) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: types attaquant/defenseur. Sortie: multiplicateur.
   let mult = 1;
   
   for (const at of attackerTypes) {
@@ -99,6 +103,8 @@ export type BattleResult = {
  * Retourne le vainqueur et l'historique des tours.
  */
 export function fight(a: PokemonDetail, b: PokemonDetail): BattleResult {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: deux Pokemon. Sortie: historique de combat.
   let aHp = stat(a, "hp");
   const aAtk = stat(a, "attack");
   const aDef = stat(a, "defense");
@@ -204,6 +210,8 @@ export function fight(a: PokemonDetail, b: PokemonDetail): BattleResult {
  * - Vitesse pour déterminer qui frappe en premier
  */
 export function estimateWinChance(a: PokemonDetail, b: PokemonDetail): number {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: deux Pokemon. Sortie: proba de victoire (0..1).
   const aHp = stat(a, "hp");
   const aAtk = stat(a, "attack");
   const aDef = stat(a, "defense");

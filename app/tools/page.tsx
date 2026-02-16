@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 export default function ToolsHubPage() {
+  // Catalogue des outils disponibles (affichage par cartes).
   const tools = [
     {
       title: 'Calculateur IV/EV',
@@ -30,7 +31,7 @@ export default function ToolsHubPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* En-tete */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             🛠️ Outils Compétitifs
@@ -40,7 +41,7 @@ export default function ToolsHubPage() {
           </p>
         </div>
 
-        {/* Tools Grid */}
+        {/* Grille des outils */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {tools.map((tool, idx) => (
             <Link
@@ -64,7 +65,7 @@ export default function ToolsHubPage() {
           ))}
         </div>
 
-        {/* Info Section */}
+        {/* Section d'aide et d'explication */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <h2 className="text-3xl font-bold mb-6 text-center">À propos des outils</h2>
           

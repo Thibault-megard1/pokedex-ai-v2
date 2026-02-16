@@ -33,10 +33,12 @@ export default function AssistantPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Auto-scroll vers le dernier message.
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   async function sendMessage() {
+    // Envoie le message utilisateur a l'API IA avec l'historique.
     if (!input.trim() || loading) return;
     
     const userMessage = input.trim();
@@ -98,6 +100,7 @@ export default function AssistantPage() {
   }
 
   function handleKeyPress(e: React.KeyboardEvent) {
+    // Permet d'envoyer avec Entree (Shift+Entree pour sauter une ligne).
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -105,6 +108,7 @@ export default function AssistantPage() {
   }
 
   function clearChat() {
+    // Remet la conversation a l'etat initial.
     setMessages([
       {
         role: 'assistant',

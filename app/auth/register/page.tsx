@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const { lang } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // Inscription via l'API interne, puis redirection.
     e.preventDefault();
     setError(null);
     const form = new FormData(e.currentTarget);

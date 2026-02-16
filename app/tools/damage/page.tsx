@@ -54,6 +54,7 @@ export default function DamageCalculatorPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function loadPokemon(name: string, role: 'attacker' | 'defender') {
+    // Charge un Pokemon (stats de base) pour le role attaque/defense.
     if (!name.trim()) return;
     
     setLoading(prev => ({ ...prev, [role]: true }));
@@ -93,6 +94,7 @@ export default function DamageCalculatorPage() {
   }
 
   async function loadMoves(pokemonName: string) {
+    // Charge un sous-ensemble de capacites depuis PokeAPI.
     setLoading(prev => ({ ...prev, moves: true }));
     
     try {
@@ -124,6 +126,7 @@ export default function DamageCalculatorPage() {
   }
 
   function selectMove(moveName: string) {
+    // Selectionne une capacite a partir de la liste chargee.
     const selectedMove = moves.find(m => m.name === moveName);
     if (selectedMove) {
       setMove(selectedMove);
@@ -131,6 +134,7 @@ export default function DamageCalculatorPage() {
     }
   }
 
+  // Calcul des degats et du multiplicateur d'efficacite.
   const result = attacker && defender && move
     ? calculateDamage(attacker, defender, move, attackerModifiers, defenderModifiers, conditions)
     : null;

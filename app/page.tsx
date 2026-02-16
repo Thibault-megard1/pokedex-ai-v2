@@ -9,19 +9,30 @@ import { t } from "@/lib/i18n";
 
 type Me = { username: string } | null;
 
+/**
+ * Page d'accueil.
+ * Cette page n'utilise pas d'intelligence artificielle.
+ * Entree: aucune. Sortie: UI avec navigation selon l'etat de connexion.
+ */
 export default function HomePage() {
   const { lang } = useLanguage();
   const [me, setMe] = useState<Me>(null);
 
+  /**
+   * Charge l'utilisateur courant via l'API.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   * Entree: aucune. Sortie: mise a jour de l'etat local.
+   */
   async function refresh() {
     const res = await fetch("/api/me", { cache: "no-store" });
     const data = await res.json();
     setMe(data.user ?? null);
   }
 
+  // Charge l'utilisateur au montage.
   useEffect(() => { refresh(); }, []);
 
-  // Primary Actions - Always visible
+  // Actions principales (visibles pour tous)
   const primaryActions = [
     {
       href: "/pokemon",
@@ -49,7 +60,7 @@ export default function HomePage() {
     }
   ];
 
-  // Battle Features - Secondary section
+  // Fonctionnalites combat (section secondaire)
   const battleFeatures = [
     {
       href: "/tournament",
@@ -69,7 +80,7 @@ export default function HomePage() {
     }
   ];
 
-  // Tools & Features - Utility section
+  // Outils et fonctionnalites (section utilitaire)
   const toolsFeatures = [
     {
       href: "/favorites",
@@ -97,7 +108,7 @@ export default function HomePage() {
     }
   ];
 
-  // Fun Features - Entertainment section
+  // Features ludiques
   const funFeatures = [
     {
       href: "/quiz",

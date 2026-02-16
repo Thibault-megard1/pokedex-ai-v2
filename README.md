@@ -13,6 +13,30 @@ Ce projet sert de support au cours d'Intelligence Artificielle. Il illustre l'us
 - IA: Ollama (local) ou Mistral (cloud)
 - PWA (service worker + manifest)
 
+## Navigation globale (diagramme)
+Ce schema situe les pages principales et leur passage par les routes API.
+
+```mermaid
+graph TD
+	Accueil[Accueil] --> Pokedex[Pokédex]
+	Accueil --> Combat[Combat]
+	Accueil --> Quiz[Quiz IA]
+	Accueil --> Jeu[Jeu]
+	Accueil --> Outils[Outils]
+	Accueil --> IA[IA]
+	Accueil --> Equipe[Equipe]
+	Accueil --> Favoris[Favoris]
+	Accueil --> Stats[Statistiques]
+	Auth[Auth] --> Admin[Admin (protege)]
+	Pokedex --> API[/api/*]
+	Combat --> API
+	Quiz --> API
+	IA --> API
+	Jeu --> API
+```
+
+Le diagramme met en evidence la navigation centrale et le role transversal des endpoints `/api/*`.
+
 ## Installation
 Prerequis: Node.js 18+ et npm.
 
