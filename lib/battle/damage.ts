@@ -97,8 +97,8 @@ export function calculateDamage(
     ? defender.currentStats.defense
     : defender.currentStats.specialDefense;
 
-  // Level (assume all Pokémon are level 50 for simplicity)
-  const level = 50;
+  // Use actual Pokémon level (from attacker)
+  const level = attacker.level || 50; // Fallback to 50 if not set
 
   // Base damage calculation
   const baseDamage = Math.floor(

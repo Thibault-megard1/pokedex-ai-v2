@@ -22,6 +22,7 @@ function createTestPokemon(name: string): BattlePokemon {
     id: 1,
     name,
     types: ["normal"],
+    level: 50, // Add level for tests
     baseStats: {
       hp: 100,
       attack: 100,

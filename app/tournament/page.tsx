@@ -17,6 +17,7 @@ import {
 import { useAdminView } from "@/components/AdminViewProvider";
 import { AdminDebugPanel } from "@/components/AdminDebugComponents";
 import { initializeStatStages } from "@/lib/battle/effects";
+import { calculatePokemonStats } from "@/lib/battle/statCalculator";
 import type { 
   BattleTeam, 
   BattlePokemon, 
@@ -315,12 +316,16 @@ export default function TournamentPage() {
           // Ensure evolution chain has at least the Pokemon itself
           const evolutionChain = p.evolutionChain && p.evolutionChain.length > 0 ? p.evolutionChain : [p.name];
           
+          // Calculate actual stats based on level
+          const calculatedStats = calculatePokemonStats(p.stats, tournamentRules.targetLevel);
+          
           return {
             id: i + 1,
             name: p.name,
             types: p.types,
-            baseStats: p.stats,
-            currentStats: { ...p.stats },
+            level: tournamentRules.targetLevel, // Use tournament level
+            baseStats: p.stats, // Store base stats
+            currentStats: calculatedStats, // Use calculated stats
             statStages: initializeStatStages(),
             moves: p.moves.map(m => ({
               name: m.name,
@@ -329,8 +334,8 @@ export default function TournamentPage() {
               damageClass: m.damageClass as "physical" | "special" | "status",
               accuracy: m.accuracy,
             })),
-            currentHp: p.stats.hp,
-            maxHp: p.stats.hp,
+            currentHp: calculatedStats.hp,
+            maxHp: calculatedStats.hp,
             evolutionStage: 0,
             evolutionChain,
             isFainted: false,

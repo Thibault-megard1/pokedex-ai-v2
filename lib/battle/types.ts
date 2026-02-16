@@ -55,9 +55,10 @@ export interface BattlePokemon {
   id: number;
   name: string;
   types: string[];
-  baseStats: BattlePokemonStats;
-  currentStats: BattlePokemonStats;
-  statStages: StatStages; // Stat modifications
+  level: number; // Pokémon level (50, 75, or 100 in tournaments)
+  baseStats: BattlePokemonStats; // Base stats from PokéAPI
+  currentStats: BattlePokemonStats; // Calculated stats (with level, IVs, EVs)
+  statStages: StatStages; // Stat modifications during battle
   moves: BattleMove[];
   currentHp: number;
   maxHp: number;

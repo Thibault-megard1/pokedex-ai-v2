@@ -10,6 +10,7 @@
 import type { BattleTeam, BattlePokemon, BattlePokemonStats, BattleMove } from "../battle/types";
 import { calculateDefensiveMultiplier } from "../typeRelations";
 import { initializeStatStages } from "../battle/effects";
+import { calculatePokemonStats } from "../battle/statCalculator";
 
 // ============================================================================
 // TYPES
@@ -631,23 +632,29 @@ export async function generateOpponentTeam(
     });
   }
 
-  // Step 5: Build BattleTeam
-  const battlePokemon: BattlePokemon[] = selectedPokemon.map(p => ({
-    id: p.id,
-    name: p.name,
-    types: p.types,
-    baseStats: p.stats,
-    currentStats: { ...p.stats },
-    statStages: initializeStatStages(),
-    moves: p.moves,
-    currentHp: p.stats.hp,
-    maxHp: p.stats.hp,
-    evolutionStage: 0,
-    evolutionChain: p.evolutionChain,
-    isFainted: false,
-    statusCondition: null,
-    lastUsedMoves: [],
-  }));
+  // Step 5: Build BattleTeam with proper level-based stats
+  const battlePokemon: BattlePokemon[] = selectedPokemon.map(p => {
+    // Calculate actual stats based on level
+    const calculatedStats = calculatePokemonStats(p.stats, rules.targetLevel);
+    
+    return {
+      id: p.id,
+      name: p.name,
+      types: p.types,
+      level: rules.targetLevel, // Use tournament level
+      baseStats: p.stats, // Store base stats from PokéAPI
+      currentStats: calculatedStats, // Use calculated stats
+      statStages: initializeStatStages(),
+      moves: p.moves,
+      currentHp: calculatedStats.hp,
+      maxHp: calculatedStats.hp,
+      evolutionStage: 0,
+      evolutionChain: p.evolutionChain,
+      isFainted: false,
+      statusCondition: null,
+      lastUsedMoves: [],
+    };
+  });
 
   // Optimal evolution allocation (simple: prioritize high-stat Pokémon)
   const evolutionAllocations = battlePokemon
@@ -682,41 +689,42 @@ export function generateQuickOpponentTeam(playerTeam: BattlePokemon[], level: nu
   // Fallback: Use predefined strong team
   const quickTeam = ["garchomp", "metagross", "gengar", "milotic", "tyranitar", "alakazam"];
   
-  const battlePokemon: BattlePokemon[] = quickTeam.map((name, i) => ({
-    id: 100 + i,
-    name,
-    types: ["dragon", "ground"], // Simplified
-    baseStats: {
+  const battlePokemon: BattlePokemon[] = quickTeam.map((name, i) => {
+    // Use default base stats, then calculate with level
+    const baseStats = {
       hp: 90,
       attack: 120,
       defense: 90,
       specialAttack: 100,
       specialDefense: 85,
       speed: 100,
-    },
-    currentStats: {
-      hp: 90,
-      attack: 120,
-      defense: 90,
-      specialAttack: 100,
-      specialDefense: 85,
-      speed: 100,
-    },
-    statStages: initializeStatStages(),
-    moves: [
-      { name: "earthquake", type: "ground", power: 100, damageClass: "physical", accuracy: 100 },
-      { name: "dragon-claw", type: "dragon", power: 80, damageClass: "physical", accuracy: 100 },
-      { name: "fire-blast", type: "fire", power: 110, damageClass: "special", accuracy: 85 },
-      { name: "thunderbolt", type: "electric", power: 90, damageClass: "special", accuracy: 100 },
-    ],
-    currentHp: 90,
-    maxHp: 90,
-    evolutionStage: 2,
-    evolutionChain: [name],
-    isFainted: false,
-    statusCondition: null,
-    lastUsedMoves: [],
-  }));
+    };
+    
+    const calculatedStats = calculatePokemonStats(baseStats, level);
+    
+    return {
+      id: 100 + i,
+      name,
+      types: ["dragon", "ground"], // Simplified
+      level,
+      baseStats,
+      currentStats: calculatedStats,
+      statStages: initializeStatStages(),
+      moves: [
+        { name: "earthquake", type: "ground", power: 100, damageClass: "physical", accuracy: 100 },
+        { name: "dragon-claw", type: "dragon", power: 80, damageClass: "physical", accuracy: 100 },
+        { name: "fire-blast", type: "fire", power: 110, damageClass: "special", accuracy: 85 },
+        { name: "thunderbolt", type: "electric", power: 90, damageClass: "special", accuracy: 100 },
+      ],
+      currentHp: calculatedStats.hp,
+      maxHp: calculatedStats.hp,
+      evolutionStage: 2,
+      evolutionChain: [name],
+      isFainted: false,
+      statusCondition: null,
+      lastUsedMoves: [],
+    };
+  });
 
   return {
     teamId: "ai-quick",
