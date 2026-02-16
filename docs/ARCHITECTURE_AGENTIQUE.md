@@ -11,26 +11,27 @@ Ce document décrit le **fonctionnement global de la structure agentique** mise 
 Le projet implémente une **architecture multi-agents** où plusieurs systèmes d'IA collaborent pour offrir une expérience interactive et stratégique.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    POKÉDEX IA - SYSTÈME MULTI-AGENTS             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
+┌────────────────────────────────────────────────────────────────┐
+│                    POKÉDEX IA - SYSTÈME MULTI-AGENTS           │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
 │  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐    │
 │  │   AGENT 1    │     │   AGENT 2    │     │   AGENT 3    │    │
 │  │  Assistant   │     │ Team Builder │     │Battle Engine │    │
-│  │   Mistral    │────▶│      IA      │────▶│      IA      │    │
+│  │   Mistral    │───▶│      IA      │────▶│      IA      │    │
 │  └──────────────┘     └──────────────┘     └──────────────┘    │
-│         │                     │                     │            │
-│         │                     │                     │            │
-│         ▼                     ▼                     ▼            │
+│         │                     │                     │          │
+│         │                     │                     │          │
+│         ▼                     ▼                     ▼          │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │              BASE DE DONNÉES & APIs                       │  │
+│  │              BASE DE DONNÉES & APIs                      │  │
 │  │  • PokéAPI (données Pokémon)                             │  │
 │  │  • Base locale (équipes, historique)                     │  │
 │  │  • Mistral AI API (conversations)                        │  │
 │  └──────────────────────────────────────────────────────────┘  │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+il faut détailler plus multi agent pour team builder donc tool (stats), tool()
 ```
 
 ---
