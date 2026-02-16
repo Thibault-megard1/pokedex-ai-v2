@@ -83,6 +83,8 @@ export class BattleScene extends Phaser.Scene {
   private battleLogData: BattleLogData | null = null;
   private battleTurn: number = 1;
   private battleWinner: string | null = null;
+  private teamSelectionOverlay?: Phaser.GameObjects.Container;
+  private currentPlayerTeam: PlayerPokemon[] = [];
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -106,13 +108,18 @@ export class BattleScene extends Phaser.Scene {
     this.selectedMove = null;
     this.playerMoves = [];
     this.enemyMoves = [];
+    this.currentPlayerTeam = [];
     
     const save = saveManager.getSave();
     if (!save || save.team.length === 0) {
       // If no team, create a temporary starter
       this.playerPokemon = this.createTemporaryPokemon(25, 5); // Pikachu Lv.5
+      this.currentPlayerTeam = [this.playerPokemon];
     } else {
-      this.playerPokemon = save.team[0]; // Use first Pokémon
+      // Store team reference and use first alive Pokémon
+      this.currentPlayerTeam = [...save.team];
+      const alivePokemon = save.team.find(p => p.hp > 0);
+      this.playerPokemon = alivePokemon || save.team[0];
     }
 
     // Generate enemy Pokémon
@@ -122,13 +129,13 @@ export class BattleScene extends Phaser.Scene {
     this.playerPokemon.attackStage = 0;
     this.playerPokemon.defenseStage = 0;
     this.playerPokemon.speedStage = 0;
-    this.playerPokemon.statusCondition = null;
+    this.playerPokemon.statusCondition = undefined;
     this.playerPokemon.statusTurns = 0;
     
     this.enemyPokemon.attackStage = 0;
     this.enemyPokemon.defenseStage = 0;
     this.enemyPokemon.speedStage = 0;
-    this.enemyPokemon.statusCondition = null;
+    this.enemyPokemon.statusCondition = undefined;
     this.enemyPokemon.statusTurns = 0;
     
     // Init battle log export data and usage stats
@@ -604,13 +611,38 @@ export class BattleScene extends Phaser.Scene {
     // Create move buttons (will be populated when moves load)
     this.createMoveButtons(width, height);
     
-    // Action buttons: Run and Capture (for wild battles)
+    // Action buttons: Teams, Run and Capture (for wild battles)
     const btnSpacing = 90;
+    
+    // Teams button
+    const teamsBtn = this.add.text(
+      width - 80,
+      height - 60,
+      '👥 Team',
+      {
+        fontSize: '16px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#ffffff',
+        backgroundColor: '#8b5cf6',
+        padding: { x: 12, y: 8 },
+      }
+    );
+    teamsBtn.setOrigin(0.5);
+    teamsBtn.setDepth(10);
+    teamsBtn.setInteractive({ useHandCursor: true });
+    
+    teamsBtn.on('pointerover', () => {
+      teamsBtn.setStyle({ backgroundColor: '#7c3aed' });
+    });
+    teamsBtn.on('pointerout', () => {
+      teamsBtn.setStyle({ backgroundColor: '#8b5cf6' });
+    });
+    teamsBtn.on('pointerdown', () => this.showTeamSelection());
     
     // Run button
     const runBtn = this.add.text(
       width - 80,
-      height - 60,
+      height - 60 - btnSpacing,
       'Run',
       {
         fontSize: '16px',
@@ -635,7 +667,7 @@ export class BattleScene extends Phaser.Scene {
     // Capture button (Pokéball)
     const captureBtn = this.add.text(
       width - 80,
-      height - 60 - btnSpacing,
+      height - 60 - btnSpacing * 2,
       '⚾ Catch',
       {
         fontSize: '16px',
@@ -657,7 +689,7 @@ export class BattleScene extends Phaser.Scene {
     });
     captureBtn.on('pointerdown', () => this.attemptCapture());
     
-    this.actionButtons = [runBtn, captureBtn];
+    this.actionButtons = [teamsBtn, runBtn, captureBtn];
   }
 
   createMoveButtons(width: number, height: number) {
@@ -1401,7 +1433,7 @@ export class BattleScene extends Phaser.Scene {
       to: endHP,
       duration: duration,
       onUpdate: (tween) => {
-        const currentHP = tween.getValue();
+        const currentHP = tween.getValue() ?? startHP;
         const tempPokemon = { ...pokemon, hp: Math.max(0, currentHP) };
         this.updateHPBar(bar, x, y, maxWidth, height, tempPokemon);
       },
@@ -1492,6 +1524,239 @@ export class BattleScene extends Phaser.Scene {
     }
 
     onComplete();
+  }
+
+  showTeamSelection() {
+    if (!this.battleActive) return;
+    
+    // Get available Pokémon (alive and not currently in battle)
+    const availablePokemon = this.currentPlayerTeam.filter(
+      p => p.hp > 0 && p.id !== this.playerPokemon.id
+    );
+    
+    if (availablePokemon.length === 0) {
+      this.battleLog.setText('No other Pokémon available!');
+      return;
+    }
+    
+    // Disable battle actions while showing team
+    this.battleActive = false;
+    this.actionButtons.forEach(btn => btn.disableInteractive());
+    this.moveButtons.forEach(container => {
+      const bg = container.getData('bg');
+      if (bg) bg.disableInteractive();
+    });
+    
+    const { width, height } = this.scale;
+    
+    // Create overlay container
+    this.teamSelectionOverlay = this.add.container(0, 0);
+    this.teamSelectionOverlay.setDepth(100);
+    
+    // Semi-transparent background
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8);
+    overlay.setInteractive();
+    overlay.on('pointerdown', () => this.closeTeamSelection());
+    this.teamSelectionOverlay.add(overlay);
+    
+    // Title
+    const title = this.add.text(width / 2, 80, 'Choose a Pokémon to switch in', {
+      fontSize: '24px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#ffffff',
+      fontStyle: 'bold',
+    });
+    title.setOrigin(0.5);
+    this.teamSelectionOverlay.add(title);
+    
+    // Display team Pokémon
+    const cardWidth = 280;
+    const cardHeight = 100;
+    const startY = 150;
+    const spacing = 120;
+    
+    availablePokemon.forEach((pokemon, index) => {
+      const y = startY + index * spacing;
+      
+      // Card background
+      const cardBg = this.add.rectangle(width / 2, y, cardWidth, cardHeight, 0x3b82f6, 1);
+      cardBg.setStrokeStyle(3, 0xffffff);
+      cardBg.setInteractive({ useHandCursor: true });
+      
+      // Pokémon sprite
+      const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+      const sprite = this.add.image(width / 2 - 100, y, 'placeholder');
+      this.load.image(`team_pokemon_${pokemon.id}_${index}`, spriteUrl);
+      this.load.once('complete', () => {
+        sprite.setTexture(`team_pokemon_${pokemon.id}_${index}`);
+      });
+      this.load.start();
+      sprite.setScale(1.5);
+      
+      // Pokémon info
+      const nameText = this.add.text(width / 2 - 40, y - 25, pokemon.name, {
+        fontSize: '20px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#ffffff',
+        fontStyle: 'bold',
+      });
+      nameText.setOrigin(0, 0.5);
+      
+      const levelText = this.add.text(width / 2 - 40, y, `Lv. ${pokemon.level}`, {
+        fontSize: '16px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#e0e0e0',
+      });
+      levelText.setOrigin(0, 0.5);
+      
+      const hpText = this.add.text(width / 2 - 40, y + 20, `HP: ${pokemon.hp}/${pokemon.maxHp}`, {
+        fontSize: '16px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#22c55e',
+      });
+      hpText.setOrigin(0, 0.5);
+      
+      // Add all to overlay
+      this.teamSelectionOverlay!.add([cardBg, sprite, nameText, levelText, hpText]);
+      
+      // Hover effect
+      cardBg.on('pointerover', () => {
+        cardBg.setFillStyle(0x2563eb);
+      });
+      cardBg.on('pointerout', () => {
+        cardBg.setFillStyle(0x3b82f6);
+      });
+      
+      // Click to switch
+      cardBg.on('pointerdown', () => {
+        this.switchPokemon(pokemon);
+      });
+    });
+    
+    // Close button
+    const closeBtn = this.add.text(width / 2, height - 60, 'Cancel (Click outside)', {
+      fontSize: '16px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#ffffff',
+      backgroundColor: '#ef4444',
+      padding: { x: 16, y: 8 },
+    });
+    closeBtn.setOrigin(0.5);
+    closeBtn.setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => this.closeTeamSelection());
+    this.teamSelectionOverlay.add(closeBtn);
+  }
+  
+  closeTeamSelection() {
+    if (this.teamSelectionOverlay) {
+      this.teamSelectionOverlay.destroy();
+      this.teamSelectionOverlay = undefined;
+    }
+    
+    // Re-enable battle actions
+    this.battleActive = true;
+    this.actionButtons.forEach(btn => btn.setInteractive());
+    this.moveButtons.forEach(container => {
+      if (container.getData('enabled')) {
+        const bg = container.getData('bg');
+        if (bg) bg.setInteractive({ useHandCursor: true });
+      }
+    });
+  }
+  
+  switchPokemon(newPokemon: PlayerPokemon) {
+    // Close overlay
+    this.closeTeamSelection();
+    
+    // Disable buttons during switch
+    this.battleActive = false;
+    this.actionButtons.forEach(btn => btn.disableInteractive());
+    this.moveButtons.forEach(container => {
+      const bg = container.getData('bg');
+      if (bg) bg.disableInteractive();
+    });
+    
+    // Show switch message
+    this.battleLog.setText(`Come back, ${this.playerPokemon.name}!`);
+    
+    // Fade out current Pokémon
+    this.tweens.add({
+      targets: this.playerSprite,
+      alpha: 0,
+      duration: 500,
+      onComplete: () => {
+        // Update player Pokémon
+        const oldPokemon = this.playerPokemon;
+        this.playerPokemon = newPokemon;
+        
+        // Reset battle-only states for new Pokémon
+        this.playerPokemon.attackStage = 0;
+        this.playerPokemon.defenseStage = 0;
+        this.playerPokemon.speedStage = 0;
+        
+        // Load moves for new Pokémon
+        this.loadPlayerMovesForSwitch();
+        
+        // Update sprite
+        const newSpriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${newPokemon.id}.png`;
+        this.load.image(`player_pokemon_${newPokemon.id}_back_switch`, newSpriteUrl);
+        this.load.once('complete', () => {
+          this.playerSprite.setTexture(`player_pokemon_${newPokemon.id}_back_switch`);
+          this.playerSprite.setScale(3);
+          
+          // Show switch-in message
+          this.battleLog.setText(`Go, ${newPokemon.name}!`);
+          
+          // Fade in new Pokémon
+          this.tweens.add({
+            targets: this.playerSprite,
+            alpha: 1,
+            duration: 500,
+            onComplete: () => {
+              // Update HUD and HP bar
+              this.updateHPBar(this.playerHPBar, 37, 37, 191, 8, this.playerPokemon);
+              if (this.playerHPText) {
+                this.playerHPText.setText(`${this.playerPokemon.hp}/${this.playerPokemon.maxHp}`);
+              }
+              
+              // Update team in save
+              const save = saveManager.getSave();
+              if (save) {
+                const oldIndex = save.team.findIndex(p => p.id === oldPokemon.id);
+                const newIndex = save.team.findIndex(p => p.id === newPokemon.id);
+                if (oldIndex !== -1 && newIndex !== -1) {
+                  save.team[oldIndex] = oldPokemon;
+                  save.team[newIndex] = newPokemon;
+                  saveManager.saveGame(save);
+                }
+              }
+              
+              // Increment usage stats
+              this.incrementPokemonUsed(this.playerPokemon);
+              
+              // Enemy turn (switching takes a turn)
+              this.time.delayedCall(1000, () => this.enemyTurn());
+            }
+          });
+        });
+        this.load.start();
+      }
+    });
+  }
+  
+  async loadPlayerMovesForSwitch() {
+    try {
+      const learnset = await fetchPokemonLearnset(this.playerPokemon.id);
+      const selectedMoves = selectMovesForLevel(learnset, this.playerPokemon.level);
+      
+      this.playerMoves = selectedMoves;
+      this.playerPokemon.battleMoves = selectedMoves;
+      
+      // Update move buttons
+      this.updateMoveButtons();
+    } catch (error) {
+      console.error('[BattleScene] Failed to load moves for switched Pokémon:', error);
+    }
   }
 
   runAway() {
@@ -1970,18 +2235,23 @@ export class BattleScene extends Phaser.Scene {
       this.battleLog.setPosition(config.centerX, logY);
     }
 
-    // Update action buttons position (Run and Capture, stacked vertically)
+    // Update action buttons position (Teams, Run and Capture, stacked vertically)
     if (this.actionButtons.length > 0) {
       const btnSize = this.uiHelper.getButtonSize(80, 40);
       const btnSpacing = 90;
       const basePos = this.uiHelper.getSafeCornerPosition('bottom-right', btnSize.width / 2 + config.padding, btnSize.height / 2 + config.padding);
       
-      // Run button (bottom)
+      // Teams button (bottom)
       this.actionButtons[0].setPosition(basePos.x, basePos.y);
       
-      // Capture button (above Run button)
+      // Run button (middle)
       if (this.actionButtons.length > 1) {
         this.actionButtons[1].setPosition(basePos.x, basePos.y - btnSpacing);
+      }
+      
+      // Capture button (top)
+      if (this.actionButtons.length > 2) {
+        this.actionButtons[2].setPosition(basePos.x, basePos.y - btnSpacing * 2);
       }
     }
     
@@ -2118,7 +2388,7 @@ export class BattleScene extends Phaser.Scene {
     // Update player status
     const playerStatusText = this.playerHUDContainer.getByName('statusText') as Phaser.GameObjects.Text;
     if (playerStatusText) {
-      if (this.playerPokemon.statusCondition) {
+      if (this.playerPokemon.statusCondition !== null && this.playerPokemon.statusCondition !== undefined) {
         const statusName = getStatusName(this.playerPokemon.statusCondition);
         const statusColor = getStatusColor(this.playerPokemon.statusCondition);
         playerStatusText.setText(statusName);
@@ -2132,7 +2402,7 @@ export class BattleScene extends Phaser.Scene {
     // Update enemy status
     const enemyStatusText = this.enemyHUDContainer.getByName('statusText') as Phaser.GameObjects.Text;
     if (enemyStatusText) {
-      if (this.enemyPokemon.statusCondition) {
+      if (this.enemyPokemon.statusCondition !== null && this.enemyPokemon.statusCondition !== undefined) {
         const statusName = getStatusName(this.enemyPokemon.statusCondition);
         const statusColor = getStatusColor(this.enemyPokemon.statusCondition);
         enemyStatusText.setText(statusName);

@@ -226,6 +226,7 @@ export class MenuManager {
       { label: 'Resume', action: () => this.closeMenu() },
       { label: 'Team', action: () => { this.closeMenu(); setTimeout(() => this.openTeam(), 100); } },
       { label: 'Inventory', action: () => { this.closeMenu(); setTimeout(() => this.openInventory(), 100); } },
+      { label: 'Progress', action: () => this.viewProgress() },
       { label: 'Save Game', action: () => this.saveGame() },
       { label: 'Exit to Menu', action: () => this.exitToMenu() },
     ];
@@ -985,6 +986,13 @@ export class MenuManager {
     if (save) {
       saveManager.saveGame(save);
       this.showMessage('Game saved successfully!');
+    }
+  }
+
+  private viewProgress() {
+    // Open trainer progress page in new tab
+    if (typeof window !== 'undefined') {
+      window.open('/stats', '_blank');
     }
   }
 
