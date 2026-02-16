@@ -110,47 +110,44 @@ export class RoleClassifierTool {
 
   /**
    * Calcule un score d'équilibre des rôles (0-100)
+   * ADAPTÉ pour ne pas pénaliser les équipes incomplètes
    */
   private calculateRoleBalance(
     roles: Map<StrategicRole, number>,
     teamSize: number
   ): number {
-    let score = 50; // Score de base
+    // NOUVEAU: Pour petites équipes, base plus élevée
+    // (on ne peut pas avoir tous les rôles avec 1-2 Pokémon)
+    let score = teamSize <= 2 ? 70 : teamSize <= 4 ? 60 : 50;
 
-    // +20 si tous les rôles essentiels sont présents
-    const hasAllEssential = this.ESSENTIAL_ROLES.every(role => 
-      roles.has(role) && roles.get(role)! > 0
-    );
-    if (hasAllEssential) {
+    // Comptage des rôles présents
+    const presentRoles = this.ESSENTIAL_ROLES.filter(r => roles.has(r) && roles.get(r)! > 0);
+    const presentCount = presentRoles.length;
+
+    // Rôles essentiels attendus selon taille
+    const expectedRoles = Math.min(teamSize, 3); // Max 3 rôles essentiels
+
+    // +20 si on a TOUS les rôles attendus pour cette taille
+    if (presentCount >= expectedRoles) {
       score += 20;
-    } else {
-      // -10 par rôle essentiel manquant
-      score -= (3 - this.ESSENTIAL_ROLES.filter(r => roles.has(r)).length) * 10;
+    } else if (presentCount > 0) {
+      // Bonus proportionnel aux rôles présents (pas de pénalité)
+      score += (presentCount / expectedRoles) * 15;
     }
 
-    // +15 si au moins un revenge killer
-    if (roles.has("revenge-killer")) {
-      score += 15;
-    }
+    // Bonus pour rôles additionnels (pas pénalité si manquants)
+    if (roles.has("revenge-killer")) score += 10;
+    if (roles.has("pivot")) score += 8;
 
-    // +10 si au moins un pivot
-    if (roles.has("pivot")) {
-      score += 10;
-    }
-
-    // -15 par rôle surchargé
+    // Pénalité seulement pour vraie surcharge (3+ du même rôle)
     roles.forEach(count => {
-      if (count > 2) {
-        score -= 15;
-      }
+      if (count >= 3) score -= 10;
     });
 
-    // +5 si bonne diversité (4+ rôles différents pour une équipe de 6)
-    if (teamSize >= 6 && roles.size >= 4) {
-      score += 5;
-    }
+    // Bonus diversité pour grandes équipes
+    if (teamSize >= 5 && roles.size >= 4) score += 5;
 
-    return Math.min(100, Math.max(0, score));
+    return Math.min(100, Math.max(40, score)); // Minimum 40
   }
 
   /**
@@ -160,47 +157,47 @@ export class RoleClassifierTool {
     candidate: Pokemon,
     distribution: TeamRoleDistribution
   ): { score: number; details: string[] } {
-    let score = 0;
+    let score = 55; // Base neutre positive
     const details: string[] = [];
 
     const candidateRole = this.classifyStrategicRole(candidate);
 
-    // +50 si le candidat remplit un rôle essentiel manquant
+    // +45 si le candidat remplit un rôle essentiel manquant (PRIORITÉ!)
     if (distribution.missingRoles.includes(candidateRole)) {
-      score += 50;
-      details.push(`🎯 Remplit le rôle manquant: ${candidateRole}`);
+      score += 45;
+      details.push(`🎯 Rôle ESSENTIEL manquant: ${candidateRole}`);
     }
 
-    // +30 si le candidat ajoute de la diversité
-    if (!distribution.roles.has(candidateRole) || distribution.roles.get(candidateRole) === 0) {
-      score += 30;
-      details.push(`✨ Ajoute un nouveau rôle: ${candidateRole}`);
+    // +25 si le candidat ajoute de la diversité
+    else if (!distribution.roles.has(candidateRole) || distribution.roles.get(candidateRole) === 0) {
+      score += 25;
+      details.push(`✨ Nouveau rôle: ${candidateRole}`);
     }
 
-    // -20 si le rôle est déjà surchargé
-    if (distribution.overloadedRoles.includes(candidateRole)) {
-      score -= 20;
-      details.push(`⚠️ Rôle déjà surchargé: ${candidateRole}`);
+    // -15 si le rôle est déjà surchargé (pénalité réduite)
+    else if (distribution.overloadedRoles.includes(candidateRole)) {
+      score -= 15;
+      details.push(`⚠️ Rôle surchargé: ${candidateRole}`);
     }
 
-    // +10 pour les rôles versatiles
+    // +12 pour les rôles versatiles
     if (candidateRole === "balanced" || candidateRole === "pivot") {
-      score += 10;
+      score += 12;
       details.push(`🔄 Rôle polyvalent`);
     }
 
-    // Bonus spéciaux
+    // Bonus spéciaux pour rôles stratégiques
     if (candidateRole === "revenge-killer" && !distribution.roles.has("revenge-killer")) {
-      score += 25;
-      details.push(`⚡ Ajoute un finisseur rapide`);
+      score += 20;
+      details.push(`⚡ Finisseur rapide (revenge killer)`);
     }
 
     if (candidateRole === "wallbreaker" && !distribution.roles.has("wallbreaker")) {
-      score += 20;
-      details.push(`💥 Ajoute un brise-mur`);
+      score += 18;
+      details.push(`💥 Brise-mur puissant`);
     }
 
-    return { score, details };
+    return { score: Math.max(30, Math.min(100, Math.round(score))), details };
   }
 
   /**

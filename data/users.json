@@ -1,9 +1,14 @@
 [
   {
-    "id": "afe522e8-2d45-4a6c-b515-01e47dbf9a17",
-    "username": "Jiz3o",
-    "passwordHash": "$2a$10$NbnglA1Ah6g0brT7gbwM3uRDmtoyjmEXmEH79O.oe1cCu/9GW26jq",
-    "createdAt": "2026-02-16T17:26:59.146Z",
-    "isAdmin": true
+    "id": "e261c8ca-8956-4aac-b339-a04958d309e4",
+    "username": "test",
+    "passwordHash": "$2a$10$yDzjLY59gcRKpa56d.Z2e.HYb4yCqdg4H/9/Bm.LLNuUE4lXtz3m6",
+    "createdAt": "2026-01-25T21:46:50.898Z"
+  },
+  {
+    "id": "f09faa21-1b1b-4a0e-bd2d-b10aee55d6ab",
+    "username": "goatier",
+    "passwordHash": "$2a$10$d4pwFdge2409qBCIPm3zauGlVcCGTL3vuP.sC3yhdlYdNX.fXn8oS",
+    "createdAt": "2026-01-25T23:06:21.366Z"
   }
 ]

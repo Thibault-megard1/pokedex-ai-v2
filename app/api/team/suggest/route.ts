@@ -9,44 +9,73 @@ interface TeamMember {
   stats?: { name: string; value: number }[];
 }
 /**
- * Pool de Pokémon populaires et compétitifs pour les suggestions
- * Organisés par tiers pour optimiser les recommandations
+ * Pool de Pokémon diversifié pour les suggestions
+ * ÉLARGI avec plus de types variés pour meilleure complémentarité
  */
 const POKEMON_POOL = {
-  // Legendaires et Pseudo-legendaires (très forts)
+  // Légendaires (stats élevées mais pas toujours la meilleure synergie)
   legendary: [
-    143, 144, 145, 146, 149, 150, 151, // Gen 1
-    243, 244, 245, 249, 250, 251, // Gen 2
-    377, 378, 379, 380, 381, 382, 383, 384, 385, // Gen 3
-    147, 148, 246, 247, 248, 371, 372, 373 // Pseudo-legendaries
+    144, 145, 146, 149, 150, 151, // Gen 1 oiseaux + Mewtwo + Mew
+    243, 244, 245, 249, 250, // Gen 2
+    380, 381, 382, 383, 384, 385, // Gen 3
   ],
   
-  // Starters (populaires et équilibrés)
+  // Pseudo-légendaires (très bons)
+  pseudoLegendary: [
+    149, // Dragonite (Dragon/Flying)
+    248, // Tyranitar (Rock/Dark)
+    373, // Salamence (Dragon/Flying)
+    376, // Metagross (Steel/Psychic)
+    143, // Snorlax (Normal)
+  ],
+  
+  // Starters finaux (équilibrés)
   starters: [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, // Gen 1
-    152, 153, 154, 155, 156, 157, 158, 159, 160, // Gen 2
-    252, 253, 254, 255, 256, 257, 258, 259, 260 // Gen 3
+    3, 6, 9, // Gen 1: Venusaur, Charizard, Blastoise
+    154, 157, 160, // Gen 2: Meganium, Typhlosion, Feraligatr
+    254, 257, 260 // Gen 3: Sceptile, Blaziken, Swampert
   ],
   
-  // Pokémon compétitifs populaires
-  competitive: [
-    25, 26, 65, 68, 94, 115, 121, 130, 131, // Gen 1
-    59, 71, 89, 127, 128, 134, 135, 136, 142,
-    196, 197, 212, 213, 214, 229, 230, 233, 242, // Gen 2
-    262, 271, 282, 286, 289, 295, 302, 306, 310, // Gen 3
-    319, 321, 330, 334, 342, 350, 359, 362, 365, 369, 376
-  ]
+  // Types variés pour COMPLÉMENTARITÉ (clé!)
+  byType: {
+    ghost: [94, 200, 302, 354], // Gengar, Misdreavus, Sableye, Banette
+    fighting: [68, 106, 107, 214, 286, 297], // Machamp, Hitmonlee, Hitmonchan, Heracross, Breloom, Hariyama
+    ground: [51, 105, 208, 330, 383], // Dugtrio, Marowak, Steelix, Flygon, Groudon
+    flying: [18, 142, 227, 334], // Pidgeot, Aerodactyl, Skarmory, Altaria
+    steel: [208, 212, 306, 376], // Steelix, Scizor, Aggron, Metagross
+    psychic: [65, 121, 196, 282, 385], // Alakazam, Starmie, Espeon, Gardevoir, Jirachi
+    water: [130, 131, 134, 230, 321, 350], // Gyarados, Lapras, Vaporeon, Kingdra, Wailord, Milotic
+    fire: [6, 38, 59, 136, 157, 257], // Charizard, Ninetales, Arcanine, Flareon, Typhlosion, Blaziken
+    electric: [26, 135, 181, 310], // Raichu, Jolteon, Ampharos, Manectric
+    grass: [3, 45, 71, 154, 254, 286], // Venusaur, Vileplume, Victreebel, Meganium, Sceptile, Breloom
+    ice: [131, 144, 362, 365], // Lapras, Articuno, Glalie, Walrein
+    dragon: [149, 230, 330, 373, 384], // Dragonite, Kingdra, Flygon, Salamence, Rayquaza
+    fairy: [36, 282], // Clefable, Gardevoir (gen 1-3 avec Fairy rétroactif)
+    dark: [197, 229, 248, 302, 359], // Umbreon, Houndoom, Tyranitar, Sableye, Absol
+    poison: [34, 45, 89, 94], // Nidoking, Vileplume, Muk, Gengar
+    rock: [141, 142, 248, 306, 369], // Kabutops, Aerodactyl, Tyranitar, Aggron, Relicanth
+    bug: [127, 212, 214, 284], // Pinsir, Scizor, Heracross, Masquerain
+    normal: [113, 143, 233, 242, 289], // Chansey, Snorlax, Porygon2, Blissey, Slaking
+  }
 };
 
 /**
- * Génère une pool de candidats basée sur les IDs populaires
+ * Génère une pool de candidats VARIÉE
  */
 function generateCandidatePool(): number[] {
-  return [
-    ...POKEMON_POOL.legendary,
-    ...POKEMON_POOL.starters,
-    ...POKEMON_POOL.competitive
-  ];
+  const pool = new Set<number>();
+  
+  // Ajouter tous les groupes
+  POKEMON_POOL.legendary.forEach(id => pool.add(id));
+  POKEMON_POOL.pseudoLegendary.forEach(id => pool.add(id));
+  POKEMON_POOL.starters.forEach(id => pool.add(id));
+  
+  // Ajouter tous les types
+  Object.values(POKEMON_POOL.byType).forEach(ids => {
+    ids.forEach(id => pool.add(id));
+  });
+  
+  return Array.from(pool);
 }
 
 export async function POST(req: NextRequest) {
@@ -149,8 +178,10 @@ export async function POST(req: NextRequest) {
         statsScore: teamAnalysis.statsAnalysis.summary.avgTotal,
         roleScore: teamAnalysis.roleAnalysis.distribution.balanceScore,
         coverageScore: teamAnalysis.coverageAnalysis.coverageScore,
+        synergyScore: teamAnalysis.synergyAnalysis.synergy.score,
         criticalWeaknesses: teamAnalysis.typeAnalysis.criticalWeaknesses,
-        missingRoles: teamAnalysis.roleAnalysis.distribution.missingRoles
+        missingRoles: teamAnalysis.roleAnalysis.distribution.missingRoles,
+        typeRedundancy: teamAnalysis.synergyAnalysis.synergy.typeRedundancy
       }
     });
 

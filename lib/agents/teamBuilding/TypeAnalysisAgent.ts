@@ -30,9 +30,9 @@ export class TypeAnalysisAgent {
    */
   analyzeTeam(team: Pokemon[]): TypeAnalysisResult {
     const coverage = this.tool.analyzeTeamTypes(team);
-    const coverageScore = this.tool.calculateCoverageScore(coverage);
+    const coverageScore = this.tool.calculateCoverageScore(coverage, team.length);
     const criticalWeaknesses = this.tool.getCriticalWeaknesses(coverage);
-    const recommendations = this.generateRecommendations(coverage, criticalWeaknesses);
+    const recommendations = this.generateRecommendations(coverage, criticalWeaknesses, team.length);
 
     return {
       coverage,
@@ -66,7 +66,8 @@ export class TypeAnalysisAgent {
    */
   private generateRecommendations(
     coverage: TypeCoverage,
-    criticalWeaknesses: string[]
+    criticalWeaknesses: string[],
+    teamSize: number = 1
   ): string[] {
     const recommendations: string[] = [];
 
@@ -103,7 +104,7 @@ export class TypeAnalysisAgent {
     }
 
     // Score global
-    const coverageScore = this.tool.calculateCoverageScore(coverage);
+    const coverageScore = this.tool.calculateCoverageScore(coverage, teamSize);
     if (coverageScore >= 70) {
       recommendations.push("🌟 Excellente couverture de types!");
     } else if (coverageScore >= 50) {

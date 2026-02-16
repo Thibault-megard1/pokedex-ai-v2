@@ -107,7 +107,7 @@ export class MoveCoverageTool {
     candidate: Pokemon,
     teamCoverage: MoveCoverage
   ): { score: number; details: string[] } {
-    let score = 0;
+    let score = 60; // Base neutre positive
     const details: string[] = [];
 
     // Analyser les types du candidat comme proxy des moves
@@ -115,37 +115,37 @@ export class MoveCoverageTool {
     const newCoverageTypes: string[] = [];
     const improvesAgainst: string[] = [];
 
-    // +25 points par nouveau type STAB ajouté
+    // +20 points par nouveau type STAB ajouté
     candidateStab.forEach(type => {
       if (!teamCoverage.stab.has(type)) {
-        score += 25;
+        score += 20;
         newCoverageTypes.push(type);
       }
     });
 
     if (newCoverageTypes.length > 0) {
-      details.push(`⚔️ Ajoute les types STAB: ${newCoverageTypes.join(", ")}`);
+      details.push(`⚔️ Nouveaux types STAB: ${newCoverageTypes.join(", ")}`);
     }
 
-    // +30 points par type mal couvert que le candidat améliore
+    // +25 points par type mal couvert que le candidat améliore (PRIORITÉ!)
     candidate.types.forEach(attackType => {
       teamCoverage.poorCoverageAgainst.forEach(poorType => {
         const effectiveness = this.getOffensiveEffectiveness(attackType, poorType);
-        if (effectiveness >= 2) {
-          score += 30;
+        if (effectiveness >= 2 && improvesAgainst.length < 5) {
+          score += 25;
           improvesAgainst.push(poorType);
         }
       });
     });
 
     if (improvesAgainst.length > 0) {
-      details.push(`✅ Améliore la couverture contre: ${improvesAgainst.slice(0, 3).join(", ")}`);
+      details.push(`✅ Couvre faiblesses: ${improvesAgainst.slice(0, 3).join(", ")}`);
     }
 
-    // +15 si le candidat a un dual-type (plus de flexibilité)
+    // +10 si le candidat a un dual-type (plus de flexibilité)
     if (candidate.types.length === 2) {
-      score += 15;
-      details.push(`🔀 Double type (plus de flexibilité)`);
+      score += 10;
+      details.push(`🔀 Dual-type (couverture améliorée)`);
     }
 
     // Bonus pour couverture de types problématiques
@@ -156,8 +156,8 @@ export class MoveCoverageTool {
       problematicTypes.forEach(probType => {
         if (teamCoverage.poorCoverageAgainst.has(probType)) {
           const eff = this.getOffensiveEffectiveness(atkType, probType);
-          if (eff >= 2) {
-            score += 20;
+          if (eff >= 2 && !coversProblematic) {
+            score += 15;
             coversProblematic = true;
           }
         }
@@ -165,27 +165,39 @@ export class MoveCoverageTool {
     });
 
     if (coversProblematic) {
-      details.push(`🎯 Couvre des types problématiques`);
+      details.push(`🎯 Couvre types problématiques (Steel/Fairy/etc.)`);
     }
 
-    return { score, details };
+    return { score: Math.max(40, Math.min(100, Math.round(score))), details };
   }
 
   /**
    * Calcule un score de couverture offensive (0-100)
+   * ADAPTÉ pour petites équipes - ne pénalise pas le manque de couverture
    */
   calculateOffensiveCoverageScore(coverage: MoveCoverage, teamSize: number): number {
-    const coverageRatio = coverage.superEffectiveAgainst.size / this.ALL_TYPES.length;
-    const diversityRatio = coverage.uniqueMoveTypes / Math.min(teamSize * 2, 10);
-    const poorCoverageRatio = coverage.poorCoverageAgainst.size / this.ALL_TYPES.length;
+    // NOUVEAU: Base dynamique selon taille (petite équipe = score de base plus élevé)
+    const baseScore = teamSize <= 1 ? 60 : teamSize <= 2 ? 50 : teamSize <= 4 ? 40 : 30;
+    
+    // Couverture normalisée par taille attendue
+    const expectedCoverage = Math.min(teamSize * 3, 12); // Max 12 types attendus pour une équipe complète
+    const actualCoverage = coverage.superEffectiveAgainst.size;
+    const coverageRatio = Math.min(1, actualCoverage / expectedCoverage);
+    
+    // Diversité normalisée
+    const expectedDiversity = Math.min(teamSize * 2, 8);
+    const diversityRatio = Math.min(1, coverage.uniqueMoveTypes / expectedDiversity);
+    
+    // Pénalité RÉDUITE pour mauvaise couverture (proportionnelle à la taille)
+    const penaltyFactor = teamSize <= 2 ? 0.3 : teamSize <= 4 ? 0.5 : 0.8;
+    const poorCoveragePenalty = penaltyFactor * coverage.poorCoverageAgainst.size;
 
-    const score = Math.min(100, Math.max(0,
-      (coverageRatio * 50) + // 50 points max pour la couverture
-      (diversityRatio * 30) - // 30 points max pour la diversité
-      (poorCoverageRatio * 30) // -30 points pour les faiblesses de couverture
-    ));
+    const score = baseScore +
+      (coverageRatio * 25) + // Jusqu'à +25 pour bonne couverture proportionnelle
+      (diversityRatio * 15) - // Jusqu'à +15 pour diversité
+      poorCoveragePenalty;   // Pénalité réduite
 
-    return Math.round(score);
+    return Math.round(Math.min(100, Math.max(40, score))); // Minimum 40
   }
 
   /**

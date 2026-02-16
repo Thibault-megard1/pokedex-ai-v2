@@ -169,7 +169,7 @@ export class StatsAnalyzerTool {
     candidate: Pokemon,
     teamStats: StatsSummary
   ): { score: number; details: string[] } {
-    let score = 0;
+    let score = 60; // Base neutre positive
     const details: string[] = [];
 
     const candidateRole = this.classifyPokemonRole(candidate);
@@ -177,44 +177,50 @@ export class StatsAnalyzerTool {
     const candidateAtk = this.getStat(candidate, "attack");
     const candidateSpAtk = this.getStat(candidate, "special-attack");
 
-    // Équilibrage de la vitesse
+    // Bonus RÉDUIT pour stats (ne doit pas dominer la synergie!)
+    const totalStats = this.getTotalStats(candidate);
+    if (totalStats >= 520) {
+      score += 12; // Réduit de 25 à 12
+      details.push(`⭐ Stats élevées (${totalStats})`);
+    } else if (totalStats >= 480) {
+      score += 8; // Réduit de 15 à 8
+      details.push(`✨ Bonnes stats (${totalStats})`);
+    } else if (totalStats >= 420) {
+      score += 4;
+      details.push(`👍 Stats correctes (${totalStats})`);
+    }
+    // PAS de pénalité pour stats faibles - ce n'est pas un critère majeur
+
+    // Équilibrage de la vitesse (important pour les combats!)
     if (teamStats.speedDistribution === "slow" && candidateSpeed >= 90) {
-      score += 30;
-      details.push("⚡ Ajoute de la vitesse à l'équipe");
+      score += 18;
+      details.push("⚡ Ajoute vitesse (équipe lente)");
     } else if (teamStats.speedDistribution === "fast" && candidateSpeed <= 60) {
-      score += 20;
-      details.push("🛡️ Ajoute du bulk/contrôle");
+      score += 12;
+      details.push("🛡️ Ajoute contrôle (équipe rapide)");
     }
 
     // Équilibrage physique/spécial
-    if (teamStats.physicalBias > 0.3 && candidateSpAtk > candidateAtk) {
-      score += 25;
-      details.push("✨ Équilibre avec de l'attaque spéciale");
-    } else if (teamStats.physicalBias < -0.3 && candidateAtk > candidateSpAtk) {
-      score += 25;
-      details.push("💪 Équilibre avec de l'attaque physique");
-    }
-
-    // Bonus pour bon total de stats
-    const totalStats = this.getTotalStats(candidate);
-    if (totalStats >= 500) {
-      score += 20;
-      details.push(`⭐ Excellentes stats totales (${totalStats})`);
-    } else if (totalStats >= 450) {
-      score += 10;
-      details.push(`👍 Bonnes stats totales (${totalStats})`);
+    if (teamStats.physicalBias > 0.3 && candidateSpAtk > candidateAtk && candidateSpAtk >= 90) {
+      score += 15;
+      details.push("✨ Équilibre avec Sp.Atk élevé");
+    } else if (teamStats.physicalBias < -0.3 && candidateAtk > candidateSpAtk && candidateAtk >= 90) {
+      score += 15;
+      details.push("💪 Équilibre avec Atk élevé");
     }
 
     // Bonus si l'équipe manque de bulk
-    if (teamStats.bulkRating < 40 && candidateRole.bulk === "wall") {
-      score += 35;
-      details.push("🛡️ Ajoute beaucoup de bulk");
-    } else if (teamStats.bulkRating < 40 && candidateRole.bulk === "bulky") {
-      score += 20;
-      details.push("🛡️ Ajoute du bulk");
+    if (teamStats.bulkRating < 40) {
+      if (candidateRole.bulk === "wall") {
+        score += 25;
+        details.push("🛡️ Mur défensif (bulk critique)");
+      } else if (candidateRole.bulk === "bulky") {
+        score += 15;
+        details.push("🛡️ Ajoute bulk nécessaire");
+      }
     }
 
-    return { score, details };
+    return { score: Math.max(30, Math.min(100, Math.round(score))), details };
   }
 
   /**

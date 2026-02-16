@@ -73,62 +73,69 @@ export class TypeEffectivenessTool {
 
   /**
    * Score un Pokémon candidat basé sur la couverture de types
+   * REFACTORISÉ: Bonus ÉNORMES pour couvrir les faiblesses d'équipe
    */
   scorePokemonTypeContribution(
     candidate: Pokemon,
     currentCoverage: TypeCoverage
   ): { score: number; details: string[] } {
-    let score = 0;
+    let score = 40; // Base RÉDUITE pour laisser place aux bonus
     const details: string[] = [];
 
     const candidateRelations = getTypeRelations(candidate.types);
 
-    // +40 points par faiblesse critique couverte (x4)
+    // +60 points par IMMUNITÉ à une faiblesse d'équipe (ÉNORME!)
+    candidateRelations.immuneTo.forEach(immuneType => {
+      if (currentCoverage.weaknesses.has(immuneType)) {
+        score += 60;
+        details.push(`🛡️ IMMUNITÉ contre ${immuneType} (faiblesse d'équipe!)`);
+      }
+    });
+
+    // +45 points par faiblesse critique couverte (x4)
     candidateRelations.resistantTo.forEach(resistType => {
       const weaknessLevel = currentCoverage.weaknesses.get(resistType) || 0;
       if (weaknessLevel >= 4) {
-        score += 40;
-        details.push(`✅ Résiste à ${resistType} (faiblesse critique de l'équipe)`);
+        score += 45;
+        details.push(`✅ Résiste à ${resistType} (faiblesse CRITIQUE x4)`);
       } else if (weaknessLevel >= 2) {
-        score += 20;
-        details.push(`✅ Résiste à ${resistType} (faiblesse de l'équipe)`);
-      }
-    });
-
-    // +30 points par immunité à une faiblesse d'équipe
-    candidateRelations.immuneTo.forEach(immuneType => {
-      if (currentCoverage.weaknesses.has(immuneType)) {
         score += 30;
-        details.push(`🛡️ Immunisé contre ${immuneType} (faiblesse d'équipe)`);
+        details.push(`✅ Résiste à ${resistType} (faiblesse x2)`);
       }
     });
 
-    // +15 points par type non couvert ajouté
+    // +25 points par type non couvert ajouté
     candidate.types.forEach(type => {
       if (currentCoverage.uncoveredTypes.includes(type)) {
-        score += 15;
-        details.push(`⚡ Ajoute le type ${type} (non couvert)`);
+        score += 25;
+        details.push(`⚡ Nouveau type offensif: ${type}`);
       }
     });
 
-    // -25 points par nouvelle faiblesse créée
+    // +20 points si le candidat est fort contre les faiblesses de l'équipe
+    candidateRelations.strongAgainst.forEach(strongType => {
+      if (currentCoverage.weaknesses.has(strongType)) {
+        score += 20;
+        details.push(`⚔️ Attaque super efficace contre ${strongType}`);
+      }
+    });
+
+    // Pénalité progressive pour faiblesses TRÈS partagées (4+)
+    let sharedWeaknesses = 0;
     candidateRelations.weakTo.forEach(weakType => {
       const currentWeakness = currentCoverage.weaknesses.get(weakType) || 0;
       if (currentWeakness > 0) {
-        score -= 25;
-        details.push(`⚠️ Partage la faiblesse ${weakType}`);
+        sharedWeaknesses++;
       }
     });
+    
+    if (sharedWeaknesses >= 4) {
+      const penalty = (sharedWeaknesses - 3) * 12;
+      score -= penalty;
+      details.push(`⚠️ DANGER: Partage ${sharedWeaknesses} faiblesses`);
+    }
 
-    // +10 points si le candidat est fort contre les faiblesses de l'équipe
-    candidateRelations.strongAgainst.forEach(strongType => {
-      if (currentCoverage.weaknesses.has(strongType)) {
-        score += 10;
-        details.push(`⚔️ Fort contre ${strongType} (faiblesse d'équipe)`);
-      }
-    });
-
-    return { score, details };
+    return { score: Math.max(15, Math.min(100, Math.round(score))), details };
   }
 
   /**
@@ -142,20 +149,31 @@ export class TypeEffectivenessTool {
 
   /**
    * Calcule un score de couverture globale (0-100)
+   * ADAPTÉ pour petites équipes (1-2 Pokémon)
    */
-  calculateCoverageScore(coverage: TypeCoverage): number {
-    const coverageRatio = coverage.offensiveCoverage.size / ALL_TYPES.length;
-    const weaknessCount = coverage.weaknesses.size;
+  calculateCoverageScore(coverage: TypeCoverage, teamSize: number = 1): number {
+    // NOUVEAU: Base dynamique selon taille équipe
+    // Petite équipe = score de base plus élevé (normal de ne pas tout couvrir)
+    const baseScore = teamSize <= 1 ? 55 : teamSize <= 2 ? 50 : teamSize <= 4 ? 40 : 30;
+    
+    // Couverture normalisée par taille attendue
+    const expectedCoverage = Math.min(teamSize * 2, 10); // Max 10 types attendus
+    const actualCoverage = coverage.offensiveCoverage.size;
+    const coverageRatio = Math.min(1, actualCoverage / expectedCoverage);
+    
     const resistanceCount = coverage.resistances.size;
     const immunityCount = coverage.immunities.size;
+    const weaknessCount = coverage.weaknesses.size;
 
-    const score = Math.min(100, Math.max(0,
-      (coverageRatio * 40) + // 40 points max pour la couverture
-      (resistanceCount * 3) + // +3 par résistance
-      (immunityCount * 5) - // +5 par immunité
-      (weaknessCount * 2) // -2 par faiblesse
-    ));
+    // Score = base + bonus - malus (mais malus réduits pour petites équipes)
+    const weaknessPenaltyFactor = teamSize <= 2 ? 0.5 : teamSize <= 4 ? 0.75 : 1;
+    
+    const score = baseScore +
+      (coverageRatio * 25) + // Jusqu'à +25 pour bonne couverture proportionnelle
+      (resistanceCount * 2) + // +2 par résistance
+      (immunityCount * 4) - // +4 par immunité
+      (weaknessCount * weaknessPenaltyFactor); // Pénalité réduite pour petites équipes
 
-    return Math.round(score);
+    return Math.round(Math.min(100, Math.max(35, score))); // Minimum 35
   }
 }
