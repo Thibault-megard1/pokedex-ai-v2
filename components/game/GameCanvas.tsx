@@ -133,6 +133,7 @@ export default function GameCanvas({ username }: GameCanvasProps) {
           <li>ESC - Menu</li>
           <li>I - Inventory</li>
           <li>T - Team</li>
+          <li>H - Heal Party</li>
           <li>R - Run</li>
         </ul>
       </div>
