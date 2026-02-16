@@ -38,14 +38,21 @@ export async function GET(req: NextRequest) {
     const pokemon = await getPokemonFromCache(identifier);
 
     // Return minimal data needed for autocomplete/lists
-    return NextResponse.json({
-      id: pokemon.id,
-      name: pokemon.name,
-      frenchName: pokemon.frenchName,
-      sprite: pokemon.sprite,
-      types: pokemon.types,
-      // Include any other fields needed by client components
-    });
+    return NextResponse.json(
+      {
+        id: pokemon.id,
+        name: pokemon.name,
+        frenchName: pokemon.frenchName,
+        sprite: pokemon.sprite,
+        types: pokemon.types,
+      },
+      {
+        headers: {
+          // Cache côté client pendant 5 minutes
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        }
+      }
+    );
   } catch (error: any) {
     console.error("Error fetching Pokemon cache:", error);
     return NextResponse.json(

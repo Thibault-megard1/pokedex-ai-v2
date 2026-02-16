@@ -6,6 +6,11 @@ import { generationToRegion } from "@/lib/regions";
 
 const CACHE_DIR = path.join(DATA_DIR, "pokemon-cache");
 
+// Cache en mémoire pour éviter les lectures de fichiers répétées
+// TTL de 5 minutes pour équilibrer mémoire et fraîcheur des données
+const MEMORY_CACHE = new Map<string, { data: PokemonDetail; timestamp: number }>();
+const MEMORY_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // Mapping manuel pour afficher l'objet nécessaire à la Méga-Évolution.
 // Les noms sont conservés en anglais pour rester cohérents avec la PokéAPI.
 const MEGA_STONES: Record<string, string> = {
@@ -352,6 +357,15 @@ function compare(a: number | string, b: number | string) {
 }
 
 export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail> {
+  const normalizedId = normalizeName(nameOrId);
+  
+  // 1. Vérifier le cache en mémoire d'abord
+  const cached = MEMORY_CACHE.get(normalizedId);
+  if (cached && (Date.now() - cached.timestamp) < MEMORY_CACHE_TTL) {
+    return cached.data;
+  }
+
+  // 2. Vérifier le cache fichier
   const p = await cachePathFor(nameOrId);
 
   try {
@@ -373,6 +387,8 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
         cached.forms !== undefined &&
         hasFormMetadata &&
         hasMoveTypes) {
+      // Mettre en cache mémoire
+      MEMORY_CACHE.set(normalizedId, { data: cached, timestamp: Date.now() });
       return cached;
     }
     // Si les nouveaux champs ne sont pas présents, on continue pour refetch
@@ -600,6 +616,10 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
   };
 
   await writeJsonFile(p, detail);
+  
+  // Mettre en cache mémoire après écriture
+  MEMORY_CACHE.set(normalizedId, { data: detail, timestamp: Date.now() });
+  
   return detail;
 }
 

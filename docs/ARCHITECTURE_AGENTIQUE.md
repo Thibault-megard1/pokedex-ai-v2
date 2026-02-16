@@ -31,6 +31,7 @@ Le projet implémente une **architecture multi-agents** où plusieurs systèmes 
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
+il faut détailler plus multi agent pour team builder donc tool (stats), tool()
 ```
 
 ---
