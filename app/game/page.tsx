@@ -20,6 +20,7 @@ export default function GamePage() {
   const [mounted, setMounted] = useState(false);
   const [username, setUsername] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [backgroundUrl, setBackgroundUrl] = useState<string>("");
 
   useEffect(() => {
     setMounted(true);
@@ -39,6 +40,16 @@ export default function GamePage() {
     
     // Prevent overscroll behavior on mobile
     document.body.style.overscrollBehavior = 'none';
+    
+    // Fetch random region background
+    fetch('/api/game/random-region-bg')
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          setBackgroundUrl(data.url);
+        }
+      })
+      .catch(console.error);
     
     // Recupere l'utilisateur courant pour le pseudo du jeu.
     fetch('/api/me')
@@ -91,7 +102,11 @@ export default function GamePage() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0
+      bottom: 0,
+      backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
     }}>
       <GameCanvas username={username} />
     </div>

@@ -15,11 +15,17 @@ export class MenuManager {
   private selectedPokemonIndex: number = -1; // -1 means no selection
   private detailPanelContainer: Phaser.GameObjects.Container | null = null;
   private uiHelper: UIHelper;
-  
+  private selectedMenuIndex: number = 0; // For keyboard navigation
+  private menuOptions: Array<{label: string, action: () => void}> = [];
+  private menuButtons: Phaser.GameObjects.Container[] = [];
+  private keyUpHandler?: (event: KeyboardEvent) => void;
+  private keyDownHandler?: (event: KeyboardEvent) => void;
+  private keyEnterHandler?: (event: KeyboardEvent) => void;
+
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.uiHelper = new UIHelper(scene);
-    
+
     // Listen for resize events
     this.scene.scale.on('resize', this.onResize, this);
   }
@@ -89,17 +95,98 @@ export class MenuManager {
   }
 
   closeMenu() {
+    // Cleanup keyboard listeners
+    this.cleanupKeyboardListeners();
+
     if (this.menuContainer) {
       this.menuContainer.destroy();
       this.menuContainer = null;
     }
-    
+
     const previousState = this.menuState;
     this.menuState = 'none';
-    
+    this.selectedMenuIndex = 0;
+    this.menuOptions = [];
+    this.menuButtons = [];
+
     if (this.onClose) {
       this.onClose();
       this.onClose = null;
+    }
+  }
+
+  // =====================
+  // KEYBOARD NAVIGATION
+  // =====================
+  private setupKeyboardNavigation() {
+    this.cleanupKeyboardListeners();
+
+    this.keyUpHandler = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        this.selectedMenuIndex = (this.selectedMenuIndex - 1 + this.menuOptions.length) % this.menuOptions.length;
+        this.updateMenuHighlight();
+      }
+    };
+
+    this.keyDownHandler = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        this.selectedMenuIndex = (this.selectedMenuIndex + 1) % this.menuOptions.length;
+        this.updateMenuHighlight();
+      }
+    };
+
+    this.keyEnterHandler = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (this.menuOptions[this.selectedMenuIndex]) {
+          this.menuOptions[this.selectedMenuIndex].action();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', this.keyUpHandler);
+    window.addEventListener('keydown', this.keyDownHandler);
+    window.addEventListener('keydown', this.keyEnterHandler);
+  }
+
+  private cleanupKeyboardListeners() {
+    if (this.keyUpHandler) {
+      window.removeEventListener('keydown', this.keyUpHandler);
+      this.keyUpHandler = undefined;
+    }
+    if (this.keyDownHandler) {
+      window.removeEventListener('keydown', this.keyDownHandler);
+      this.keyDownHandler = undefined;
+    }
+    if (this.keyEnterHandler) {
+      window.removeEventListener('keydown', this.keyEnterHandler);
+      this.keyEnterHandler = undefined;
+    }
+  }
+
+  private updateMenuHighlight() {
+    // Update visual highlight based on menu type
+    if (this.menuState === 'pause') {
+      // Update pause menu buttons
+      this.menuButtons.forEach((button, index) => {
+        const bg = button.getAt(0) as Phaser.GameObjects.Rectangle;
+
+        if (index === this.selectedMenuIndex) {
+          // Highlighted
+          bg.setFillStyle(0x2563eb);
+          bg.setStrokeStyle(3, 0xfbbf24);
+        } else {
+          // Normal
+          bg.setFillStyle(0x3b82f6);
+          bg.setStrokeStyle(2, 0x2563eb);
+        }
+      });
+    } else if (this.menuState === 'inventory') {
+      this.updateInventoryHighlight();
+    } else if (this.menuState === 'team') {
+      this.updateTeamHighlight();
     }
   }
 
@@ -109,7 +196,7 @@ export class MenuManager {
   private createPauseMenu() {
     const config = this.uiHelper.getConfig();
     const menuScale = this.uiHelper.getMenuScale();
-    
+
     // Container
     this.menuContainer = this.scene.add.container(0, 0);
     this.menuContainer.setDepth(1000);
@@ -135,7 +222,7 @@ export class MenuManager {
     this.menuContainer.add(title);
 
     // Menu options
-    const options = [
+    this.menuOptions = [
       { label: 'Resume', action: () => this.closeMenu() },
       { label: 'Team', action: () => { this.closeMenu(); setTimeout(() => this.openTeam(), 100); } },
       { label: 'Inventory', action: () => { this.closeMenu(); setTimeout(() => this.openInventory(), 100); } },
@@ -143,16 +230,24 @@ export class MenuManager {
       { label: 'Exit to Menu', action: () => this.exitToMenu() },
     ];
 
+    this.menuButtons = [];
+    this.selectedMenuIndex = 0;
+
     const spacing = this.uiHelper.getSpacing(70);
     const startY = config.centerY - this.uiHelper.scale(80);
-    options.forEach((option, index) => {
+    this.menuOptions.forEach((option, index) => {
       const btnY = startY + index * spacing;
       const btn = this.createButton(config.centerX, btnY, option.label, option.action);
+      this.menuButtons.push(btn);
       this.menuContainer!.add(btn);
     });
 
+    // Setup keyboard navigation
+    this.setupKeyboardNavigation();
+    this.updateMenuHighlight();
+
     // Close hint
-    const hint = this.uiHelper.createText(config.centerX, config.centerY + panelHeight / 2 - this.uiHelper.scale(30), 'Press ESC to close', 'small', '#666666');
+    const hint = this.uiHelper.createText(config.centerX, config.centerY + panelHeight / 2 - this.uiHelper.scale(30), 'Press ESC to close | ↑↓ to navigate | Enter to select', 'small', '#666666');
     hint.setOrigin(0.5);
     this.menuContainer.add(hint);
   }
@@ -213,20 +308,25 @@ export class MenuManager {
       noTeamText.setOrigin(0.5);
       this.menuContainer.add(noTeamText);
     } else {
+      // Setup menu options for keyboard navigation
+      this.menuOptions = [];
+      this.menuButtons = [];
+      this.selectedMenuIndex = 0;
+
       // Calculate layout based on screen size
       const hasDetailPanel = this.selectedPokemonIndex !== -1;
       const isDesktop = config.width >= 768 && !config.isMobile;
-      
+
       // List area dimensions
       const listWidth = hasDetailPanel && isDesktop ? panelWidth * 0.4 : panelWidth * 0.85;
       const listX = config.centerX - panelWidth / 2 + (hasDetailPanel && isDesktop ? listWidth * 0.55 : panelWidth * 0.5);
       const startY = config.centerY - panelHeight / 2 + this.uiHelper.scale(60);
-      
+
       // Compact card spacing
       const cardHeight = Math.round(65 * menuScale);
       const cardSpacing = Math.round(10 * menuScale);
       const totalCardHeight = cardHeight + cardSpacing;
-      
+
       // Maximum visible cards
       const availableHeight = panelHeight - this.uiHelper.scale(100);
       const maxVisibleCards = Math.floor(availableHeight / totalCardHeight);
@@ -241,7 +341,13 @@ export class MenuManager {
           Math.round(listWidth * 0.9)
         );
         this.menuContainer!.add(pokemonCard);
+        this.menuButtons.push(pokemonCard);
+        this.menuOptions.push({ label: pokemon.name, action: () => this.selectPokemon(index) });
       });
+
+      // Setup keyboard navigation
+      this.setupKeyboardNavigation();
+      this.updateMenuHighlight();
 
       // Detail panel (right side on desktop, bottom on mobile)
       if (hasDetailPanel) {
@@ -264,7 +370,7 @@ export class MenuManager {
     }
 
     // Controls hint
-    const hintText = this.selectedPokemonIndex !== -1 ? 'ESC to close | Click Pokémon again to hide details' : 'ESC to close | Click Pokémon to view details';
+    const hintText = this.selectedPokemonIndex !== -1 ? 'ESC to close | ↑↓ to navigate | Enter to toggle details' : 'ESC to close | ↑↓ to navigate | Enter to view details';
     const hint = this.uiHelper.createText(
       config.centerX,
       config.centerY + panelHeight / 2 - this.uiHelper.scale(15),
@@ -274,6 +380,30 @@ export class MenuManager {
     );
     hint.setOrigin(0.5);
     this.menuContainer.add(hint);
+  }
+
+  private updateTeamHighlight() {
+    // Update visual highlight for team cards
+    this.menuButtons.forEach((button, index) => {
+      const bg = button.getAt(0) as Phaser.GameObjects.Rectangle;
+      const isSelected = this.selectedPokemonIndex === index;
+
+      if (index === this.selectedMenuIndex) {
+        // Keyboard highlighted
+        if (isSelected) {
+          bg.setStrokeStyle(3, 0xfbbf24);
+        } else {
+          bg.setStrokeStyle(3, 0x3b82f6);
+        }
+      } else {
+        // Normal
+        if (isSelected) {
+          bg.setStrokeStyle(3, 0x3b82f6);
+        } else {
+          bg.setStrokeStyle(2, 0xcccccc);
+        }
+      }
+    });
   }
 
   private createCompactPokemonCard(x: number, y: number, pokemon: PlayerPokemon, index: number, cardWidth: number): Phaser.GameObjects.Container {
@@ -575,11 +705,16 @@ export class MenuManager {
       const startY = panelY - panelHeight / 2 + this.uiHelper.scale(80);
       const itemHeight = this.uiHelper.scale(55);
       const itemsPerColumn = Math.floor((panelHeight - this.uiHelper.scale(120)) / itemHeight);
-      
+
       // Adaptive column count based on width
       const columns = panelWidth > this.uiHelper.scale(600) ? 2 : 1;
       const columnWidth = (panelWidth - this.uiHelper.scale(80)) / columns - this.uiHelper.scale(20);
       const columnSpacing = this.uiHelper.getSpacing(40);
+
+      // Setup menu options for keyboard navigation
+      this.menuOptions = [];
+      this.menuButtons = [];
+      this.selectedMenuIndex = 0;
 
       save.inventory.forEach((item, index) => {
         const column = Math.floor(index / itemsPerColumn);
@@ -589,13 +724,36 @@ export class MenuManager {
 
         const itemCard = this.createInventoryItem(itemX, itemY, item, columnWidth);
         this.menuContainer!.add(itemCard);
+        this.menuButtons.push(itemCard);
+        this.menuOptions.push({ label: item.name, action: () => this.useItem(item) });
       });
+
+      // Setup keyboard navigation
+      this.setupKeyboardNavigation();
+      this.updateInventoryHighlight();
     }
 
     // Controls hint (responsive font)
-    const hint = this.uiHelper.createText(panelX, panelY + panelHeight / 2 - this.uiHelper.scale(20), 'ESC to close | Click item to use', 'small', '#666666');
+    const hint = this.uiHelper.createText(panelX, panelY + panelHeight / 2 - this.uiHelper.scale(20), 'ESC to close | ↑↓ to navigate | Enter to use', 'small', '#666666');
     hint.setOrigin(0.5);
     this.menuContainer.add(hint);
+  }
+
+  private updateInventoryHighlight() {
+    // Update visual highlight for inventory items
+    this.menuButtons.forEach((button, index) => {
+      const bg = button.getAt(0) as Phaser.GameObjects.Rectangle;
+
+      if (index === this.selectedMenuIndex) {
+        // Highlighted
+        bg.setFillStyle(0xf0f0f0);
+        bg.setStrokeStyle(this.uiHelper.scale(3), 0xfbbf24);
+      } else {
+        // Normal
+        bg.setFillStyle(0xffffff);
+        bg.setStrokeStyle(this.uiHelper.scale(2), 0x999999);
+      }
+    });
   }
 
   private createInventoryItem(x: number, y: number, item: InventoryItem, itemWidth: number): Phaser.GameObjects.Container {

@@ -33,6 +33,9 @@ export class GameScene extends Phaser.Scene {
   private autoSaveTimer?: Phaser.Time.TimerEvent;
   private lastSaveTime: number = Date.now();
   private confirmExitContainer: Phaser.GameObjects.Container | null = null;
+  private locationLabel?: Phaser.GameObjects.Text;
+  private autoSaveIndicator?: Phaser.GameObjects.Container;
+  private mapPositions: Map<string, { x: number; y: number }> = new Map(); // Store last position in each map
 
   constructor() {
     super({ key: 'GameScene' });
@@ -56,7 +59,7 @@ export class GameScene extends Phaser.Scene {
       this.scene.start('MenuScene');
       return;
     }
-    
+
     // Debug: Log pointer events with detailed coordinate info
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       const canvas = this.game.canvas;
@@ -72,6 +75,10 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.currentMap = save.position.map;
+
+    // Initialize map positions with starting position
+    this.mapPositions.set(this.currentMap, { x: save.position.x, y: save.position.y });
+
     this.loadMap(this.currentMap);
     this.createPlayer(save.position.x, save.position.y);
     this.setupCamera();
@@ -85,6 +92,12 @@ export class GameScene extends Phaser.Scene {
     
     // Create UI buttons
     this.createUIButtons();
+    
+    // Create location label
+    this.createLocationLabel();
+    
+    // Create auto-save indicator
+    this.createAutoSaveIndicator();
     
     // Listen for resize
     this.scale.on('resize', this.onResize, this);
@@ -141,6 +154,18 @@ export class GameScene extends Phaser.Scene {
           );
           grass.setDepth(0.5);
         }
+
+        // Render walls (collision layer) on top
+        if (mapData.layers.collision[y][x] === 1) {
+          const wall = this.add.rectangle(
+            x * this.tileSize + this.tileSize / 2,
+            y * this.tileSize + this.tileSize / 2,
+            this.tileSize,
+            this.tileSize,
+            0x4b5563 // Dark gray for walls
+          );
+          wall.setDepth(1); // Above grass
+        }
       }
     }
 
@@ -196,11 +221,18 @@ export class GameScene extends Phaser.Scene {
     this.shiftKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.shiftKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.setupKeyboardEvents();
-    
+
     // Add debug toggle (F3 key)
     this.input.keyboard?.on('keydown-F3', () => {
       this.debugHelper.toggle();
       console.log('[GameScene] Debug mode toggled');
+    });
+
+    // Add teleport to lab (P key)
+    this.input.keyboard?.on('keydown-P', () => {
+      if (!this.menuManager.isMenuOpen() && !this.confirmExitContainer) {
+        this.teleportToLab();
+      }
     });
   }
 
@@ -352,12 +384,145 @@ export class GameScene extends Phaser.Scene {
     });
   }
   
+  createLocationLabel() {
+    if (this.locationLabel) {
+      this.locationLabel.destroy();
+    }
+
+    const mapName = this.getMapDisplayName(this.currentMap);
+    const config = this.uiHelper.getConfig();
+    const { height } = this.cameras.main;
+
+    // Calculate text dimensions first
+    const tempText = this.add.text(0, 0, mapName, {
+      fontSize: '20px',
+      fontFamily: 'monospace',
+      fontStyle: 'bold',
+    });
+    const textWidth = tempText.width;
+    const textHeight = tempText.height;
+    tempText.destroy();
+
+    // Box dimensions with padding
+    const boxWidth = textWidth + 30;
+    const boxHeight = textHeight + 20;
+
+    // Create container for the location display (Pokemon-style) - BOTTOM LEFT
+    const locationContainer = this.add.container(
+      config.padding + 10,
+      height - boxHeight - config.padding - 10
+    );
+    locationContainer.setScrollFactor(0);
+    locationContainer.setDepth(450);
+
+    // Background box (dark blue/black)
+    const bgBox = this.add.rectangle(
+      0,
+      0,
+      boxWidth,
+      boxHeight,
+      0x1a1a2e,
+      0.95
+    );
+    bgBox.setOrigin(0, 0);
+
+    // Golden/yellow border
+    const borderGraphics = this.add.graphics();
+    borderGraphics.lineStyle(3, 0xfbbf24, 1);
+    borderGraphics.strokeRect(0, 0, boxWidth, boxHeight);
+
+    // Inner shadow effect (darker border inside)
+    const innerBorder = this.add.graphics();
+    innerBorder.lineStyle(1, 0x000000, 0.3);
+    innerBorder.strokeRect(3, 3, boxWidth - 6, boxHeight - 6);
+
+    // Location name text
+    this.locationLabel = this.add.text(
+      boxWidth / 2,
+      boxHeight / 2,
+      mapName,
+      {
+        fontSize: '20px',
+        fontFamily: 'monospace',
+        color: '#fbbf24',
+        fontStyle: 'bold',
+        align: 'center',
+      }
+    );
+    this.locationLabel.setOrigin(0.5);
+
+    // Add all elements to container
+    locationContainer.add([bgBox, borderGraphics, innerBorder, this.locationLabel]);
+
+    // Store container reference for cleanup
+    this.locationLabel = locationContainer as any;
+  }
+  
+  getMapDisplayName(mapKey: string): string {
+    const names: Record<string, string> = {
+      'pallettown': 'Pallet Town',
+      'lab': 'Professor Oak\'s Lab',
+      'route1': 'Route 1',
+      'viridianforest': 'Viridian Forest',
+      'route2': 'Route 2',
+    };
+    return names[mapKey] || mapKey.toUpperCase();
+  }
+  
+  createAutoSaveIndicator() {
+    if (this.autoSaveIndicator) {
+      this.autoSaveIndicator.destroy();
+    }
+    
+    const config = this.uiHelper.getConfig();
+    const { width } = this.cameras.main;
+    
+    this.autoSaveIndicator = this.add.container(
+      width - config.padding - 70,
+      config.padding + 60
+    );
+    this.autoSaveIndicator.setScrollFactor(0);
+    this.autoSaveIndicator.setDepth(450);
+    this.autoSaveIndicator.setAlpha(0); // Hidden by default
+    
+    const bg = this.add.rectangle(0, 0, 100, 30, 0x10b981, 0.9);
+    bg.setStrokeStyle(2, 0xffffff);
+    
+    const text = this.add.text(0, 0, '💾 Saved', {
+      fontSize: '14px',
+      fontFamily: 'monospace',
+      color: '#ffffff',
+    });
+    text.setOrigin(0.5);
+    
+    this.autoSaveIndicator.add([bg, text]);
+  }
+  
+  showAutoSaveIndicator() {
+    if (!this.autoSaveIndicator) return;
+    
+    this.autoSaveIndicator.setAlpha(1);
+    
+    this.tweens.add({
+      targets: this.autoSaveIndicator,
+      alpha: 0,
+      duration: 2000,
+      delay: 1000,
+    });
+  }
+  
   onResize(gameSize: Phaser.Structs.Size): void {
     // Recalculate UI helper
     this.uiHelper.recalculate();
     
     // Recreate UI buttons
     this.createUIButtons();
+    
+    // Recreate location label
+    this.createLocationLabel();
+    
+    // Recreate auto-save indicator
+    this.createAutoSaveIndicator();
   }
 
   update(time: number, delta: number) {
@@ -435,6 +600,9 @@ export class GameScene extends Phaser.Scene {
         this.player.setData('gridY', targetY);
         this.isMoving = false;
 
+        // Update saved position for current map
+        this.mapPositions.set(this.currentMap, { x: targetX, y: targetY });
+
         // Check for grass encounter
         if (this.grassLayer[targetY][targetX] === 1) {
           this.checkWildEncounter();
@@ -470,37 +638,85 @@ export class GameScene extends Phaser.Scene {
     const warp = mapData.warps.find(w => w.x === x && w.y === y);
     if (warp) {
       console.log(`[GameScene] Warp detected! ${this.currentMap} -> ${warp.targetMap}`);
-      this.changeMap(warp.targetMap, warp.targetX, warp.targetY);
+
+      // Save current position before warping
+      this.mapPositions.set(this.currentMap, { x, y });
+      console.log(`[GameScene] Saved position for ${this.currentMap}:`, x, y);
+
+      // Check if we have a saved position for the target map
+      const savedPosition = this.mapPositions.get(warp.targetMap);
+      if (savedPosition) {
+        console.log(`[GameScene] Using saved position for ${warp.targetMap}:`, savedPosition.x, savedPosition.y);
+        this.changeMap(warp.targetMap, savedPosition.x, savedPosition.y);
+      } else {
+        // Use warp's default position
+        this.changeMap(warp.targetMap, warp.targetX, warp.targetY);
+      }
     }
   }
 
   changeMap(targetMap: string, targetX: number, targetY: number) {
     console.log(`[GameScene] Changing map to ${targetMap} at (${targetX}, ${targetY})`);
-    
+
     // Clear current scene
     this.npcs.forEach(npc => npc.destroy());
     this.npcs.clear();
-    
+
     // Remove all existing tiles and objects
     this.children.removeAll();
-    
+
     // Load new map
     this.currentMap = targetMap;
     this.loadMap(targetMap);
-    
+
     // Recreate player at new position
     this.createPlayer(targetX, targetY);
-    
+
     // Reset camera
     this.setupCamera();
-    
+
+    // Recreate UI
+    this.createUIButtons();
+    this.createLocationLabel();
+    this.createAutoSaveIndicator();
+
     // Reset movement state
     this.isMoving = false;
     this.canMove = true;
-    
+
     // Update save
     saveManager.updateSave({
       position: { x: targetX, y: targetY, map: targetMap },
+    });
+  }
+
+  teleportToLab() {
+    console.log('[GameScene] Teleporting to lab...');
+
+    // Show teleport effect
+    const flashOverlay = this.add.rectangle(
+      this.cameras.main.scrollX + this.cameras.main.width / 2,
+      this.cameras.main.scrollY + this.cameras.main.height / 2,
+      this.cameras.main.width,
+      this.cameras.main.height,
+      0xffffff,
+      0
+    );
+    flashOverlay.setScrollFactor(0);
+    flashOverlay.setDepth(1000);
+
+    // Flash animation
+    this.tweens.add({
+      targets: flashOverlay,
+      alpha: 1,
+      duration: 300,
+      yoyo: true,
+      onComplete: () => {
+        flashOverlay.destroy();
+        // Teleport to lab at position (7, 7)
+        this.changeMap('lab', 7, 7);
+        this.showNotification('Teleported to Professor Oak\'s Lab!');
+      },
     });
   }
 
@@ -586,6 +802,35 @@ export class GameScene extends Phaser.Scene {
     
     console.log('[GameScene] Talking to NPC:', npcData.name);
 
+    // Handle special interactions BEFORE dialogue
+    if (npcData.onInteract === 'heal_pokemon') {
+      this.healPokemon();
+      return;
+    }
+
+    // Handle trainer battles
+    if (npcData.onInteract === 'trainer_battle') {
+      // Check if already defeated
+      const battleFlag = `defeated_${npcData.id}`;
+      if (saveManager.getFlag(battleFlag)) {
+        // Already defeated, show regular dialogue
+        const dialogue = npcData.dialogues[0] || "You already defeated me!";
+        this.showDialogue(npcData.name, dialogue);
+        return;
+      }
+      
+      // Show battle challenge dialogue then start battle
+      const dialogue = npcData.dialogues[0] || "Let's battle!";
+      this.showDialogue(npcData.name, dialogue);
+      
+      // Wait for dialogue to close, then start battle
+      this.time.delayedCall(2000, () => {
+        this.hideDialogue();
+        this.startTrainerBattle(npcData);
+      });
+      return;
+    }
+
     let dialogue = '';
 
     if (npcData.useAI) {
@@ -622,6 +867,39 @@ export class GameScene extends Phaser.Scene {
 
     console.log('[GameScene] Showing dialogue:', dialogue);
     this.showDialogue(npcData.name, dialogue);
+  }
+
+  healPokemon() {
+    saveManager.healAllPokemon();
+    saveManager.autoSave();
+    
+    const healText = "Your Pokémon are now fully healed!\nCome back anytime!";
+    this.showDialogue("Nurse Joy", healText);
+    
+    console.log('[GameScene] Pokémon healed!');
+  }
+
+  startTrainerBattle(npcData: NPCData) {
+    console.log('[GameScene] Starting trainer battle with:', npcData.name);
+    
+    // For now, use a random pokemon (in a full implementation, this would be from trainer data)
+    const trainerPokemons = [
+      { id: 10, level: 5 },  // Caterpie
+      { id: 13, level: 5 },  // Weedle
+      { id: 16, level: 6 },  // Pidgey
+      { id: 19, level: 6 },  // Rattata
+    ];
+    
+    const randomPokemon = trainerPokemons[Math.floor(Math.random() * trainerPokemons.length)];
+    
+    this.scene.sleep();
+    this.scene.launch('BattleScene', {
+      enemyId: randomPokemon.id,
+      enemyLevel: randomPokemon.level,
+      environment: 'route',
+      isTrainerBattle: true,
+      trainerId: npcData.id,
+    });
   }
 
   showDialogue(name: string, text: string) {
@@ -790,7 +1068,7 @@ export class GameScene extends Phaser.Scene {
     this.canMove = true;
   }
 
-  handleMenuAction(action: string) {
+  async handleMenuAction(action: string) {
     switch (action) {
       case 'team':
         this.closeMenu();
@@ -811,7 +1089,8 @@ export class GameScene extends Phaser.Scene {
         this.menuOpen = true;
         break;
       case 'save':
-        this.manualSave();
+        await this.manualSave();
+        this.closeMenu();
         break;
       case 'exit':
         this.exitToHome();
@@ -838,6 +1117,7 @@ export class GameScene extends Phaser.Scene {
   async autoSave() {
     await saveManager.autoSave();
     this.lastSaveTime = Date.now();
+    this.showAutoSaveIndicator();
     console.log('[GameScene] Auto-saved');
   }
 

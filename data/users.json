@@ -1,22 +1,9 @@
 [
   {
-    "id": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "id": "afe522e8-2d45-4a6c-b515-01e47dbf9a17",
     "username": "Jiz3o",
-    "passwordHash": "$2a$10$hR2/Nj2Qc2HtpisIbHTc5OwHRwPi3FAsCMyXpLdIf4dgnYQhxytoG",
-    "createdAt": "2026-01-28T08:19:36.902Z",
+    "passwordHash": "$2a$10$NbnglA1Ah6g0brT7gbwM3uRDmtoyjmEXmEH79O.oe1cCu/9GW26jq",
+    "createdAt": "2026-02-16T17:26:59.146Z",
     "isAdmin": true
-  },
-  {
-    "id": "a56eb3ff-9992-4cd8-89e3-763828bda1b5",
-    "username": "Clement",
-    "passwordHash": "$2a$10$jPKv0Vx4gEMBw6fWE7rq0uBkOHLj9PboFK9gmOoA5D7UVkyN.JH2.",
-    "createdAt": "2026-01-29T11:58:24.580Z",
-    "isAdmin": false
-  },
-  {
-    "id": "2a45fd21-596b-43e1-9c4b-435fd819fdfd",
-    "username": "goatier",
-    "passwordHash": "$2a$10$nkXDs8.dkUopaZvG2BiZqOQfhSWW9leKNcet0wv6L3CQfQBxtFVEe",
-    "createdAt": "2026-02-16T13:41:00.958Z"
   }
 ]

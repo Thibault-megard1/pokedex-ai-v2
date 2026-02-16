@@ -1,62 +1,8 @@
 [
   {
-    "token": "5f3593a33e15c38c29b0a951c6dcca0d6da9c73276e1f559c0b8ee3a570030ae",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "token": "61e043c3a09c347db42c1b70b799247e7304435df2d72e6892e66c1707db5a8a",
+    "userId": "afe522e8-2d45-4a6c-b515-01e47dbf9a17",
     "username": "Jiz3o",
-    "createdAt": "2026-02-02T12:41:53.756Z"
-  },
-  {
-    "token": "8b16c3ef426f5edd38b61363fd0f18959f7858d18066294874c1dd634ce50e39",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
-    "username": "Jiz3o",
-    "createdAt": "2026-02-02T12:42:08.938Z"
-  },
-  {
-    "token": "aad6dff0e6c3983a7e46b56af3501f7c094ef6270d36cb81e64c9efe460ca8d1",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
-    "username": "Jiz3o",
-    "createdAt": "2026-02-08T22:18:00.377Z"
-  },
-  {
-    "token": "6bad47150577cb1c559320295c0eb4a209633fb33874b18949d43ffc96da199c",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
-    "username": "Jiz3o",
-    "createdAt": "2026-02-16T07:22:51.750Z"
-  },
-  {
-    "token": "e34f72f697fc3ecc59878be8b2df6edbbaea4f921bcfc8cdd8b2532a9ab70e89",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
-    "username": "Jiz3o",
-    "createdAt": "2026-02-16T08:03:40.434Z"
-  },
-  {
-    "token": "4092e187cc62b1263fce4108b4b6e1b05dd9dd6c6604927460d71b9527232d83",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
-    "username": "Jiz3o",
-    "createdAt": "2026-02-16T08:35:09.940Z"
-  },
-  {
-    "token": "f14595608debf6f9235d00586f285d343266be741729cedf6d27f8e6418e7631",
-    "userId": "2a45fd21-596b-43e1-9c4b-435fd819fdfd",
-    "username": "goatier",
-    "createdAt": "2026-02-16T13:41:01.009Z"
-  },
-  {
-    "token": "a7c6e57fa9cabf75d4c30f47f4548edcab150a56630789dcce1a4c7edfb4c3f6",
-    "userId": "2a45fd21-596b-43e1-9c4b-435fd819fdfd",
-    "username": "goatier",
-    "createdAt": "2026-02-16T15:14:19.315Z"
-  },
-  {
-    "token": "0210e58e4b2de7046716d502d13849a815fcb871bc85f94676491fba69512bdd",
-    "userId": "2a45fd21-596b-43e1-9c4b-435fd819fdfd",
-    "username": "goatier",
-    "createdAt": "2026-02-16T15:14:19.645Z"
-  },
-  {
-    "token": "80c9295e36478e7b5e770829a0e32917dafa6d2238c4824df060622a08d50bb2",
-    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
-    "username": "Jiz3o",
-    "createdAt": "2026-02-16T15:31:23.792Z"
+    "createdAt": "2026-02-16T17:26:59.148Z"
   }
 ]

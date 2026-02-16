@@ -1398,12 +1398,12 @@ export class BattleScene extends Phaser.Scene {
     // Show success message
     this.battleLog.setText(`Bravo ! ${this.enemyPokemon.name} est capturé !`);
 
-    // Get the save manager
+    // Get the save manager from GameScene
     const gameScene = this.scene.get('GameScene') as any;
-    const saveManager = gameScene?.saveManager;
+    const saveManagerInstance = gameScene?.saveManager;
 
-    if (!saveManager) {
-      console.error('SaveManager not found!');
+    if (!saveManagerInstance) {
+      console.error('[BattleScene] SaveManager not found!');
       this.time.delayedCall(1500, () => this.runAway());
       return;
     }
@@ -1414,7 +1414,7 @@ export class BattleScene extends Phaser.Scene {
       name: this.enemyPokemon.name,
       level: this.enemyPokemon.level,
       exp: 0,
-      xpTotal: this.enemyPokemon.xpTotal,
+      xpTotal: this.enemyPokemon.xpTotal || 0,
       hp: this.enemyPokemon.maxHp, // Restore to full HP
       maxHp: this.enemyPokemon.maxHp,
       attack: this.enemyPokemon.attack,
@@ -1425,30 +1425,22 @@ export class BattleScene extends Phaser.Scene {
       baseDefense: this.enemyPokemon.baseDefense,
       baseSpeed: this.enemyPokemon.baseSpeed,
       moves: [...this.enemyPokemon.moves], // Copy moves
+      battleMoves: this.enemyPokemon.battleMoves ? [...this.enemyPokemon.battleMoves] : undefined,
     };
 
-    // Check if team has space
-    const currentSave = saveManager.getCurrentSave();
-    if (!currentSave) {
-      console.error('No save found!');
-      this.time.delayedCall(1500, () => this.runAway());
-      return;
-    }
-
-    if (currentSave.team.length < 6) {
-      // Add to team
-      currentSave.team.push(capturedPokemon);
-      saveManager.saveGame(currentSave);
+    // Add Pokémon using saveManager (handles team vs PC automatically)
+    const addedToTeam = saveManagerInstance.addPokemon(capturedPokemon);
+    
+    if (addedToTeam) {
       this.battleLog.setText(`${this.enemyPokemon.name} rejoint votre équipe !`);
     } else {
-      // Add to PC box (if PC system exists, otherwise just show message)
-      if (!currentSave.pcBox) {
-        currentSave.pcBox = [];
-      }
-      currentSave.pcBox.push(capturedPokemon);
-      saveManager.saveGame(currentSave);
       this.battleLog.setText(`${this.enemyPokemon.name} envoyé au PC Box (équipe pleine)`);
     }
+
+    // Save the game
+    saveManagerInstance.autoSave().then(() => {
+      console.log('[BattleScene] Game saved after capture');
+    });
 
     // Fade out and return to game
     this.time.delayedCall(2000, () => {

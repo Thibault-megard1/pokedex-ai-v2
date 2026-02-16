@@ -3,8 +3,9 @@ import type { GameSave, PlayerPokemon } from './types';
 
 const DEFAULT_SAVE: Omit<GameSave, 'username'> = {
   playerName: 'Trainer',
-  position: { x: 5, y: 5, map: 'lab' },
+  position: { x: 12, y: 10, map: 'pallettown' }, // Start in Pallet Town
   team: [],
+  pcBox: [], // Initialize PC box
   inventory: [
     { id: 'pokeball', name: 'Poké Ball', quantity: 5, type: 'pokeball' },
     { id: 'potion', name: 'Potion', quantity: 3, type: 'potion' },
@@ -86,6 +87,10 @@ export class SaveManager {
     return this.save;
   }
 
+  getCurrentSave(): GameSave | null {
+    return this.save;
+  }
+
   updateSave(updates: Partial<GameSave>): void {
     if (this.save) {
       const username = this.save.username; // Preserve username
@@ -99,9 +104,24 @@ export class SaveManager {
     }
   }
 
-  addPokemon(pokemon: PlayerPokemon): void {
-    if (this.save && this.save.team.length < 6) {
+  addPokemon(pokemon: PlayerPokemon): boolean {
+    if (!this.save) return false;
+    
+    // Initialize pcBox if not exists
+    if (!this.save.pcBox) {
+      this.save.pcBox = [];
+    }
+    
+    // Add to team if space available
+    if (this.save.team.length < 6) {
       this.save.team.push(pokemon);
+      console.log('[SaveManager] Added Pokémon to team:', pokemon.name);
+      return true;
+    } else {
+      // Add to PC box
+      this.save.pcBox.push(pokemon);
+      console.log('[SaveManager] Added Pokémon to PC box:', pokemon.name);
+      return false; // Returns false to indicate it went to PC
     }
   }
 
@@ -119,6 +139,25 @@ export class SaveManager {
     if (this.save) {
       this.save.playTime += seconds;
     }
+  }
+
+  healAllPokemon(): void {
+    if (!this.save) return;
+
+    this.save.team.forEach(pokemon => {
+      pokemon.hp = pokemon.maxHp;
+      pokemon.statusCondition = undefined;
+      pokemon.statusTurns = 0;
+
+      // Restore PP for all moves
+      if (pokemon.battleMoves) {
+        pokemon.battleMoves.forEach(move => {
+          move.pp = move.maxPp;
+        });
+      }
+    });
+
+    console.log('[SaveManager] All Pokémon healed (HP and PP restored)');
   }
 }
 
