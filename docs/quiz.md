@@ -19,7 +19,7 @@ Ce flux met en evidence l'enchainement entree -> traitement -> sortie.
 ```mermaid
 graph LR
 	Reponses[Reponses utilisateur] --> Prompt[Construction du prompt]
-	Prompt --> LLM[Appel LLM (Ollama/Mistral)]
+	Prompt --> LLM[Appel LLM Ollama/Mistral]
 	LLM --> JSON[JSON structure]
 	JSON --> Resultat[Pokemon propose + justifications]
 ```

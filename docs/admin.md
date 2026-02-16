@@ -24,7 +24,7 @@ graph TD
 	Session --> Check[Verification isAdmin]
 	Check -->|Non| Refus[Redirection / Acces refuse]
 	Check -->|Oui| AdminUI[UI Admin]
-	AdminUI --> AdminAPI[/api/admin/*]
+	AdminUI --> AdminAPI["/api/admin/*"]
 	AdminAPI --> UsersJSON[data/users.json]
 ```
 

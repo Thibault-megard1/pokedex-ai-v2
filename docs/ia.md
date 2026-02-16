@@ -51,7 +51,7 @@ Ce flux illustre le cycle d'une question utilisateur vers une reponse contextual
 ```mermaid
 graph LR
 	Q[Question utilisateur] --> Ctx[Construction du contexte]
-	Ctx --> LLM[Appel LLM (Ollama/Mistral)]
+	Ctx --> LLM[Appel LLM Ollama/Mistral]
 	LLM --> Resp[Reponse texte + metadonnees]
 ```
 
@@ -63,7 +63,7 @@ Ce flux montre comment l'equipe actuelle est analysee puis completee par l'IA.
 ```mermaid
 graph LR
 	Team[Equipe utilisateur] --> Analyse[Analyse types/roles]
-	Analyse --> LLM[Appel LLM (Ollama/Mistral)]
+	Analyse --> LLM[Appel LLM Ollama/Mistral]
 	LLM --> Suggestion[Suggestion de Pokemon et justification]
 ```
 
