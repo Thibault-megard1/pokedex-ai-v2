@@ -83,6 +83,14 @@ export default function HomePage() {
   // Outils et fonctionnalites (section utilitaire)
   const toolsFeatures = [
     {
+      href: "/progression",
+      label: "PROGRESSION",
+      icon: "/icons/ui/ic-success.png",
+      description: "Votre progression de dresseur",
+      color: "bg-gradient-to-r from-emerald-500 to-emerald-600",
+      requireAuth: true
+    },
+    {
       href: "/favorites",
       label: "FAVORIS",
       icon: "/icons/ui/ic-success.png",

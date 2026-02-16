@@ -27,6 +27,29 @@ import { MenuManager } from '../MenuManager';
 import { UIHelper } from '../UIHelper';
 import { playTypeSfx } from '../audio/sfx';
 
+type BattleLogAction = {
+  turn: number;
+  actor: 'player' | 'enemy';
+  move: string;
+  damage: number;
+  details: string;
+};
+
+type BattleLogData = {
+  battleId: string;
+  startTime: number;
+  endTime?: number;
+  playerPokemon: { id: number; name: string; level: number; moves: string[] };
+  enemyPokemon: { id: number; name: string; level: number; moves: string[] };
+  actions: BattleLogAction[];
+  totalTurns: number;
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  playerMovesUsed: string[];
+  enemyMovesUsed: string[];
+  winner?: string;
+};
+
 export class BattleScene extends Phaser.Scene {
   private playerPokemon!: PlayerPokemon;
   private enemyPokemon!: PlayerPokemon;
@@ -57,6 +80,9 @@ export class BattleScene extends Phaser.Scene {
   private moveLearnModal?: Phaser.GameObjects.Container;
   private menuManager!: MenuManager;
   private uiHelper!: UIHelper;
+  private battleLogData: BattleLogData | null = null;
+  private battleTurn: number = 1;
+  private battleWinner: string | null = null;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -105,8 +131,136 @@ export class BattleScene extends Phaser.Scene {
     this.enemyPokemon.statusCondition = null;
     this.enemyPokemon.statusTurns = 0;
     
+    // Init battle log export data and usage stats
+    this.initBattleLog();
+    this.incrementPokemonUsed(this.playerPokemon);
+
     // Load moves asynchronously (will be completed in create)
     this.loadPokemonMoves();
+  }
+
+  private initBattleLog() {
+    this.battleTurn = 1;
+    this.battleLogData = {
+      battleId: `battle_${Date.now()}`,
+      startTime: Date.now(),
+      playerPokemon: {
+        id: this.playerPokemon.id,
+        name: this.playerPokemon.name,
+        level: this.playerPokemon.level,
+        moves: this.playerPokemon.moves ?? [],
+      },
+      enemyPokemon: {
+        id: this.enemyPokemon.id,
+        name: this.enemyPokemon.name,
+        level: this.enemyPokemon.level,
+        moves: this.enemyPokemon.moves ?? [],
+      },
+      actions: [],
+      totalTurns: 0,
+      totalDamageDealt: 0,
+      totalDamageTaken: 0,
+      playerMovesUsed: [],
+      enemyMovesUsed: [],
+    };
+  }
+
+  private recordAction(
+    actor: 'player' | 'enemy',
+    move: string,
+    damage: number,
+    details: string,
+    turnOverride?: number
+  ) {
+    if (!this.battleLogData) return;
+
+    const turn = turnOverride ?? this.battleTurn;
+
+    this.battleLogData.actions.push({
+      turn,
+      actor,
+      move,
+      damage,
+      details,
+    });
+
+    if (actor === 'player') {
+      this.battleLogData.totalDamageDealt += Math.max(0, damage);
+      this.battleLogData.playerMovesUsed.push(move);
+    } else {
+      this.battleLogData.totalDamageTaken += Math.max(0, damage);
+      this.battleLogData.enemyMovesUsed.push(move);
+    }
+  }
+
+  private finalizeBattleLog(winner: string) {
+    if (!this.battleLogData || this.battleLogData.endTime) return;
+
+    this.battleLogData.endTime = Date.now();
+    this.battleLogData.totalTurns = Math.max(0, this.battleTurn - 1);
+    this.battleLogData.winner = winner;
+
+    try {
+      window.dispatchEvent(new CustomEvent('battle:end', { detail: this.battleLogData }));
+    } catch (err) {
+      console.warn('[BattleScene] Failed to dispatch battle log event', err);
+    }
+  }
+
+  private ensureStats() {
+    const save = saveManager.getSave();
+    if (!save) return null;
+
+    if (!save.stats) {
+      save.stats = {
+        battlesWon: 0,
+        battlesLost: 0,
+        encounters: {},
+        pokemonUsed: {},
+      };
+    }
+
+    return save;
+  }
+
+  private incrementPokemonUsed(pokemon: PlayerPokemon) {
+    const save = this.ensureStats();
+    if (!save || !save.stats) return;
+
+    const key = pokemon.id;
+    const current = save.stats.pokemonUsed[key];
+    save.stats.pokemonUsed[key] = {
+      id: pokemon.id,
+      name: pokemon.name,
+      count: (current?.count ?? 0) + 1,
+    };
+
+    saveManager.updateSave({ stats: save.stats });
+  }
+
+  private incrementBattleResult(result: 'win' | 'loss') {
+    const save = this.ensureStats();
+    if (!save || !save.stats) return;
+
+    if (result === 'win') {
+      save.stats.battlesWon += 1;
+    } else {
+      save.stats.battlesLost += 1;
+    }
+
+    saveManager.updateSave({ stats: save.stats });
+  }
+
+  private async markPokedexEntry(pokemonId: number, action: 'seen' | 'caught') {
+    try {
+      await fetch('/api/pokedex-completion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pokemonId, action }),
+      });
+    } catch (err) {
+      console.warn('[BattleScene] Failed to update pokedex completion', err);
+    }
   }
 
   preload() {
@@ -964,6 +1118,9 @@ export class BattleScene extends Phaser.Scene {
   }
 
   continuePlayerAttack(move: BattleMove) {
+    const currentTurn = this.battleTurn;
+    this.battleTurn += 1;
+
     // Decrease PP
     move.pp = Math.max(0, move.pp - 1);
     this.updateMoveButtons();
@@ -1011,6 +1168,16 @@ export class BattleScene extends Phaser.Scene {
           effectMessage = this.applyMoveEffect(move.effect, this.playerPokemon, this.enemyPokemon);
         }
 
+        let logText = `${this.playerPokemon.name} used ${move.name}!`;
+        if (damage > 0) {
+          logText += ` ${damage} damage!`;
+        }
+        if (effectMessage) {
+          logText += ` ${effectMessage}`;
+        }
+
+        this.recordAction('player', move.name, damage, logText, currentTurn);
+
         // Update HP bar with smooth animation
         this.animateHPDecrease(
           this.enemyHPBar,
@@ -1020,13 +1187,6 @@ export class BattleScene extends Phaser.Scene {
           8,
           this.enemyPokemon,
           () => {
-            let logText = `${this.playerPokemon.name} used ${move.name}!`;
-            if (damage > 0) {
-              logText += ` ${damage} damage!`;
-            }
-            if (effectMessage) {
-              logText += ` ${effectMessage}`;
-            }
             this.battleLog.setText(logText);
 
             // Update status displays
@@ -1123,6 +1283,7 @@ export class BattleScene extends Phaser.Scene {
   enemyAttack() {
     // Select a random move
     const move = selectRandomMove(this.enemyMoves);
+    const currentTurn = Math.max(1, this.battleTurn - 1);
     
     // Decrease PP
     move.pp = Math.max(0, move.pp - 1);
@@ -1170,6 +1331,16 @@ export class BattleScene extends Phaser.Scene {
           effectMessage = this.applyMoveEffect(move.effect, this.enemyPokemon, this.playerPokemon);
         }
 
+        let logText = `${this.enemyPokemon.name} used ${move.name}!`;
+        if (damage > 0) {
+          logText += ` ${damage} damage!`;
+        }
+        if (effectMessage) {
+          logText += ` ${effectMessage}`;
+        }
+
+        this.recordAction('enemy', move.name, damage, logText, currentTurn);
+
         // Update HP bar and HP text
         this.animateHPDecrease(
           this.playerHPBar,
@@ -1182,13 +1353,6 @@ export class BattleScene extends Phaser.Scene {
             this.playerHPText.setText(
               `${this.playerPokemon.hp} / ${this.playerPokemon.maxHp}`
             );
-            let logText = `${this.enemyPokemon.name} used ${move.name}!`;
-            if (damage > 0) {
-              logText += ` ${damage} damage!`;
-            }
-            if (effectMessage) {
-              logText += ` ${effectMessage}`;
-            }
             this.battleLog.setText(logText);
 
             // Update status displays
@@ -1336,6 +1500,9 @@ export class BattleScene extends Phaser.Scene {
     this.battleActive = false;
     this.actionButtons.forEach((btn) => btn.disableInteractive());
 
+    this.battleWinner = 'run';
+    this.finalizeBattleLog(this.battleWinner);
+
     // Stop all animations
     this.tweens.killAll();
 
@@ -1397,6 +1564,11 @@ export class BattleScene extends Phaser.Scene {
   captureSuccess() {
     // Show success message
     this.battleLog.setText(`Bravo ! ${this.enemyPokemon.name} est capturé !`);
+
+    this.battleWinner = 'capture';
+    this.incrementBattleResult('win');
+    this.finalizeBattleLog(this.battleWinner);
+    void this.markPokedexEntry(this.enemyPokemon.id, 'caught');
 
     // Get the save manager from GameScene
     const gameScene = this.scene.get('GameScene') as any;
@@ -1472,6 +1644,9 @@ export class BattleScene extends Phaser.Scene {
 
   async victory() {
     this.battleLog.setText(`${this.enemyPokemon.name} est K.O. ! Vous avez gagné !`);
+
+    this.battleWinner = 'player';
+    this.incrementBattleResult('win');
 
     // Fade out enemy sprite
     this.tweens.add({
@@ -1696,6 +1871,10 @@ export class BattleScene extends Phaser.Scene {
       console.log('[BattleScene] Progress saved');
     }
 
+    if (this.battleWinner) {
+      this.finalizeBattleLog(this.battleWinner);
+    }
+
     // Fade-out transition
     this.cameras.main.fadeOut(800, 0, 0, 0);
 
@@ -1713,6 +1892,10 @@ export class BattleScene extends Phaser.Scene {
 
   defeat() {
     this.battleLog.setText(`${this.playerPokemon.name} fainted! You lost!`);
+
+    this.battleWinner = 'enemy';
+    this.incrementBattleResult('loss');
+    this.finalizeBattleLog(this.battleWinner);
 
     // Fade out player sprite
     this.tweens.add({

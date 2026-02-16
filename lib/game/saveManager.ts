@@ -15,6 +15,12 @@ const DEFAULT_SAVE: Omit<GameSave, 'username'> = {
   playTime: 0,
   starterChosen: false,
   flags: {},
+  stats: {
+    battlesWon: 0,
+    battlesLost: 0,
+    encounters: {},
+    pokemonUsed: {},
+  },
   lastSaved: new Date().toISOString(),
 };
 

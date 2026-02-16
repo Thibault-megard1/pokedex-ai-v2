@@ -1,8 +1,10 @@
 import PokemonCard from "@/components/PokemonCard";
+import PokemonGridWithStatus from "@/components/PokemonGridWithStatus";
 import { queryPokemon } from "@/lib/pokeapi";
 import { backgroundForPokedex } from "@/lib/backgrounds";
 import PokedexSearchBar from "@/components/PokedexSearchBar";
 import RecentPokemon from "@/components/RecentPokemon";
+import PokedexCompletion from "@/components/PokedexCompletion";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +126,11 @@ export default async function PokemonListPage({
           />
         </div>
 
+        {/* Pokedex Completion */}
+        <div className="max-w-7xl mx-auto mb-6">
+          <PokedexCompletion />
+        </div>
+
         {/* Recent Pokemon */}
         <div className="max-w-7xl mx-auto mb-6">
           <RecentPokemon />
@@ -132,9 +139,7 @@ export default async function PokemonListPage({
         {/* Pokemon Grid */}
         <div className="max-w-7xl mx-auto mb-6">
           {result.items.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {result.items.map(p => <PokemonCard key={p.id} p={p} />)}
-            </div>
+            <PokemonGridWithStatus pokemon={result.items} />
           ) : (
             <div className="pokedex-panel">
               <div className="pokedex-panel-content p-12 text-center">

@@ -50,9 +50,9 @@ Ce flux illustre le cycle d'une question utilisateur vers une reponse contextual
 
 ```mermaid
 graph LR
-	Q[Question utilisateur] --> Ctx[Construction du contexte]
-	Ctx --> LLM[Appel LLM Ollama/Mistral]
-	LLM --> Resp[Reponse texte + metadonnees]
+  Q["Question utilisateur"] --> Ctx["Construction du contexte"]
+  Ctx --> LLM["Appel LLM (Ollama ou Mistral)"]
+  LLM --> Resp["Reponse texte + metadonnees"]
 ```
 
 Le contexte integre l'historique et des connaissances Pokemon pour guider la reponse.
@@ -62,9 +62,9 @@ Ce flux montre comment l'equipe actuelle est analysee puis completee par l'IA.
 
 ```mermaid
 graph LR
-	Team[Equipe utilisateur] --> Analyse[Analyse types/roles]
-	Analyse --> LLM[Appel LLM Ollama/Mistral]
-	LLM --> Suggestion[Suggestion de Pokemon et justification]
+  Team["Equipe utilisateur"] --> Analyse["Analyse types/roles"]
+  Analyse --> LLM["Appel LLM (Ollama ou Mistral)"]
+  LLM --> Suggestion["Suggestion de Pokemon et justification"]
 ```
 
 La sortie est structuree pour etre exploitable par l'UI.

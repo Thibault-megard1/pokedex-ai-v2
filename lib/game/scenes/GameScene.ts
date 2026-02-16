@@ -1,6 +1,6 @@
 // Main game scene with player movement, NPCs, and interactions
 import * as Phaser from 'phaser';
-import type { GameSave, NPCData } from '../types';
+import type { GameSave, NPCData, InventoryItem } from '../types';
 import { saveManager } from '../saveManager';
 import { getMap, ENCOUNTER_TABLES } from '../maps';
 import { KEYBOARD_CONTROLS } from '../types';
@@ -36,6 +36,10 @@ export class GameScene extends Phaser.Scene {
   private locationLabel?: Phaser.GameObjects.Text;
   private autoSaveIndicator?: Phaser.GameObjects.Container;
   private mapPositions: Map<string, { x: number; y: number }> = new Map(); // Store last position in each map
+  private adminOverlayEnabled: boolean = false;
+  private adminOverlayGraphics: Phaser.GameObjects.Graphics | null = null;
+  private adminOverlayLabels: Phaser.GameObjects.Text[] = [];
+  private adminOverlayListener?: (event: CustomEvent) => void;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -89,6 +93,25 @@ export class GameScene extends Phaser.Scene {
     this.uiHelper = new UIHelper(this);
     this.menuManager = new MenuManager(this);
     this.debugHelper = new DebugHelper(this);
+
+    try {
+      if (localStorage.getItem('adminDebugOverlay') === 'true') {
+        this.setAdminOverlay(true);
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+
+    this.adminOverlayListener = (event: CustomEvent) => {
+      const enabled = Boolean(event.detail?.enabled);
+      this.setAdminOverlay(enabled);
+    };
+    window.addEventListener('admin:debug-overlay' as any, this.adminOverlayListener as any);
+    this.events.once('shutdown', () => {
+      if (this.adminOverlayListener) {
+        window.removeEventListener('admin:debug-overlay' as any, this.adminOverlayListener as any);
+      }
+    });
     
     // Create UI buttons
     this.createUIButtons();
@@ -199,6 +222,10 @@ export class GameScene extends Phaser.Scene {
       this.createNPC(npcData);
     });
 
+    if (this.adminOverlayEnabled) {
+      this.renderAdminOverlay();
+    }
+
     console.log(`[GameScene] Loaded map: ${mapName}`);
   }
 
@@ -233,7 +260,150 @@ export class GameScene extends Phaser.Scene {
     );
     npc.setDepth(10);
     npc.setData('npcData', npcData);
+    if (npcData.hidden) {
+      npc.setAlpha(0);
+    }
     this.npcs.set(npcData.id, npc);
+  }
+
+  private setAdminOverlay(enabled: boolean) {
+    this.adminOverlayEnabled = enabled;
+
+    if (!enabled) {
+      if (this.adminOverlayGraphics) {
+        this.adminOverlayGraphics.destroy();
+        this.adminOverlayGraphics = null;
+      }
+      this.adminOverlayLabels.forEach(label => label.destroy());
+      this.adminOverlayLabels = [];
+      return;
+    }
+
+    this.renderAdminOverlay();
+  }
+
+  private renderAdminOverlay() {
+    if (!this.adminOverlayEnabled) return;
+
+    const mapData = getMap(this.currentMap);
+    if (!mapData) return;
+
+    if (!this.adminOverlayGraphics) {
+      this.adminOverlayGraphics = this.add.graphics();
+      this.adminOverlayGraphics.setDepth(900);
+    }
+
+    this.adminOverlayGraphics.clear();
+
+    // Collision cells
+    this.adminOverlayGraphics.lineStyle(1, 0xef4444, 0.8);
+    for (let y = 0; y < mapData.layers.collision.length; y++) {
+      for (let x = 0; x < mapData.layers.collision[y].length; x++) {
+        if (mapData.layers.collision[y][x] === 1) {
+          this.adminOverlayGraphics.strokeRect(
+            x * this.tileSize,
+            y * this.tileSize,
+            this.tileSize,
+            this.tileSize
+          );
+        }
+      }
+    }
+
+    // Warp zones
+    mapData.warps.forEach((warp) => {
+      const color = warp.color ?? 0x38bdf8;
+      this.adminOverlayGraphics.lineStyle(2, color, 0.9);
+      this.adminOverlayGraphics.strokeRect(
+        warp.x * this.tileSize,
+        warp.y * this.tileSize,
+        this.tileSize,
+        this.tileSize
+      );
+    });
+
+    // NPC labels
+    this.adminOverlayLabels.forEach(label => label.destroy());
+    this.adminOverlayLabels = [];
+    mapData.npcs.forEach((npc) => {
+      const label = this.add.text(
+        npc.x * this.tileSize + this.tileSize / 2,
+        npc.y * this.tileSize - this.tileSize / 2,
+        npc.id,
+        {
+          fontSize: '10px',
+          fontFamily: 'monospace',
+          color: '#facc15',
+          backgroundColor: '#111827',
+          padding: { x: 4, y: 2 },
+        }
+      );
+      label.setOrigin(0.5);
+      label.setDepth(901);
+      this.adminOverlayLabels.push(label);
+    });
+  }
+
+  private ensureStats() {
+    const save = saveManager.getSave();
+    if (!save) return null;
+
+    if (!save.stats) {
+      save.stats = {
+        battlesWon: 0,
+        battlesLost: 0,
+        encounters: {},
+        pokemonUsed: {},
+      };
+    }
+
+    return save;
+  }
+
+  private incrementEncounter(pokemonId: number, name: string) {
+    const save = this.ensureStats();
+    if (!save || !save.stats) return;
+
+    const current = save.stats.encounters[pokemonId];
+    save.stats.encounters[pokemonId] = {
+      id: pokemonId,
+      name,
+      count: (current?.count ?? 0) + 1,
+    };
+
+    saveManager.updateSave({ stats: save.stats });
+  }
+
+  private grantItem(item: InventoryItem, message: string, speaker: string = 'Info') {
+    const save = saveManager.getSave();
+    if (!save) return;
+
+    const existing = save.inventory.find((inv) => inv.id === item.id);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      save.inventory.push({ ...item });
+    }
+
+    saveManager.updateSave({ inventory: save.inventory });
+    saveManager.autoSave();
+    this.showDialogue(speaker, message);
+  }
+
+  private resolveOneTimeFlag(npcData: NPCData): string {
+    return npcData.oneTimeFlag ?? `event_${npcData.id}`;
+  }
+
+  private async markPokedexEntry(pokemonId: number, action: 'seen' | 'caught') {
+    try {
+      await fetch('/api/pokedex-completion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pokemonId, action }),
+      });
+    } catch (err) {
+      console.warn('[GameScene] Failed to update pokedex completion', err);
+    }
   }
 
   setupCamera() {
@@ -759,6 +929,10 @@ export class GameScene extends Phaser.Scene {
         const level = Math.floor(
           Math.random() * (encounter.maxLevel - encounter.minLevel + 1) + encounter.minLevel
         );
+        const pokemonId = encounter.pokemon;
+        const displayName = `Pokemon #${pokemonId}`;
+        this.incrementEncounter(pokemonId, displayName);
+        void this.markPokedexEntry(pokemonId, 'seen');
         console.log(`[GameScene] Wild encounter! Pokémon #${encounter.pokemon} Lv.${level}`);
         
         // Determine battle environment based on current map
@@ -830,6 +1004,58 @@ export class GameScene extends Phaser.Scene {
     // Handle special interactions BEFORE dialogue
     if (npcData.onInteract === 'heal_pokemon') {
       this.healPokemon();
+      return;
+    }
+
+    if (npcData.onInteract === 'give_potion') {
+      const flag = this.resolveOneTimeFlag(npcData);
+      if (saveManager.getFlag(flag)) {
+        this.showDialogue(npcData.name, "Je t'ai deja donne une potion aujourd'hui.");
+        return;
+      }
+      saveManager.setFlag(flag, true);
+      this.grantItem(
+        { id: 'potion', name: 'Potion', quantity: 1, type: 'potion' },
+        'Tu as recu une Potion !',
+        npcData.name
+      );
+      return;
+    }
+
+    if (npcData.onInteract === 'give_pokeballs') {
+      const flag = this.resolveOneTimeFlag(npcData);
+      if (saveManager.getFlag(flag)) {
+        this.showDialogue(npcData.name, "Je n'ai plus de Pokeballs a donner.");
+        return;
+      }
+      saveManager.setFlag(flag, true);
+      this.grantItem(
+        { id: 'pokeball', name: 'Poké Ball', quantity: 3, type: 'pokeball' },
+        'Tu as recu 3 Pokeballs !',
+        npcData.name
+      );
+      return;
+    }
+
+    if (npcData.onInteract === 'hidden_item') {
+      const flag = this.resolveOneTimeFlag(npcData);
+      if (saveManager.getFlag(flag)) {
+        this.showDialogue('...', "Il n'y a plus rien ici.");
+        return;
+      }
+      saveManager.setFlag(flag, true);
+      this.grantItem(
+        { id: 'potion', name: 'Potion', quantity: 1, type: 'potion' },
+        'Objet trouve ! Une Potion etait cachee.',
+        '...'
+      );
+      return;
+    }
+
+    if (npcData.onInteract === 'lore_tip') {
+      const randomIndex = Math.floor(Math.random() * npcData.dialogues.length);
+      const tip = npcData.dialogues[randomIndex] || 'Explore et observe les Pokemon autour de toi.';
+      this.showDialogue(npcData.name, tip);
       return;
     }
 
@@ -1064,6 +1290,7 @@ export class GameScene extends Phaser.Scene {
     const items = [
       { label: '[T] Team', key: 'team' },
       { label: '[I] Inventory', key: 'inventory' },
+      { label: '[O] Settings', key: 'settings' },
       { label: '[S] Save Game', key: 'save' },
       { label: '[H] Exit to Home', key: 'exit' },
       { label: '[ESC] Resume', key: 'resume' },
@@ -1112,6 +1339,14 @@ export class GameScene extends Phaser.Scene {
         });
         this.canMove = false;
         this.menuOpen = true;
+        break;
+      case 'settings':
+        this.closeMenu();
+        try {
+          window.dispatchEvent(new CustomEvent('game:open-settings'));
+        } catch {
+          // ignore
+        }
         break;
       case 'save':
         await this.manualSave();

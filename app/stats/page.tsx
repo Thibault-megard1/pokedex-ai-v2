@@ -10,6 +10,7 @@ type UserStats = {
   teamSize: number;
   favoritesCount: number;
   notesCount: number;
+  trainerProgress?: TrainerProgress | null;
   quizResult?: {
     primary: {
       id: number;
@@ -20,6 +21,16 @@ type UserStats = {
     };
     completedAt: string;
   };
+};
+
+type TrainerProgress = {
+  totalCaught: number | null;
+  battlesWon: number | null;
+  battlesLost: number | null;
+  favoritePokemon: { id: number; name: string; count: number } | null;
+  mostEncountered: { id: number; name: string; count: number } | null;
+  playTimeSeconds: number | null;
+  lastSaved: string | null;
 };
 
 export default function StatsPage() {
@@ -49,6 +60,10 @@ export default function StatsPage() {
       const quizRes = await fetch("/api/quiz-result");
       const quizData = await quizRes.json();
 
+      // Charger la progression du jeu
+      const progressRes = await fetch("/api/trainer-progress");
+      const progressData = await progressRes.json();
+
       // Analyse simple des types preferes a partir de l'equipe.
       const typeCount: Record<string, number> = {};
 
@@ -75,6 +90,7 @@ export default function StatsPage() {
         teamSize: teamData.team?.length || 0,
         favoritesCount: favData.favorites?.length || 0,
         notesCount: notesData.notes?.length || 0,
+        trainerProgress: progressData ?? null,
         quizResult: quizData.result ? {
           primary: quizData.result.result.primary,
           completedAt: quizData.result.completedAt
@@ -86,6 +102,14 @@ export default function StatsPage() {
       console.error(err);
       setLoading(false);
     }
+  }
+
+  function formatPlayTime(seconds: number | null | undefined) {
+    if (seconds == null) return "—";
+    const total = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    return `${hours}h ${minutes}m`;
   }
 
   if (loading) {
@@ -110,12 +134,74 @@ export default function StatsPage() {
 
   const sortedTypes = Object.entries(stats.favoriteTypes)
     .sort((a, b) => b[1] - a[1]);
+  const progress = stats.trainerProgress ?? null;
 
   return (
     <div className="page-content mt-24 space-y-4">
       <div className="card p-6">
         <h1 className="text-2xl font-bold mb-2">📊 Mes Statistiques</h1>
         <p className="text-gray-600">Aperçu de votre activité Pokédex</p>
+      </div>
+
+      {/* Trainer Progress */}
+      <div className="card p-6">
+        <h2 className="text-xl font-bold mb-4">🎖️ Trainer Progress</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-blue-50 rounded">
+            <div className="text-sm text-blue-700">Pokémon capturés</div>
+            <div className="text-2xl font-bold text-blue-900">
+              {progress?.totalCaught ?? "—"}
+            </div>
+          </div>
+          <div className="p-4 bg-green-50 rounded">
+            <div className="text-sm text-green-700">Combats gagnés / perdus</div>
+            <div className="text-2xl font-bold text-green-900">
+              {progress?.battlesWon ?? "—"} / {progress?.battlesLost ?? "—"}
+            </div>
+          </div>
+          <div className="p-4 bg-purple-50 rounded">
+            <div className="text-sm text-purple-700">Temps de jeu</div>
+            <div className="text-2xl font-bold text-purple-900">
+              {formatPlayTime(progress?.playTimeSeconds)}
+            </div>
+          </div>
+          <div className="p-4 bg-yellow-50 rounded">
+            <div className="text-sm text-yellow-700">Pokémon favori (utilisé)</div>
+            <div className="text-lg font-bold text-yellow-900">
+              {progress?.favoritePokemon ? `${progress.favoritePokemon.name} (${progress.favoritePokemon.count})` : "—"}
+            </div>
+          </div>
+          <div className="p-4 bg-orange-50 rounded">
+            <div className="text-sm text-orange-700">Plus rencontré</div>
+            <div className="text-lg font-bold text-orange-900">
+              {progress?.mostEncountered ? `${progress.mostEncountered.name} (${progress.mostEncountered.count})` : "—"}
+            </div>
+          </div>
+          <div className="p-4 bg-pink-50 rounded">
+            <div className="text-sm text-pink-700">Derniere sauvegarde</div>
+            <div className="text-sm font-bold text-pink-900">
+              {progress?.lastSaved ? new Date(progress.lastSaved).toLocaleString('fr-FR') : "—"}
+            </div>
+          </div>
+        </div>
+
+        {stats.quizResult?.primary && (
+          <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded border border-purple-200">
+            <div className="text-sm font-semibold text-purple-700 mb-2">Pokémon du quiz</div>
+            <div className="flex items-center gap-3">
+              {stats.quizResult.primary.sprite_url && (
+                <img
+                  src={stats.quizResult.primary.sprite_url}
+                  alt={stats.quizResult.primary.name}
+                  className="w-12 h-12 pixelated"
+                />
+              )}
+              <div className="text-lg font-bold text-purple-900 capitalize">
+                {stats.quizResult.primary.name}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Vue d'ensemble */}

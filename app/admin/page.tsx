@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AdminInsights from "@/components/admin/AdminInsights";
 
 type User = {
   id: string;
@@ -58,7 +59,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "theme" | "analytics">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "theme" | "analytics" | "insights">("users");
   
   // Users state
   const [users, setUsers] = useState<User[]>([]);
@@ -385,6 +386,16 @@ export default function AdminPage() {
             }`}
           >
             📊 Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab("insights")}
+            className={`px-6 py-3 font-semibold transition-colors ${
+              activeTab === "insights"
+                ? "text-red-600 border-b-2 border-red-600"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+          >
+            🔍 Insights
           </button>
         </div>
 
@@ -816,6 +827,13 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Insights Tab */}
+        {activeTab === "insights" && (
+          <div className="max-w-4xl mx-auto">
+            <AdminInsights />
           </div>
         )}
       </div>

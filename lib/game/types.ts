@@ -17,7 +17,21 @@ export interface GameSave {
   playTime: number; // seconds
   starterChosen: boolean;
   flags: Record<string, boolean>; // story flags
+  stats?: GameStats;
   lastSaved: string; // ISO date
+}
+
+export interface GameStatsEntry {
+  id: number;
+  name: string;
+  count: number;
+}
+
+export interface GameStats {
+  battlesWon: number;
+  battlesLost: number;
+  encounters: Record<number, GameStatsEntry>;
+  pokemonUsed: Record<number, GameStatsEntry>;
 }
 
 export interface PlayerPokemon {
@@ -66,6 +80,8 @@ export interface NPCData {
   useAI?: boolean; // use Ollama for dynamic responses
   aiContext?: string; // personality/role for AI
   onInteract?: string; // special event trigger
+  hidden?: boolean;
+  oneTimeFlag?: string;
 }
 
 export interface MapData {
