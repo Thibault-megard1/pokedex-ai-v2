@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./ThemeProvider";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "./LanguageProvider";
@@ -14,6 +15,7 @@ type Me = { username: string; isAdmin?: boolean } | null;
 
 export default function NavBar() {
   const { lang } = useLanguage();
+  const pathname = usePathname();
   const { adminViewEnabled, toggleAdminView } = useAdminView();
   const [me, setMe] = useState<Me>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -21,6 +23,10 @@ export default function NavBar() {
   const [openDesktopDropdown, setOpenDesktopDropdown] = useState<string | null>(null);
   const fetchingRef = useRef(false);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Pages where admin view actually does something
+  const adminViewPages = ['/assistant', '/battle', '/quiz', '/pokemon'];
+  const showAdminView = me?.isAdmin && adminViewPages.some(page => pathname?.startsWith(page));
 
   async function refresh() {
     // Éviter les appels multiples simultanés
@@ -238,8 +244,8 @@ export default function NavBar() {
               <AIStatusIndicator />
             </div>
             
-            {/* Admin View Toggle - Only show for admin users */}
-            {me?.isAdmin && (
+            {/* Admin View Toggle - Only show on pages where it's functional */}
+            {showAdminView && (
               <button
                 onClick={toggleAdminView}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shadow-lg ${
@@ -339,8 +345,8 @@ export default function NavBar() {
               </Link>
             )}
             
-            {/* Admin View Toggle - Mobile */}
-            {me?.isAdmin && (
+            {/* Admin View Toggle - Mobile - Only show on pages where it's functional */}
+            {showAdminView && (
               <button
                 onClick={toggleAdminView}
                 className={`px-4 py-3 rounded-lg transition-all flex items-center gap-3 font-bold w-full ${

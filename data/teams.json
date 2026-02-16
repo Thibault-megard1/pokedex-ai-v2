@@ -1,1 +1,34 @@
-{}
+{
+  "104585f3-4600-4efc-88c8-f3c5255edcfd": [
+    {
+      "slot": 1,
+      "pokemonName": "starmie",
+      "pokemonId": 121
+    },
+    {
+      "slot": 2,
+      "pokemonName": "houndoom",
+      "pokemonId": 229
+    },
+    {
+      "slot": 3,
+      "pokemonName": "flygon",
+      "pokemonId": 330
+    },
+    {
+      "slot": 4,
+      "pokemonName": "heracross",
+      "pokemonId": 214
+    },
+    {
+      "slot": 5,
+      "pokemonName": "metagross",
+      "pokemonId": 376
+    },
+    {
+      "slot": 6,
+      "pokemonName": "pikachu",
+      "pokemonId": 25
+    }
+  ]
+}
