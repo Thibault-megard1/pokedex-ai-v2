@@ -34,13 +34,16 @@ export function initializeBattle(
   applyEvolutionPoints(team1.pokemon, team1.evolutionPoints);
   applyEvolutionPoints(team2.pokemon, team2.evolutionPoints);
 
-  // Initialize stat stages and status for all Pokémon
+  // Initialize stat stages, status, and move history for all Pokémon
   for (const pokemon of [...team1.pokemon, ...team2.pokemon]) {
     if (!pokemon.statStages) {
       pokemon.statStages = initializeStatStages();
     }
     if (pokemon.statusCondition === undefined) {
       pokemon.statusCondition = null;
+    }
+    if (!pokemon.lastUsedMoves) {
+      pokemon.lastUsedMoves = [];
     }
   }
 
@@ -165,24 +168,64 @@ export function executeTurn(
     return state;
   }
 
+  // SANITY CHECK: Ensure active Pokemon are not fainted
+  const team1Active = state.team1.pokemon[state.team1.activeIndex];
+  const team2Active = state.team2.pokemon[state.team2.activeIndex];
+  
+  if (team1Active.isFainted || team1Active.currentHp <= 0) {
+    console.error("CRITICAL: Team 1 active Pokemon is fainted!", team1Active.name);
+    const nextIndex = getNextActivePokemon(state.team1);
+    if (nextIndex === -1) {
+      state.isFinished = true;
+      state.winner = state.team2.teamId;
+      return state;
+    }
+    state.team1.activeIndex = nextIndex;
+  }
+  
+  if (team2Active.isFainted || team2Active.currentHp <= 0) {
+    console.error("CRITICAL: Team 2 active Pokemon is fainted!", team2Active.name);
+    const nextIndex = getNextActivePokemon(state.team2);
+    if (nextIndex === -1) {
+      state.isFinished = true;
+      state.winner = state.team1.teamId;
+      return state;
+    }
+    state.team2.activeIndex = nextIndex;
+  }
+
   const [firstTeam, secondTeam] = determineTurnOrder(state.team1, state.team2);
+  
+  // Double-check that active Pokemon can act
+  const firstAttacker = firstTeam.pokemon[firstTeam.activeIndex];
+  const secondAttacker = secondTeam.pokemon[secondTeam.activeIndex];
+  
+  if (firstAttacker.isFainted || firstAttacker.currentHp <= 0) {
+    console.error("First attacker is fainted, ending turn");
+    return state;
+  }
+  
+  if (secondAttacker.isFainted || secondAttacker.currentHp <= 0) {
+    console.error("Second attacker is fainted, ending turn");
+    return state;
+  }
   
   // Select moves (AI if not provided)
   const firstMove = (firstTeam === state.team1 && team1Move) || 
                     (firstTeam === state.team2 && team2Move) ||
-                    firstTeam.pokemon[firstTeam.activeIndex].moves[
+                    firstAttacker.moves[
                       chooseMove(
-                        firstTeam.pokemon[firstTeam.activeIndex],
-                        secondTeam.pokemon[secondTeam.activeIndex]
+                        firstAttacker,
+                        secondAttacker
                       ).moveIndex
                     ];
 
   const secondMove = (secondTeam === state.team1 && team1Move) ||
                      (secondTeam === state.team2 && team2Move) ||
-                     secondTeam.pokemon[secondTeam.activeIndex].moves[
+                     secondAttacker.moves[
                        chooseMove(
-                         secondTeam.pokemon[secondTeam.activeIndex],
-                         firstTeam.pokemon[firstTeam.activeIndex]
+                         secondAttacker,
+                         firstAttacker
                        ).moveIndex
                      ];
 
@@ -192,8 +235,13 @@ export function executeTurn(
   const turn1 = executeAttack(firstTeam, secondTeam, firstMove, state.currentTurn);
   state.turnHistory.push(turn1);
 
-  // Check if defender fainted
-  if (turn1.fainted) {
+  // IMMEDIATE faint check and switching
+  const defenderAfterTurn1 = secondTeam.pokemon[secondTeam.activeIndex];
+  if (defenderAfterTurn1.currentHp <= 0 && !defenderAfterTurn1.isFainted) {
+    defenderAfterTurn1.isFainted = true;
+  }
+  
+  if (turn1.fainted || defenderAfterTurn1.isFainted) {
     const nextIndex = getNextActivePokemon(secondTeam);
     if (nextIndex === -1) {
       // All Pokémon fainted, battle over
@@ -204,13 +252,19 @@ export function executeTurn(
     secondTeam.activeIndex = nextIndex;
   }
 
-  // Second attacker (if still alive)
-  if (!firstTeam.pokemon[firstTeam.activeIndex].isFainted) {
+  // Second attacker (only if first attacker is still alive)
+  const firstAttackerAfterTurn1 = firstTeam.pokemon[firstTeam.activeIndex];
+  if (!firstAttackerAfterTurn1.isFainted && firstAttackerAfterTurn1.currentHp > 0) {
     const turn2 = executeAttack(secondTeam, firstTeam, secondMove, state.currentTurn);
     state.turnHistory.push(turn2);
 
-    // Check if defender fainted
-    if (turn2.fainted) {
+    // IMMEDIATE faint check and switching
+    const defenderAfterTurn2 = firstTeam.pokemon[firstTeam.activeIndex];
+    if (defenderAfterTurn2.currentHp <= 0 && !defenderAfterTurn2.isFainted) {
+      defenderAfterTurn2.isFainted = true;
+    }
+    
+    if (turn2.fainted || defenderAfterTurn2.isFainted) {
       const nextIndex = getNextActivePokemon(firstTeam);
       if (nextIndex === -1) {
         // All Pokémon fainted, battle over

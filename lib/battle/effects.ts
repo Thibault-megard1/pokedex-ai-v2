@@ -159,7 +159,7 @@ export function applySelfDamage(
  * Effect log entry for tracking what happened
  */
 export interface EffectLog {
-  type: "stat-change" | "recoil" | "drain" | "self-damage" | "status";
+  type: "stat-change" | "recoil" | "drain" | "self-damage" | "status" | "heal";
   pokemonName: string;
   description: string;
   value?: number;
@@ -256,6 +256,22 @@ export function applyMoveEffects(
           }
         }
         break;
+      
+      case "heal":
+        if (effect.percent) {
+          const healAmount = Math.floor(attacker.maxHp * effect.percent / 100);
+          const actualHeal = Math.min(healAmount, attacker.maxHp - attacker.currentHp);
+          if (actualHeal > 0) {
+            attacker.currentHp += actualHeal;
+            logs.push({
+              type: "heal",
+              pokemonName: attacker.name,
+              description: `${attacker.name} restored ${actualHeal} HP!`,
+              value: actualHeal,
+            });
+          }
+        }
+        break;
     }
   }
   
@@ -322,4 +338,15 @@ export const MOVE_EFFECTS_DATABASE: Record<string, MoveEffect[]> = {
   "blizzard": [{ type: "status", target: "opponent", status: "freeze", chance: 10 }],
   "sludge-bomb": [{ type: "status", target: "opponent", status: "poison", chance: 30 }],
   "poison-jab": [{ type: "status", target: "opponent", status: "poison", chance: 30 }],
+  
+  // Healing moves
+  "recover": [{ type: "heal", target: "self", percent: 50 }],
+  "roost": [{ type: "heal", target: "self", percent: 50 }],
+  "rest": [{ type: "heal", target: "self", percent: 100 }],
+  "soft-boiled": [{ type: "heal", target: "self", percent: 50 }],
+  "moonlight": [{ type: "heal", target: "self", percent: 50 }],
+  "synthesis": [{ type: "heal", target: "self", percent: 50 }],
+  "morning-sun": [{ type: "heal", target: "self", percent: 50 }],
+  "wish": [{ type: "heal", target: "self", percent: 50 }],
+  "slack-off": [{ type: "heal", target: "self", percent: 50 }],
 };

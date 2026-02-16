@@ -148,6 +148,10 @@ export default function TournamentPage() {
             // Fetch real moves for this Pokemon at target level
             const moves = await fetchPokemonMoves(pokemon.name, tournamentRules.targetLevel);
             
+            // Ensure evolution chain has at least the Pokemon itself
+            const evolutionChain = pokemon.evolutionChain?.map((e: any) => e.name) || [];
+            const finalEvolutionChain = evolutionChain.length > 0 ? evolutionChain : [pokemon.name];
+            
             loadedTeam[slot.slot - 1] = {
               name: pokemon.name,
               sprite: pokemon.sprite,
@@ -161,7 +165,7 @@ export default function TournamentPage() {
                 speed: pokemon.stats.find((s: any) => s.name === "speed")?.value || 50,
               },
               moves,
-              evolutionChain: pokemon.evolutionChain?.map((e: any) => e.name) || [pokemon.name],
+              evolutionChain: finalEvolutionChain,
             };
           }
         }
@@ -191,7 +195,21 @@ export default function TournamentPage() {
         // Add log entry
         const lastTurn = battleState.turnHistory[battleState.turnHistory.length - 1];
         if (lastTurn) {
-          const log = `Tour ${lastTurn.turnNumber}: ${lastTurn.attacker.pokemonName} utilise ${lastTurn.attacker.move.name} → ${lastTurn.damage} dégâts${lastTurn.isCritical ? " (Critique!)" : ""} (×${lastTurn.effectiveness})`;
+          // Build log message based on move type
+          let log = `Tour ${lastTurn.turnNumber}: ${lastTurn.attacker.pokemonName} utilise ${lastTurn.attacker.move.name}`;
+          
+          // Only show damage for damaging moves
+          if (lastTurn.attacker.move.damageClass !== "status") {
+            if (lastTurn.damage > 0) {
+              log += ` → ${lastTurn.damage} dégâts${lastTurn.isCritical ? " (Critique!)" : ""}`;
+              if (lastTurn.effectiveness !== 1) {
+                log += ` (×${lastTurn.effectiveness})`;
+              }
+            } else {
+              log += " → Raté!";
+            }
+          }
+          
           setBattleLog(prev => [...prev, log]);
           
           // Add effect logs if any
@@ -216,6 +234,10 @@ export default function TournamentPage() {
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
 
+      // Ensure evolution chain has at least the Pokemon itself
+      const evolutionChain = data.evolutionChain || [];
+      const finalEvolutionChain = evolutionChain.length > 0 ? evolutionChain : [data.name];
+      
       const pokemon: PokemonSlot = {
         name: data.name,
         sprite: data.sprite,
@@ -235,7 +257,7 @@ export default function TournamentPage() {
           damageClass: "physical",
           accuracy: 100,
         })),
-        evolutionChain: data.evolutionChain || [data.name],
+        evolutionChain: finalEvolutionChain,
       };
 
       const newTeam = [...playerTeam];
@@ -289,27 +311,33 @@ export default function TournamentPage() {
       // Convert player team to BattlePokemon format for AI analysis
       const playerBattlePokemon: BattlePokemon[] = playerTeam
         .filter((p): p is PokemonSlot => p !== null)
-        .map((p, i) => ({
-          id: i + 1,
-          name: p.name,
-          types: p.types,
-          baseStats: p.stats,
-          currentStats: { ...p.stats },
-          statStages: initializeStatStages(),
-          moves: p.moves.map(m => ({
-            name: m.name,
-            type: m.type,
-            power: m.power,
-            damageClass: m.damageClass as "physical" | "special" | "status",
-            accuracy: m.accuracy,
-          })),
-          currentHp: p.stats.hp,
-          maxHp: p.stats.hp,
-          evolutionStage: 0,
-          evolutionChain: p.evolutionChain,
-          isFainted: false,
-          statusCondition: null,
-        }));
+        .map((p, i) => {
+          // Ensure evolution chain has at least the Pokemon itself
+          const evolutionChain = p.evolutionChain && p.evolutionChain.length > 0 ? p.evolutionChain : [p.name];
+          
+          return {
+            id: i + 1,
+            name: p.name,
+            types: p.types,
+            baseStats: p.stats,
+            currentStats: { ...p.stats },
+            statStages: initializeStatStages(),
+            moves: p.moves.map(m => ({
+              name: m.name,
+              type: m.type,
+              power: m.power,
+              damageClass: m.damageClass as "physical" | "special" | "status",
+              accuracy: m.accuracy,
+            })),
+            currentHp: p.stats.hp,
+            maxHp: p.stats.hp,
+            evolutionStage: 0,
+            evolutionChain,
+            isFainted: false,
+            statusCondition: null,
+            lastUsedMoves: [],
+          };
+        });
 
       // Generate AI team based on player team analysis
       console.log("Starting AI team generation...");

@@ -30,14 +30,14 @@ export interface StatStages {
 export type StatusCondition = "burn" | "poison" | "paralysis" | "sleep" | "freeze" | null;
 
 export interface MoveEffect {
-  type: "stat-change" | "recoil" | "drain" | "self-damage" | "status";
+  type: "stat-change" | "recoil" | "drain" | "self-damage" | "status" | "heal";
   target: "self" | "opponent";
   // For stat changes
   stat?: "attack" | "defense" | "special-attack" | "special-defense" | "speed" | "accuracy" | "evasion";
   stages?: number; // -6 to +6
   chance?: number; // 0-100, probability of effect
-  // For recoil/drain
-  percent?: number; // percentage of damage
+  // For recoil/drain/heal
+  percent?: number; // percentage of damage or max HP
   // For status
   status?: StatusCondition;
 }
@@ -65,6 +65,7 @@ export interface BattlePokemon {
   evolutionChain: string[]; // ["bulbasaur", "ivysaur", "venusaur"]
   isFainted: boolean;
   statusCondition: StatusCondition;
+  lastUsedMoves?: string[]; // Track last 3 moves to encourage variety
 }
 
 // ============================================================================

@@ -142,6 +142,11 @@ async function fetchPokemonMoves(pokemonName: string, targetLevel: number): Prom
       }
     }
     
+    // Validate moves before returning (dev warning)
+    if (selectedMoves.length > 0) {
+      validateMovepool(pokemonName, data.types?.map((t: any) => t.type?.name) || ["normal"], selectedMoves);
+    }
+    
     return selectedMoves.slice(0, 4);
     
   } catch (error) {
@@ -155,6 +160,35 @@ async function fetchPokemonMoves(pokemonName: string, targetLevel: number): Prom
       specialDefense: 70,
       speed: 70,
     });
+  }
+}
+
+/**
+ * Validates that moves are appropriate for the Pokemon's types
+ * Logs warnings for potentially invalid moves
+ */
+function validateMovepool(pokemonName: string, pokemonTypes: string[], moves: BattleMove[]): void {
+  const invalidMoves: string[] = [];
+  
+  // Define type-exclusive moves that should only appear on certain types
+  const typeExclusiveMoves: Record<string, string[]> = {
+    steel: ["meteor-mash", "iron-head", "flash-cannon", "bullet-punch"],
+    fire: ["lava-plume", "flare-blitz", "blue-flare", "sacred-fire"],
+    dragon: ["draco-meteor", "dragon-claw", "outrage", "dragon-pulse"],
+    psychic: ["psychic", "psystrike", "future-sight"],
+  };
+  
+  for (const move of moves) {
+    // Check if move type is completely unrelated to Pokemon types
+    for (const [exclusiveType, exclusiveMoves] of Object.entries(typeExclusiveMoves)) {
+      if (exclusiveMoves.includes(move.name) && !pokemonTypes.includes(exclusiveType)) {
+        invalidMoves.push(`${move.name} (${move.type}-type move on non-${exclusiveType} Pokemon)`);
+      }
+    }
+  }
+  
+  if (invalidMoves.length > 0) {
+    console.warn(`⚠️ Potentially invalid moves on ${pokemonName} [${pokemonTypes.join("/")}]:`, invalidMoves);
   }
 }
 
@@ -612,6 +646,7 @@ export async function generateOpponentTeam(
     evolutionChain: p.evolutionChain,
     isFainted: false,
     statusCondition: null,
+    lastUsedMoves: [],
   }));
 
   // Optimal evolution allocation (simple: prioritize high-stat Pokémon)
@@ -680,6 +715,7 @@ export function generateQuickOpponentTeam(playerTeam: BattlePokemon[], level: nu
     evolutionChain: [name],
     isFainted: false,
     statusCondition: null,
+    lastUsedMoves: [],
   }));
 
   return {
