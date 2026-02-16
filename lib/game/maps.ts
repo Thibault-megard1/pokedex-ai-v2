@@ -1,6 +1,14 @@
 // Map data definitions
 import type { MapData, WildEncounter } from './types';
 
+// Warp colors for visual identification (bidirectional connections)
+export const WARP_COLORS = {
+  LAB_PALLETTOWN: 0x3b82f6,      // Blue - Lab entrance
+  PALLETTOWN_ROUTE1: 0x10b981,   // Green - South exit
+  ROUTE1_VIRIDIAN: 0x8b5cf6,     // Purple - Forest entrance
+  ROUTE1_ROUTE2: 0xf59e0b,       // Orange - North connection
+} as const;
+
 // Pallet Town - Starting town (REDESIGNED!)
 export const PALLET_TOWN_MAP: MapData = {
   name: 'pallettown',
@@ -119,13 +127,13 @@ export const PALLET_TOWN_MAP: MapData = {
   ],
   warps: [
     // To lab (entrance at bottom of lab building)
-    { x: 4, y: 5, targetMap: 'lab', targetX: 7, targetY: 9 },
-    { x: 5, y: 5, targetMap: 'lab', targetX: 7, targetY: 9 },
+    { x: 4, y: 5, targetMap: 'lab', targetX: 7, targetY: 9, color: WARP_COLORS.LAB_PALLETTOWN },
+    { x: 5, y: 5, targetMap: 'lab', targetX: 7, targetY: 9, color: WARP_COLORS.LAB_PALLETTOWN },
     // To Route 1
-    { x: 13, y: 23, targetMap: 'route1', targetX: 12, targetY: 2 },
-    { x: 14, y: 23, targetMap: 'route1', targetX: 12, targetY: 2 },
-    { x: 15, y: 23, targetMap: 'route1', targetX: 12, targetY: 2 },
-    { x: 16, y: 23, targetMap: 'route1', targetX: 12, targetY: 2 },
+    { x: 13, y: 23, targetMap: 'route1', targetX: 12, targetY: 2, color: WARP_COLORS.PALLETTOWN_ROUTE1 },
+    { x: 14, y: 23, targetMap: 'route1', targetX: 12, targetY: 2, color: WARP_COLORS.PALLETTOWN_ROUTE1 },
+    { x: 15, y: 23, targetMap: 'route1', targetX: 12, targetY: 2, color: WARP_COLORS.PALLETTOWN_ROUTE1 },
+    { x: 16, y: 23, targetMap: 'route1', targetX: 12, targetY: 2, color: WARP_COLORS.PALLETTOWN_ROUTE1 },
   ],
 };
 
@@ -203,8 +211,8 @@ export const LAB_MAP: MapData = {
     },
   ],
   warps: [
-    { x: 7, y: 11, targetMap: 'pallettown', targetX: 4, targetY: 7 },
-    { x: 8, y: 11, targetMap: 'pallettown', targetX: 5, targetY: 7 },
+    { x: 7, y: 11, targetMap: 'pallettown', targetX: 4, targetY: 7, color: WARP_COLORS.LAB_PALLETTOWN },
+    { x: 8, y: 11, targetMap: 'pallettown', targetX: 5, targetY: 7, color: WARP_COLORS.LAB_PALLETTOWN },
   ],
 };
 
@@ -295,13 +303,13 @@ export const ROUTE1_MAP: MapData = {
   ],
   warps: [
     // To Viridian Forest
-    { x: 8, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38 },
-    { x: 9, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38 },
-    { x: 10, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38 },
-    { x: 11, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38 },
+    { x: 8, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38, color: WARP_COLORS.ROUTE1_VIRIDIAN },
+    { x: 9, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38, color: WARP_COLORS.ROUTE1_VIRIDIAN },
+    { x: 10, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38, color: WARP_COLORS.ROUTE1_VIRIDIAN },
+    { x: 11, y: 0, targetMap: 'viridianforest', targetX: 12, targetY: 38, color: WARP_COLORS.ROUTE1_VIRIDIAN },
     // To Pallet Town
-    { x: 9, y: 29, targetMap: 'pallettown', targetX: 12, targetY: 17 },
-    { x: 10, y: 29, targetMap: 'pallettown', targetX: 12, targetY: 17 },
+    { x: 9, y: 29, targetMap: 'pallettown', targetX: 12, targetY: 17, color: WARP_COLORS.PALLETTOWN_ROUTE1 },
+    { x: 10, y: 29, targetMap: 'pallettown', targetX: 12, targetY: 17, color: WARP_COLORS.PALLETTOWN_ROUTE1 },
   ],
 };
 
@@ -459,9 +467,9 @@ export const VIRIDIAN_FOREST_MAP: MapData = {
   ],
   warps: [
     // To Route 1
-    { x: 11, y: 39, targetMap: 'route1', targetX: 10, targetY: 1 },
-    { x: 12, y: 39, targetMap: 'route1', targetX: 10, targetY: 1 },
-    { x: 13, y: 39, targetMap: 'route1', targetX: 10, targetY: 1 },
+    { x: 11, y: 39, targetMap: 'route1', targetX: 10, targetY: 1, color: WARP_COLORS.ROUTE1_VIRIDIAN },
+    { x: 12, y: 39, targetMap: 'route1', targetX: 10, targetY: 1, color: WARP_COLORS.ROUTE1_VIRIDIAN },
+    { x: 13, y: 39, targetMap: 'route1', targetX: 10, targetY: 1, color: WARP_COLORS.ROUTE1_VIRIDIAN },
   ],
 };
 
@@ -532,9 +540,9 @@ export const ROUTE2_MAP: MapData = {
     },
   ],
   warps: [
-    { x: 9, y: 0, targetMap: 'route1', targetX: 9, targetY: 28 },
-    { x: 10, y: 0, targetMap: 'route1', targetX: 10, targetY: 28 },
-    { x: 11, y: 0, targetMap: 'route1', targetX: 10, targetY: 28 },
+    { x: 9, y: 0, targetMap: 'route1', targetX: 9, targetY: 28, color: WARP_COLORS.ROUTE1_ROUTE2 },
+    { x: 10, y: 0, targetMap: 'route1', targetX: 10, targetY: 28, color: WARP_COLORS.ROUTE1_ROUTE2 },
+    { x: 11, y: 0, targetMap: 'route1', targetX: 10, targetY: 28, color: WARP_COLORS.ROUTE1_ROUTE2 },
   ],
 };
 

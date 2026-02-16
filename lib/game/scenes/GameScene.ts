@@ -169,6 +169,31 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Render warps with colors (visual indicators for portals)
+    mapData.warps.forEach((warp) => {
+      if (warp.color) {
+        const warpTile = this.add.rectangle(
+          warp.x * this.tileSize + this.tileSize / 2,
+          warp.y * this.tileSize + this.tileSize / 2,
+          this.tileSize,
+          this.tileSize,
+          warp.color,
+          0.7 // Semi-transparent
+        );
+        warpTile.setDepth(0.8); // Above ground, below walls
+
+        // Add a pulsing animation to make warps more visible
+        this.tweens.add({
+          targets: warpTile,
+          alpha: 0.4,
+          duration: 1000,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      }
+    });
+
     // Spawn NPCs
     mapData.npcs.forEach((npcData) => {
       this.createNPC(npcData);

@@ -88,6 +88,7 @@ export interface WarpData {
   targetMap: string;
   targetX: number;
   targetY: number;
+  color?: number; // Color for visual identification
 }
 
 export interface WildEncounter {
