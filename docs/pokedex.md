@@ -12,6 +12,22 @@ Fournir un Pokédex complet: liste, recherche, details, evolutions et outils d'e
 ## IA
 Cette fonctionnalite n'utilise pas d'intelligence artificielle.
 
+## Architecture Pokédex (schema)
+Ce schema illustre le flux de donnees pour l'affichage et la recherche de Pokemon.
+
+```mermaid
+graph LR
+	User[Utilisateur] --> Liste[Liste Pokemon]
+	User --> Detail[Detail Pokemon]
+	Liste --> PokeAPI[lib/pokeapi.ts]
+	Detail --> PokeAPI
+	PokeAPI --> API[PokéAPI externe]
+	PokeAPI --> Cache[Cache JSON local]
+	Liste --> Autocomplete[pokemon-names.json]
+```
+
+Les donnees sont recuperees via la PokéAPI puis mises en cache localement pour optimiser les performances.
+
 ## Liens avec le cours IA
 - **REST API**: PokéAPI consommee cote serveur.
 - **Structuration des donnees**: mapping des reponses en objets typés.
