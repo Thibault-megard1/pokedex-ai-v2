@@ -21,14 +21,6 @@ export default function AIHubPage() {
       status: 'Intégré',
     },
     {
-      title: 'Commentateur de Combat',
-      description: 'Commentaires dynamiques pendant vos batailles (en développement)',
-      icon: '🎙️',
-      href: '/battle',
-      color: 'from-red-500 to-orange-600',
-      status: 'Beta',
-    },
-    {
       title: 'Quiz Adaptatif',
       description: 'Questions personnalisées basées sur vos performances',
       icon: '🎯',

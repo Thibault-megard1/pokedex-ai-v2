@@ -110,7 +110,6 @@ export default function NavBar() {
         { href: "/pokemon", label: t(lang, "nav.list"), icon: "/icons/ui/ic-pokemon.png" },
         { href: "/favorites", label: t(lang, "nav.favorites"), icon: "/icons/ui/ic-success.png" },
         { href: "/compare", label: t(lang, "nav.compare"), icon: "/icons/ui/ic-filter.png" },
-        { href: "/stats", label: t(lang, "nav.stats"), icon: "/icons/ui/ic-search.png" },
       ]
     },
     {
@@ -118,9 +117,9 @@ export default function NavBar() {
       title: t(lang, "nav.battle"),
       icon: "/icons/ui/nav-battle.png",
       items: [
-        { href: "/battle", label: t(lang, "nav.battle.1v1"), icon: "/icons/ui/nav-battle.png" },
         { href: "/tournament", label: t(lang, "nav.battle.tournament"), icon: "/icons/ui/ic-success.png" },
         { href: "/damage-calculator", label: t(lang, "nav.battle.calculator"), icon: "/icons/ui/ic-filter.png" },
+        { href: "/game", label: t(lang, "nav.game"), icon: "/icons/ui/ic-pokemon.png" },
       ]
     },
     {
@@ -130,28 +129,27 @@ export default function NavBar() {
       items: [
         { href: "/team", label: t(lang, "nav.team"), icon: "/icons/ui/nav-team.png" },
         { href: "/quiz", label: t(lang, "nav.quiz"), icon: "/icons/ui/nav-quiz.png" },
-        { href: "/game", label: "🎮 Jeu Pokémon", icon: "/icons/ui/ic-pokemon.png" },
+        { href: "/stats", label: t(lang, "nav.stats"), icon: "/icons/ui/ic-search.png" },
       ]
     },
     {
       id: "tools",
-      title: "🛠️ Outils",
+      title: t(lang, "nav.tools"),
       icon: "/icons/ui/ic-filter.png",
       items: [
-        { href: "/tools", label: "📊 Hub Outils", icon: "/icons/ui/ic-search.png" },
-        { href: "/tools/iv-ev", label: "📊 Calculateur IV/EV", icon: "/icons/ui/ic-filter.png" },
-        { href: "/tools/damage", label: "⚔️ Dégâts Pro", icon: "/icons/ui/nav-battle.png" },
-        { href: "/viewer/3d", label: "🎨 Visionneuse 3D", icon: "/icons/ui/ic-pokemon.png" },
+        { href: "/tools", label: t(lang, "nav.tools.hub"), icon: "/icons/ui/ic-search.png" },
+        { href: "/tools/iv-ev", label: t(lang, "nav.tools.iv-ev"), icon: "/icons/ui/ic-filter.png" },
+        { href: "/tools/damage", label: t(lang, "nav.tools.damage-pro"), icon: "/icons/ui/nav-battle.png" },
       ]
     },
     {
       id: "ai",
-      title: "🤖 IA",
+      title: t(lang, "nav.ai"),
       icon: "/icons/ui/ic-success.png",
       items: [
-        { href: "/ai", label: "🤖 Hub IA", icon: "/icons/ui/ic-success.png" },
-        { href: "/assistant", label: "💬 Assistant IA", icon: "/icons/ui/ic-pokemon.png" },
-        { href: "/team", label: "🧠 Team Builder IA", icon: "/icons/ui/nav-team.png" },
+        { href: "/ai", label: t(lang, "nav.ai.hub"), icon: "/icons/ui/ic-success.png" },
+        { href: "/assistant", label: t(lang, "nav.ai.assistant"), icon: "/icons/ui/ic-pokemon.png" },
+        { href: "/team", label: t(lang, "nav.ai.team-builder"), icon: "/icons/ui/nav-team.png" },
       ]
     }
   ];

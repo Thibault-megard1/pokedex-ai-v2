@@ -18,9 +18,9 @@ export const dict: TranslationDict = {
   "nav.compare": { fr: "Comparer", en: "Compare", es: "Comparar" },
   "nav.stats": { fr: "Statistiques", en: "Statistics", es: "Estadísticas" },
   "nav.battle": { fr: "Combat", en: "Battle", es: "Combate" },
-  "nav.battle.1v1": { fr: "1v1", en: "1v1", es: "1v1" },
   "nav.battle.tournament": { fr: "Tournoi 6v6", en: "6v6 Tournament", es: "Torneo 6v6" },
   "nav.battle.calculator": { fr: "Calculateur", en: "Calculator", es: "Calculador" },
+  "nav.game": { fr: "Jeu Pokémon", en: "Pokémon Game", es: "Juego Pokémon" },
   "nav.trainer": { fr: "Dresseur", en: "Trainer", es: "Entrenador" },
   "nav.team": { fr: "Mon Équipe", en: "My Team", es: "Mi Equipo" },
   "nav.quiz": { fr: "Quiz", en: "Quiz", es: "Quiz" },
@@ -28,6 +28,18 @@ export const dict: TranslationDict = {
   "nav.logout": { fr: "Déconnexion", en: "Logout", es: "Cerrar sesión" },
   "nav.register": { fr: "Inscription", en: "Sign up", es: "Registrarse" },
   "nav.trainer.label": { fr: "Dresseur:", en: "Trainer:", es: "Entrenador:" },
+
+  // Tools menu
+  "nav.tools": { fr: "Outils", en: "Tools", es: "Herramientas" },
+  "nav.tools.hub": { fr: "Hub Outils", en: "Tools Hub", es: "Centro de Herramientas" },
+  "nav.tools.iv-ev": { fr: "Calculateur IV/EV", en: "IV/EV Calculator", es: "Calculador IV/EV" },
+  "nav.tools.damage-pro": { fr: "Dégâts Pro", en: "Damage Pro", es: "Daño Pro" },
+
+  // AI menu
+  "nav.ai": { fr: "IA", en: "AI", es: "IA" },
+  "nav.ai.hub": { fr: "Hub IA", en: "AI Hub", es: "Centro de IA" },
+  "nav.ai.assistant": { fr: "Assistant IA", en: "AI Assistant", es: "Asistente IA" },
+  "nav.ai.team-builder": { fr: "Team Builder IA", en: "AI Team Builder", es: "Constructor de Equipo IA" },
 
   // Home page
   "home.title": { fr: "POKÉDEX", en: "POKÉDEX", es: "POKÉDEX" },

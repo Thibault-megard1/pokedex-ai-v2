@@ -83,6 +83,18 @@ export default function QuizPage() {
 
       setResult(quizResult);
 
+      // Save quiz result to user profile
+      try {
+        await fetch("/api/quiz-result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ result: quizResult, overwrite: true }),
+        });
+      } catch (saveError) {
+        console.error("Failed to save quiz result:", saveError);
+        // Don't block the user from seeing results if save fails
+      }
+
       // Fetch full Pokemon data
       const pokemonResponse = await fetch(`/api/pokemon/${quizResult.primary.name}`);
       if (pokemonResponse.ok) {

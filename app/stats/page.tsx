@@ -10,6 +10,16 @@ type UserStats = {
   teamSize: number;
   favoritesCount: number;
   notesCount: number;
+  quizResult?: {
+    primary: {
+      id: number;
+      name: string;
+      sprite_url?: string;
+      confidence: number;
+      reasons: string[];
+    };
+    completedAt: string;
+  };
 };
 
 export default function StatsPage() {
@@ -25,18 +35,22 @@ export default function StatsPage() {
       // Charger l'équipe
       const teamRes = await fetch("/api/team");
       const teamData = await teamRes.json();
-      
+
       // Charger les favoris
       const favRes = await fetch("/api/favorites");
       const favData = await favRes.json();
-      
+
       // Charger les notes
       const notesRes = await fetch("/api/notes");
       const notesData = await notesRes.json();
 
+      // Charger le résultat du quiz
+      const quizRes = await fetch("/api/quiz-result");
+      const quizData = await quizRes.json();
+
       // Analyser les types préférés
       const typeCount: Record<string, number> = {};
-      
+
       if (teamData.team) {
         // Charger les détails de chaque Pokémon de l'équipe
         for (const member of teamData.team) {
@@ -56,12 +70,16 @@ export default function StatsPage() {
 
       setStats({
         favoriteTypes: typeCount,
-        favoriteGeneration: null, // À implémenter si nécessaire
+        favoriteGeneration: null,
         teamSize: teamData.team?.length || 0,
         favoritesCount: favData.favorites?.length || 0,
-        notesCount: notesData.notes?.length || 0
+        notesCount: notesData.notes?.length || 0,
+        quizResult: quizData.result ? {
+          primary: quizData.result.result.primary,
+          completedAt: quizData.result.completedAt
+        } : undefined
       });
-      
+
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -160,18 +178,80 @@ export default function StatsPage() {
               {stats.teamSize === 6 ? "✅ Oui" : `${stats.teamSize}/6`}
             </span>
           </div>
-          
+
           <div className="flex justify-between items-center p-3 bg-yellow-50 rounded">
             <span className="text-sm">Collection de favoris</span>
             <span className="font-bold text-yellow-600">{stats.favoritesCount} Pokémon</span>
           </div>
-          
+
           <div className="flex justify-between items-center p-3 bg-green-50 rounded">
             <span className="text-sm">Notes et stratégies</span>
             <span className="font-bold text-green-600">{stats.notesCount} rédigées</span>
           </div>
         </div>
       </div>
+
+      {/* Quiz Result */}
+      {stats.quizResult && (
+        <div className="card p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-700">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span>🔮</span>
+            <span>Résultat du Quiz de Personnalité</span>
+          </h2>
+
+          <div className="flex items-center gap-6 mb-4">
+            {stats.quizResult.primary.sprite_url && (
+              <img
+                src={stats.quizResult.primary.sprite_url}
+                alt={stats.quizResult.primary.name}
+                className="w-24 h-24 pixelated"
+              />
+            )}
+
+            <div className="flex-1">
+              <div className="text-2xl font-bold capitalize text-purple-900 dark:text-purple-100 mb-2">
+                {stats.quizResult.primary.name}
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                  Correspondance:
+                </span>
+                <div className="flex-1 bg-white dark:bg-gray-800 rounded-full h-6 overflow-hidden">
+                  <div
+                    className="h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                    style={{ width: `${stats.quizResult.primary.confidence}%` }}
+                  >
+                    {stats.quizResult.primary.confidence}%
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                Complété le {new Date(stats.quizResult.completedAt).toLocaleDateString('fr-FR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+            </div>
+          </div>
+
+          {stats.quizResult.primary.reasons && stats.quizResult.primary.reasons.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
+              <div className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2">
+                Pourquoi ce Pokémon vous correspond:
+              </div>
+              <ul className="space-y-1">
+                {stats.quizResult.primary.reasons.slice(0, 3).map((reason, idx) => (
+                  <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
+                    <span className="text-purple-500">•</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

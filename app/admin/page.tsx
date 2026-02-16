@@ -39,6 +39,8 @@ type Analytics = {
   teamsCount: number;
   avgTeamSize: string;
   topFavorites: Array<{ pokemonId: number; count: number }>;
+  totalQuizCompletions: number;
+  topQuizResults: Array<{ pokemonName: string; count: number }>;
 };
 
 const pokemonThemes = {
@@ -662,7 +664,7 @@ export default function AdminPage() {
                         Utilisateurs
                       </div>
                     </div>
-                    
+
                     <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
                       <div className="text-3xl font-bold text-red-600 dark:text-red-400">
                         {analytics.adminCount}
@@ -671,7 +673,7 @@ export default function AdminPage() {
                         Admins
                       </div>
                     </div>
-                    
+
                     <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
                       <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                         {analytics.teamsCount}
@@ -680,13 +682,68 @@ export default function AdminPage() {
                         Teams créées
                       </div>
                     </div>
-                    
+
                     <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                       <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                         {analytics.avgTeamSize}
                       </div>
                       <div className="text-sm text-purple-800 dark:text-purple-300">
                         Taille moy. team
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quiz Statistics */}
+                  <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Quiz Completions Card */}
+                      <div className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border-2 border-pink-200 dark:border-pink-700 rounded-lg p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-3xl">🔮</span>
+                          <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                            Quiz de Personnalité
+                          </h3>
+                        </div>
+                        <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+                          {analytics.totalQuizCompletions}
+                        </div>
+                        <div className="text-sm text-purple-800 dark:text-purple-300">
+                          Utilisateurs ont complété le quiz
+                        </div>
+                      </div>
+
+                      {/* Top Quiz Results */}
+                      <div className="bg-white dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+                        <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                          <span>⭐</span>
+                          <span>Top 5 Résultats Quiz</span>
+                        </h3>
+                        {analytics.topQuizResults && analytics.topQuizResults.length > 0 ? (
+                          <div className="space-y-2">
+                            {analytics.topQuizResults.map((result, index) => (
+                              <div
+                                key={result.pokemonName}
+                                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-bold text-gray-400">
+                                    #{index + 1}
+                                  </span>
+                                  <span className="capitalize font-semibold text-gray-900 dark:text-white">
+                                    {result.pokemonName}
+                                  </span>
+                                </div>
+                                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                                  {result.count} fois
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                            Aucun quiz complété pour le moment
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
