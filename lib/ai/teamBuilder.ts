@@ -1,10 +1,9 @@
 /**
- * AI Team Builder - Tournament Opponent Generation
- * 
- * Generates optimal opposing teams based on player team analysis.
- * Focuses on type coverage, defensive balance, and strategic counters.
- * 
- * NO RANDOM PICKS - Deterministic team generation with clear reasoning.
+ * Team Builder IA (tournoi) - generation d'equipe adverse.
+ * Cette "IA" est rule-based (pas de LLM): elle applique des regles deterministes.
+ * Entree: equipe joueur + regles. Sortie: equipe adverse + justification.
+ * Liens cours IA: agent heuristique, explicabilite, evaluation de couverture.
+ * Limites: strategie simplifiee, depend des heuristiques.
  */
 
 import type { BattleTeam, BattlePokemon, BattlePokemonStats, BattleMove } from "../battle/types";
@@ -508,7 +507,11 @@ function determinePokemonRole(stats: BattlePokemonStats): string {
 // ============================================================================
 
 /**
- * Main function: Generate optimal AI team based on player team
+ * Genere une equipe adverse optimisee pour un tournoi.
+ * Cette fonction n'utilise pas d'intelligence artificielle generative.
+ * Entree: equipe joueur + regles de tournoi.
+ * Processus: analyse faiblesses -> candidats -> scoring -> selection.
+ * Sortie: TeamGenerationResult (equipe + raisonnement + analyse).
  */
 export async function generateOpponentTeam(
   playerTeam: BattlePokemon[],
@@ -683,7 +686,10 @@ export async function generateOpponentTeam(
 }
 
 /**
- * Simplified team generation for quick matches (no API calls)
+ * Genere une equipe adverse rapide sans appels API.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: equipe joueur + niveau. Sortie: equipe predefinie.
+ * Limites: equipe fixe, pas de personnalisation.
  */
 export function generateQuickOpponentTeam(playerTeam: BattlePokemon[], level: number): BattleTeam {
   // Fallback: Use predefined strong team

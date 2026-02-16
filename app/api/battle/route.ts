@@ -11,6 +11,8 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: noms des deux Pokemon. Sortie: resultat de simulation.
   // Prépare un duel : charge deux Pokémon, estime les chances et exécute la simulation.
   try {
     const json = await req.json();

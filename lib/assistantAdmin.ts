@@ -1,4 +1,5 @@
-// Assistant Admin System - Utilities and Validators
+// Systeme d'administration de l'assistant
+// Cette partie ne fait pas d'IA generative: elle encadre et filtre les reponses.
 
 export interface AssistantConfig {
   guardrails: {
@@ -117,6 +118,12 @@ export const DEFAULT_CONFIG: AssistantConfig = {
 // Intent detection
 export type UserIntent = 'list' | 'ranking' | 'explanation' | 'comparison' | 'unknown';
 
+/**
+ * Detecte l'intention d'un utilisateur via des motifs simples.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: message utilisateur + config. Sortie: intention simple.
+ * Liens cours IA: approche rule-based vs LLM.
+ */
 export function detectIntent(userMessage: string, config: AssistantConfig): UserIntent {
   if (!config.intentDetection.enabled) return 'unknown';
 
@@ -153,7 +160,11 @@ export function detectIntent(userMessage: string, config: AssistantConfig): User
   return 'unknown';
 }
 
-// Check if message matches a knowledge patch
+/**
+ * Cherche un correctif (knowledge patch) qui correspond au message.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: message + liste de patches. Sortie: patch ou null.
+ */
 export function findMatchingPatch(
   userMessage: string,
   patches: KnowledgePatches
@@ -182,7 +193,12 @@ export function findMatchingPatch(
   return null;
 }
 
-// Response validator - removes unwanted extra commentary
+/**
+ * Nettoie une reponse pour respecter les regles pedagogiques.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: reponse + intention + config. Sortie: texte nettoye.
+ * Liens cours IA: post-traitement et garde-fous.
+ */
 export function validateAndCleanResponse(
   response: string,
   userIntent: UserIntent,
@@ -236,7 +252,11 @@ export function validateAndCleanResponse(
   return cleaned;
 }
 
-// Build enhanced system prompt from config
+/**
+ * Construit un prompt systeme a partir de la config admin.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: config + intention. Sortie: prompt systeme.
+ */
 export function buildSystemPrompt(config: AssistantConfig, userIntent: UserIntent): string {
   const basePrompt = `Tu es un assistant Pokémon expert et PRÉCIS. Tu dois ABSOLUMENT respecter les règles officielles de Pokémon.
 

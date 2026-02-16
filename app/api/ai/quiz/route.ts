@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM, type LLMMessage, type LLMError } from '@/lib/llm';
 
+/**
+ * Route API IA - Generation de question de quiz
+ * IA: LLM (Ollama/Mistral) pour generer une question + options + reponse.
+ * Donnees envoyees: niveau de difficulte + questions deja posees.
+ * Sortie attendue: JSON structure (question, options, correctAnswer, explanation).
+ * Liens cours IA: prompt engineering, sortie structuree, REST API.
+ * Limites: variabilite selon le modele, JSON invalide possible.
+ */
 export async function POST(req: NextRequest) {
+  // Entree: body JSON { difficulty, previousAnswers }
+  // Processus: validation -> prompt -> appel LLM -> parse JSON
+  // Sortie: question + metadata
   try {
     const body = await req.json();
     const { difficulty, previousAnswers } = body;
@@ -14,7 +25,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Generate quiz question using LLM
+    // Construction du prompt pour le LLM (IA generative)
     const difficultyText: Record<string, string> = {
       easy: 'facile - pour débutants',
       medium: 'moyenne - pour connaisseurs',
@@ -45,6 +56,7 @@ Retourne un JSON avec:
       response_format: { type: 'json_object' }
     });
     
+    // Parse de la sortie structuree
     const question = JSON.parse(llmResponse.content);
     
     return NextResponse.json({
@@ -58,6 +70,7 @@ Retourne un JSON avec:
   } catch (error: any) {
     console.error('[Quiz Generator] Error:', error);
     
+    // Gestion des erreurs LLM
     if (error.code && error.provider) {
       const llmError = error as LLMError;
       return NextResponse.json(

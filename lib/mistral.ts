@@ -1,6 +1,8 @@
 /**
- * Mistral AI Integration
- * REST API client for calling Mistral Chat Completions with structured outputs
+ * Integration Mistral (LLM cloud) pour le quiz IA.
+ * IA: oui (LLM). Donnees envoyees: prompt + candidats + reponses.
+ * Sortie attendue: JSON structure conforme au schema.
+ * Liens cours IA: sorties structurees et validation.
  */
 
 import type { QuizResult } from "./quiz";
@@ -104,6 +106,10 @@ export class MistralClient {
   private apiKey: string;
   private baseUrl: string = "https://api.mistral.ai/v1";
 
+  /**
+   * Construit le client Mistral.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   constructor(apiKey: string) {
     if (!apiKey) {
       throw new Error("Mistral API key is required");
@@ -112,7 +118,9 @@ export class MistralClient {
   }
 
   /**
-   * Call Mistral Chat Completions API with structured output
+   * Appel Mistral avec sortie structuree JSON.
+   * IA: oui (LLM cloud). Donnees: messages + options.
+   * Sortie: texte JSON.
    */
   async chatCompletion(
     messages: MistralMessage[],
@@ -171,7 +179,10 @@ export class MistralClient {
   }
 
   /**
-   * Analyze quiz answers and return Pokémon match
+   * Analyse les reponses de quiz pour associer un Pokemon.
+   * IA: oui (LLM cloud). Donnees: reponses + liste de candidats.
+   * Sortie: QuizResult (JSON structure).
+   * Limites: resultat probabiliste, depend du modele.
    */
   async analyzeQuiz(
     userAnswers: string,

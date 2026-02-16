@@ -1,6 +1,9 @@
 /**
- * Unified LLM Provider System
- * Manages provider selection and routing
+ * Systeme LLM unifie (routeur de fournisseurs IA).
+ * IA: oui (LLM), selection dynamique entre Ollama (local) et Mistral (cloud).
+ * Donnees envoyees: messages (system/user/assistant) + options de generation.
+ * Sorties attendues: texte ou JSON structure selon le mode.
+ * Liens cours IA: local vs cloud, prompt engineering, sorties structurees.
  */
 
 import type {
@@ -16,7 +19,9 @@ import OllamaClient from "./ollama";
 import MistralClient from "./mistral-client";
 
 /**
- * Get provider configuration from environment variables
+ * Lit la configuration du fournisseur IA dans les variables d'environnement.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: aucune. Sortie: configuration typée.
  */
 export function getProviderConfig(): LLMProviderConfig {
   const provider = (process.env.LLM_PROVIDER?.toLowerCase() || "ollama") as LLMProvider;
@@ -39,8 +44,11 @@ export function getProviderConfig(): LLMProviderConfig {
 }
 
 /**
- * Main LLM call function - routes to appropriate provider
- * Automatically falls back to Mistral if Ollama is not running
+ * Point d'entree principal pour appeler un LLM.
+ * IA: oui (LLM). Cette fonction route vers Ollama ou Mistral.
+ * Entree: LLMRequest (messages + options).
+ * Sortie: LLMResponse (texte, metadonnees, temps).
+ * Limites: erreur possible si provider indisponible.
  */
 export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
   const config = getProviderConfig();
@@ -95,7 +103,9 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
 }
 
 /**
- * Call Ollama (local LLM)
+ * Appel du LLM local Ollama.
+ * IA: oui (LLM local). Donnees: messages + options.
+ * Sortie: LLMResponse.
  */
 async function callOllama(
   request: LLMRequest,
@@ -112,7 +122,9 @@ async function callOllama(
 }
 
 /**
- * Call Mistral
+ * Appel du LLM Mistral (cloud).
+ * IA: oui (LLM cloud). Donnees: messages + options.
+ * Sortie: LLMResponse.
  */
 async function callMistral(
   request: LLMRequest,
@@ -137,7 +149,9 @@ async function callMistral(
 }
 
 /**
- * Check health status of current provider
+ * Verifie l'etat du provider IA configure.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: aucune. Sortie: statut (online/offline/error).
  */
 export async function checkLLMHealth(): Promise<LLMHealthStatus> {
   const config = getProviderConfig();
@@ -231,7 +245,8 @@ export async function checkLLMHealth(): Promise<LLMHealthStatus> {
 }
 
 /**
- * Create a standardized provider error
+ * Fabrique une erreur standardisee pour les providers.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 function createProviderError(
   code: string,

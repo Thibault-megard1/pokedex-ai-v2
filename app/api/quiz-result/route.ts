@@ -33,8 +33,10 @@ type QuizResultsDB = {
 
 const QUIZ_RESULTS_PATH = path.join(DATA_DIR, "quiz-results.json");
 
-// GET - Retrieve user's quiz result
+// GET - Recuperer le resultat du quiz pour l'utilisateur courant
+// Cette fonction n'utilise pas d'intelligence artificielle.
 export async function GET(req: NextRequest) {
+  // Entree: requete HTTP. Sortie: resultat JSON (ou null).
   const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -55,8 +57,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Save user's quiz result
+// POST - Enregistrer le resultat du quiz
+// Cette fonction n'utilise pas d'intelligence artificielle.
 export async function POST(req: NextRequest) {
+  // Entree: { result, overwrite }. Sortie: resultat stocke.
   const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -99,8 +103,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE - Remove user's quiz result
+// DELETE - Supprimer le resultat du quiz
+// Cette fonction n'utilise pas d'intelligence artificielle.
 export async function DELETE(req: NextRequest) {
+  // Entree: requete HTTP. Sortie: succes.
   const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

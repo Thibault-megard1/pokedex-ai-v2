@@ -1,6 +1,7 @@
 /**
- * Ollama Client (Local LLM)
- * Free, runs locally on http://localhost:11434
+ * Client Ollama (LLM local).
+ * IA: oui (LLM local). Avantage: gratuit, donnees restees locales.
+ * Liens cours IA: local vs cloud, latence et confidentialite.
  */
 
 import type { LLMMessage, LLMResponse, LLMError } from "./types";
@@ -47,13 +48,20 @@ export class OllamaClient {
   private baseUrl: string;
   private defaultModel: string;
 
+  /**
+   * Construit le client Ollama.
+   * Entree: URL et modele par defaut.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   constructor(baseUrl: string = OLLAMA_BASE_URL, model: string = DEFAULT_MODEL) {
     this.baseUrl = baseUrl;
     this.defaultModel = model;
   }
 
   /**
-   * Check if Ollama is running and accessible
+   * Verifie si Ollama est disponible.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   * Sortie: { healthy, error? }.
    */
   async healthCheck(): Promise<{ healthy: boolean; error?: string }> {
     try {
@@ -91,7 +99,10 @@ export class OllamaClient {
   }
 
   /**
-   * Call Ollama chat endpoint (OpenAI-compatible API)
+   * Appel du endpoint chat d'Ollama.
+   * IA: oui (LLM local). Donnees: messages + options.
+   * Sortie: LLMResponse.
+   * Limites: timeout possible si Ollama est arrete.
    */
   async chat(
     messages: LLMMessage[],
@@ -184,7 +195,8 @@ export class OllamaClient {
   }
 
   /**
-   * Create a standardized LLM error
+   * Construit une erreur standardisee Ollama.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
    */
   private createError(code: string, details: string = ""): LLMError {
     const errorMessages: Record<string, { en: string; fr: string }> = {

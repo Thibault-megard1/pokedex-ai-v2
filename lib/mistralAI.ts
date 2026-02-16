@@ -1,8 +1,8 @@
 /**
- * Mistral AI Integration for Pokémon features
- * 
- * All AI features use the Mistral API with server-side calls only.
- * API key must be set in .env.local as MISTRAL_API_KEY
+ * Integration Mistral (LLM cloud) pour les fonctionnalites Pokemon.
+ * IA: oui (LLM). Donnees envoyees: prompts + contexte.
+ * Sorties attendues: texte ou JSON structure.
+ * Liens cours IA: prompt engineering, sorties structurees, cloud AI.
  */
 
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
@@ -34,7 +34,10 @@ export interface MistralResponse {
 }
 
 /**
- * Call Mistral AI API
+ * Appel direct de l'API Mistral.
+ * IA: oui (LLM cloud). Entree: messages + options.
+ * Sortie: texte brut (string).
+ * Limites: cout par token et latence reseau.
  */
 export async function callMistral(
   messages: MistralMessage[],
@@ -85,7 +88,9 @@ export async function callMistral(
 }
 
 /**
- * Parse JSON response from AI
+ * Parse une reponse JSON produite par le LLM.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: texte. Sortie: objet JSON.
  */
 export function parseAIJson<T>(response: string): T {
   try {
@@ -99,14 +104,17 @@ export function parseAIJson<T>(response: string): T {
 }
 
 /**
- * Check if Mistral API is configured
+ * Verifie si la cle Mistral est presente.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 export function isMistralConfigured(): boolean {
   return !!process.env.MISTRAL_API_KEY;
 }
 
 /**
- * Get AI-powered team suggestions
+ * Suggere des Pokemon pour completer une equipe.
+ * IA: oui (LLM cloud). Donnees envoyees: equipe + points d'evolution.
+ * Sortie: JSON structure (suggestions + notes).
  */
 export async function getTeamSuggestions(
   currentTeam: { id: number; name: string }[],
@@ -164,7 +172,9 @@ Suggère des Pokémon pour compléter cette équipe à 6. Fournis ${6 - currentT
 }
 
 /**
- * Generate battle commentary
+ * Genere un commentaire court de combat.
+ * IA: oui (LLM cloud). Donnees envoyees: contexte du tour.
+ * Sortie: texte court.
  */
 export async function getBattleCommentary(
   turn: number,
@@ -206,7 +216,9 @@ ${context.ko ? 'KO!' : ''}`,
 }
 
 /**
- * Pokédex assistant chat
+ * Assistant Pokédex conversationnel.
+ * IA: oui (LLM cloud). Donnees envoyees: message utilisateur + historique.
+ * Sortie: reponse en texte francais.
  */
 export async function getAssistantResponse(
   userMessage: string,

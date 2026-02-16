@@ -1,6 +1,7 @@
 /**
- * Unified LLM Types and Interfaces
- * Supports multiple providers: Ollama (local), Mistral, OpenAI
+ * Types et interfaces LLM.
+ * Cette section ne fait pas d'IA: elle definit les contrats de donnees.
+ * Liens cours IA: sorties structurees et validation des formats.
  */
 
 export type LLMProvider = "ollama" | "mistral" | "openai";

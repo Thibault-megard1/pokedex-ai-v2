@@ -12,8 +12,20 @@ import {
   buildSystemPrompt,
 } from '@/lib/assistantAdmin';
 
-// Load config functions
+/**
+ * Route API IA - Assistant Pokédex
+ * Pourquoi l'IA: fournir des reponses conversationnelles et contextualisees.
+ * Approche: LLM (Ollama local ou Mistral cloud) avec prompt systeme structure.
+ * Donnees envoyees: message utilisateur + historique + config admin.
+ * Sortie attendue: texte clair pour l'utilisateur (pas de JSON).
+ * Limites: reponse probabiliste, dependante du modele et du prompt.
+ */
+
+// Chargement de la configuration admin de l'assistant
+// Cette fonction n'utilise pas d'intelligence artificielle.
 function loadConfig(): AssistantConfig {
+  // Entree: rien. Sortie: config JSON (fichier) ou config par defaut.
+  // Processus: lit un fichier local de config admin si disponible.
   try {
     const configPath = join(process.cwd(), 'data', 'admin', 'assistant-config.json');
     if (existsSync(configPath)) {
@@ -26,7 +38,11 @@ function loadConfig(): AssistantConfig {
   return DEFAULT_CONFIG;
 }
 
+// Chargement des "patchs" de connaissance admin
+// Cette fonction n'utilise pas d'intelligence artificielle.
 function loadPatches(): KnowledgePatches {
+  // Entree: rien. Sortie: liste de correctifs (knowledge patches).
+  // Processus: lit un fichier JSON local, ou retourne une liste vide.
   try {
     const patchesPath = join(process.cwd(), 'data', 'admin', 'assistant-patches.json');
     if (existsSync(patchesPath)) {
@@ -39,6 +55,15 @@ function loadPatches(): KnowledgePatches {
   return { patches: [] };
 }
 
+/**
+ * POST /api/ai/assistant
+ * Entree: { message, history }
+ * Processus: detection d'intention, construction du prompt, appel LLM, nettoyage.
+ * Sortie: { response, metadata }
+ * IA: LLM (Ollama/Mistral) pour generer une reponse conversationnelle.
+ * Donnees envoyees au modele: system prompt + historique + message utilisateur.
+ * Liens cours IA: prompt engineering, sortie controlee, REST API.
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -51,11 +76,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Load admin configuration
+    // Charge config admin et correctifs de connaissance (pas d'IA)
     const config = loadConfig();
     const patches = loadPatches();
 
-    // Check for knowledge patches first
+    // Applique un patch si une correction est definie (logique rule-based)
     const matchingPatch = findMatchingPatch(message, patches);
     if (matchingPatch && matchingPatch.behavior === 'replace') {
       // Return patched answer immediately
@@ -70,10 +95,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Detect user intent
+    // Detection d'intention (heuristique, pas d'IA generative)
     const userIntent = detectIntent(message, config);
 
-    // Build conversation history with enhanced system prompt
+    // Construction du prompt systeme et de l'historique conversationnel
     const systemPrompt = buildSystemPrompt(config, userIntent);
     const messages: LLMMessage[] = [
       {
@@ -94,14 +119,14 @@ export async function POST(req: NextRequest) {
     // Add current message
     messages.push({ role: 'user', content: message });
     
-    // Call unified LLM
+    // Appel du LLM (IA generative)
     const llmResponse = await callLLM({
       messages,
       temperature: 0.7,
       max_tokens: 500,
     });
 
-    // Validate and clean response
+    // Validation/cleaning pour limiter les reponses hors-sujet
     let finalResponse = llmResponse.content;
     if (config.responseValidator.enabled) {
       finalResponse = validateAndCleanResponse(finalResponse, userIntent, config);
@@ -121,7 +146,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[Assistant] Error:', error);
     
-    // Handle LLM errors gracefully
+    // Gestion des erreurs LLM (degrade proprement)
     if (error.code && error.provider) {
       const llmError = error as LLMError;
       return NextResponse.json(

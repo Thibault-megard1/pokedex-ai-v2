@@ -15,6 +15,11 @@ let _sessionsCache: Session[] | null = null;
 let _sessionsCacheTime = 0;
 const SESSION_CACHE_TTL = 5000; // 5 secondes
 
+/**
+ * Initialise les fichiers JSON locaux si besoin.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: aucune. Sortie: base prete (fichiers crees).
+ */
 export async function initDb() {
   if (_initialized) return; // Skip si déjà initialisé
   
@@ -26,19 +31,35 @@ export async function initDb() {
   _initialized = true;
 }
 
+/**
+ * Genere un identifiant unique.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export function newId() {
   return crypto.randomUUID();
 }
 
+/**
+ * Lit la liste des utilisateurs.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getUsers(): Promise<User[]> {
   await initDb();
   return readJsonFile<User[]>(USERS_PATH, []);
 }
 
+/**
+ * Sauvegarde la liste des utilisateurs.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function saveUsers(users: User[]) {
   await writeJsonFile(USERS_PATH, users);
 }
 
+/**
+ * Lit les sessions avec cache en memoire.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getSessions(): Promise<Session[]> {
   await initDb();
   
@@ -55,6 +76,10 @@ export async function getSessions(): Promise<Session[]> {
   return sessions;
 }
 
+/**
+ * Sauvegarde les sessions et invalide le cache.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function saveSessions(sessions: Session[]) {
   await writeJsonFile(SESSIONS_PATH, sessions);
   // Invalider le cache
@@ -62,20 +87,36 @@ export async function saveSessions(sessions: Session[]) {
   _sessionsCacheTime = Date.now();
 }
 
+/**
+ * Lit la base des equipes.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getTeamsDb(): Promise<TeamsDb> {
   await initDb();
   return readJsonFile<TeamsDb>(TEAMS_PATH, {});
 }
 
+/**
+ * Sauvegarde la base des equipes.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function saveTeamsDb(db: TeamsDb) {
   await writeJsonFile(TEAMS_PATH, db);
 }
 
+/**
+ * Recupere l'equipe d'un utilisateur.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getTeam(userId: string): Promise<TeamSlot[]> {
   const db = await getTeamsDb();
   return db[userId] ?? [];
 }
 
+/**
+ * Enregistre l'equipe d'un utilisateur.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function setTeam(userId: string, team: TeamSlot[]): Promise<void> {
   const db = await getTeamsDb();
   db[userId] = team;

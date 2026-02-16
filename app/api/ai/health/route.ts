@@ -1,12 +1,16 @@
 /**
  * GET /api/ai/health
- * Check status of configured AI provider
+ * Verifie l'etat du fournisseur IA configure.
+ * Cette fonction utilise une verification technique, pas un LLM.
+ * Liens cours IA: monitoring d'un service IA, REST API.
  */
 
 import { NextResponse } from "next/server";
 import { checkLLMHealth, getProviderConfig } from "@/lib/llm";
 
 export async function GET() {
+  // Entree: aucune. Sortie: status du provider IA.
+  // Cette fonction n'utilise pas d'intelligence artificielle.
   try {
     const config = getProviderConfig();
     const health = await checkLLMHealth();

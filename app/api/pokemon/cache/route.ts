@@ -12,6 +12,8 @@ import { getPokemonFromCache } from "@/lib/server/pokemonCache";
  * Falls back to PokeAPI if not cached.
  */
 export async function GET(req: NextRequest) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: id ou name. Sortie: Pokemon minimal depuis cache/PodéAPI.
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

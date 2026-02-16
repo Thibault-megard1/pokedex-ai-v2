@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPokemonDetail, getPokemonEvolutionChain } from "@/lib/pokeapi";
 
 export async function GET(req: NextRequest) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: parametre name. Sortie: details Pokemon + evolutions.
   try {
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("name");

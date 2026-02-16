@@ -1,9 +1,23 @@
-// API route for NPC dialogues with Ollama AI
+/**
+ * Route API IA - Dialogue NPC
+ * IA: LLM local via Ollama pour generer des reponses de PNJ.
+ * Donnees envoyees: nom du PNJ, contexte, message joueur, historique.
+ * Sortie attendue: texte court en personnage.
+ * Liens cours IA: prompt engineering, local vs cloud, REST API.
+ * Limites: depend de la disponibilite d'Ollama, fallback statique.
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434';
 
+/**
+ * POST /api/ai/npc
+ * Entree: { npcName, context, playerMessage, conversationHistory }
+ * Processus: build prompt -> appel Ollama -> fallback si echec.
+ * Sortie: { dialogue, source }
+ * Cette fonction utilise de l'IA (LLM local).
+ */
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest();
@@ -13,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const { npcName, context, playerMessage, conversationHistory } = await request.json();
 
-    // Build prompt for Ollama
+    // Construction du prompt pour le LLM local
     const systemPrompt = `${context}\n\nYou are ${npcName} in a Pokémon game. Respond in character with 1-3 short sentences. Keep responses friendly and game-appropriate.`;
     
     const messages = [
@@ -57,7 +71,7 @@ export async function POST(request: NextRequest) {
       console.warn('[NPC AI] Ollama unavailable:', ollamaError);
     }
 
-    // Fallback to predefined responses
+    // Fallback rule-based si l'IA est indisponible
     console.log('[NPC AI] Using fallback dialogue');
     const fallbackDialogues: Record<string, string[]> = {
       'Professor Oak': [

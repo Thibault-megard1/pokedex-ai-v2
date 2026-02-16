@@ -68,6 +68,8 @@ const MEGA_STONES: Record<string, string> = {
 const GIGAMAX_ITEM = "Soupe Gigamax"; // Item générique permettant de débloquer le facteur Gigamax
 
 function inferMegaStoneName(baseName: string, varietyName: string): string | null {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: noms de formes. Sortie: nom de mega-gemme ou null.
   const keyVariety = varietyName.toLowerCase();
   const keyBase = baseName.toLowerCase();
   if (MEGA_STONES[keyVariety]) return MEGA_STONES[keyVariety];
@@ -76,6 +78,8 @@ function inferMegaStoneName(baseName: string, varietyName: string): string | nul
 }
 
 function inferGigamaxItem(): string {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Sortie: item generique pour Gigamax.
   return GIGAMAX_ITEM;
 }
 
@@ -110,6 +114,8 @@ const POKEMON_NATURES: Nature[] = [
 
 // Fonction pour récupérer toutes les natures
 async function getAllNatures(): Promise<Nature[]> {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Retourne la liste statique des natures.
   return POKEMON_NATURES;
 }
 
@@ -136,12 +142,16 @@ export type EvolutionTree = {
 
 // Fonction pour extraire l'ID d'une URL
 function extractIdFromUrl(url: string): number {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: URL PokéAPI. Sortie: identifiant numerique.
   const id = url.split("/").filter(Boolean).pop();
   return id ? parseInt(id, 10) : 0;
 }
 
 // Fonction pour construire l'arbre d'évolution complet
 async function buildEvolutionTreeWithNames(chain: any): Promise<EvolutionNode> {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: chain evolution PokéAPI. Sortie: arbre d'evolution enrichi.
   if (!chain) return { id: 0, name: "unknown" };
 
   const id = extractIdFromUrl(chain.species?.url);
@@ -178,6 +188,8 @@ async function buildEvolutionTreeWithNames(chain: any): Promise<EvolutionNode> {
 
 // Fonction pour construire l'arbre d'évolution complet (synchrone, sans noms français)
 function buildEvolutionTree(chain: any): EvolutionNode {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: chain evolution PokéAPI. Sortie: arbre d'evolution simple.
   if (!chain) return { id: 0, name: "unknown" };
 
   const id = extractIdFromUrl(chain.species?.url);
@@ -200,6 +212,8 @@ function buildEvolutionTree(chain: any): EvolutionNode {
 
 // Fonction pour aplatir la chaîne d'évolution (legacy pour compatibilité)
 function flattenEvolutionChain(chain: any, acc: EvolutionNode[] = []): EvolutionNode[] {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
+  // Entree: chain evolution. Sortie: liste plate de noeuds.
   if (!chain) return acc;
 
   const id = extractIdFromUrl(chain.species?.url);
@@ -356,6 +370,13 @@ function compare(a: number | string, b: number | string) {
   return Number(a) - Number(b);
 }
 
+/**
+ * Recupere le detail complet d'un Pokemon.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: nom ou ID. Sortie: PokemonDetail.
+ * Processus: appel PokéAPI + cache local + enrichissement (evolutions, formes).
+ * Liens cours IA: REST API, structuration des donnees.
+ */
 export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail> {
   const normalizedId = normalizeName(nameOrId);
   
@@ -623,6 +644,11 @@ export async function getPokemonDetail(nameOrId: string): Promise<PokemonDetail>
   return detail;
 }
 
+/**
+ * Recherche/filtre la liste de Pokemon.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: params (page, type, region, tri). Sortie: PokemonQueryResult.
+ */
 export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQueryResult> {
   const page = Math.max(1, params.page);
   const pageSize = Math.max(1, params.pageSize);
@@ -734,6 +760,10 @@ export async function queryPokemon(params: PokemonQueryParams): Promise<PokemonQ
   return { items, total, totalPages };
 }
 
+/**
+ * Donne l'ID precedent/suivant (navigation).
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getAdjacentPokemonId(id: number, dir: "prev" | "next") {
   const MIN = 1;
   const MAX = 10325; // Pokédex complet incluant toutes les formes
@@ -755,6 +785,10 @@ export async function getAdjacentPokemonId(id: number, dir: "prev" | "next") {
 }
 
 // Récupère l'arbre d'évolution complet d'un Pokémon
+/**
+ * Recupere l'arbre d'evolution d'un Pokemon (noeuds).
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getPokemonEvolutionTree(pokemonId: number): Promise<EvolutionNode | null> {
   try {
     const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`;
@@ -776,6 +810,10 @@ export async function getPokemonEvolutionTree(pokemonId: number): Promise<Evolut
 }
 
 // Récupère la chaîne d'évolution complète d'un Pokémon (legacy, aplatie)
+/**
+ * Recupere la chaine d'evolution aplatit.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getPokemonEvolutionChain(pokemonId: number): Promise<EvolutionNode[]> {
   try {
     const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`;

@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM, type LLMMessage, type LLMError } from '@/lib/llm';
 
+/**
+ * Route API IA - Suggestions d'equipe
+ * IA: LLM (Ollama/Mistral) pour proposer des Pokemon complementaires.
+ * Donnees envoyees: equipe actuelle + points d'evolution disponibles.
+ * Sortie attendue: JSON structure (suggestions + analyse).
+ * Liens cours IA: prompt engineering, sortie structuree, REST API.
+ * Limites: suggestions probabilistes, dependantes du modele.
+ */
 export async function POST(req: NextRequest) {
+  // Entree: body JSON { currentTeam, evolutionPoints }
+  // Processus: validation -> prompt -> appel LLM -> parse JSON
+  // Sortie: suggestions + metadata
   try {
     const body = await req.json();
     const { currentTeam, evolutionPoints } = body;
@@ -20,7 +31,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Build prompt for team suggestions
+    // Construction du prompt LLM (IA generative)
     const teamDescription = currentTeam.map((p: any) => 
       `${p.name} (${p.types?.join('/')}) - Stats: HP ${p.hp}, Atk ${p.attack}, Def ${p.defense}`
     ).join('\n');
@@ -61,6 +72,7 @@ Retourne un JSON avec:
       response_format: { type: 'json_object' }
     });
     
+    // Parse de la sortie structuree
     const suggestions = JSON.parse(llmResponse.content);
     
     return NextResponse.json({
@@ -74,6 +86,7 @@ Retourne un JSON avec:
   } catch (error: any) {
     console.error('[Team Builder] Error:', error);
     
+    // Gestion des erreurs LLM
     if (error.code && error.provider) {
       const llmError = error as LLMError;
       return NextResponse.json(

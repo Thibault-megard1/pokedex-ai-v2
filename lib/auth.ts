@@ -6,6 +6,13 @@ import { getUsers, saveUsers, getSessions, saveSessions, newId } from "@/lib/db"
 
 const COOKIE_NAME = "pokedex_session";
 
+/**
+ * Inscription d'un utilisateur.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: pseudo + mot de passe. Sortie: utilisateur cree.
+ * Processus: verifie unicite, hash du mot de passe, sauvegarde JSON.
+ * Limites: stockage local en fichier, pas de SGBD.
+ */
 export async function registerUser(username: string, password: string): Promise<User> {
   const users = await getUsers();
   const exists = users.some(u => u.username.toLowerCase() === username.toLowerCase());
@@ -24,6 +31,11 @@ export async function registerUser(username: string, password: string): Promise<
   return user;
 }
 
+/**
+ * Verification des identifiants.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: pseudo + mot de passe. Sortie: utilisateur si ok.
+ */
 export async function verifyLogin(username: string, password: string): Promise<User> {
   const users = await getUsers();
   const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
@@ -35,10 +47,19 @@ export async function verifyLogin(username: string, password: string): Promise<U
   return user;
 }
 
+/**
+ * Genere un token de session aleatoire.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 function makeToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+/**
+ * Cree une session et pose un cookie HTTP-only.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: utilisateur. Sortie: session.
+ */
 export async function createSession(user: User): Promise<Session> {
   const sessions = await getSessions();
   const session: Session = {
@@ -60,6 +81,10 @@ export async function createSession(user: User): Promise<Session> {
   return session;
 }
 
+/**
+ * Detruit la session courante (cookie + stockage).
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function destroySession(): Promise<void> {
   const token = cookies().get(COOKIE_NAME)?.value;
   cookies().delete(COOKIE_NAME);
@@ -70,6 +95,10 @@ export async function destroySession(): Promise<void> {
   await saveSessions(filtered);
 }
 
+/**
+ * Recupere la session courante a partir du cookie.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ */
 export async function getCurrentSession(): Promise<Session | null> {
   const token = cookies().get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -79,7 +108,9 @@ export async function getCurrentSession(): Promise<Session | null> {
 }
 
 /**
- * Get current user from session (for API routes)
+ * Recupere l'utilisateur courant via la session.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: cookie. Sortie: utilisateur ou null.
  */
 export async function getUserFromRequest(): Promise<User | null> {
   const session = await getCurrentSession();
@@ -90,7 +121,8 @@ export async function getUserFromRequest(): Promise<User | null> {
 }
 
 /**
- * Check if current user is admin
+ * Verifie si l'utilisateur courant est admin.
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 export async function isAdmin(): Promise<boolean> {
   const user = await getUserFromRequest();
@@ -98,7 +130,8 @@ export async function isAdmin(): Promise<boolean> {
 }
 
 /**
- * Require admin access (throws if not admin)
+ * Exige un acces admin (leve une erreur sinon).
+ * Cette fonction n'utilise pas d'intelligence artificielle.
  */
 export async function requireAdmin(): Promise<User> {
   const user = await getUserFromRequest();

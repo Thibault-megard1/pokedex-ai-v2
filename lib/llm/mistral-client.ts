@@ -1,6 +1,7 @@
 /**
- * Mistral Client (Wrapper for existing implementation)
- * Adapts existing MistralClient to unified LLM interface
+ * Client Mistral (LLM cloud).
+ * IA: oui (LLM cloud). Avantage: qualite, mais cout/latence.
+ * Liens cours IA: cloud vs local, cout par token.
  */
 
 import type { LLMMessage, LLMResponse, LLMError } from "./types";
@@ -34,6 +35,11 @@ export class MistralClient {
   private baseUrl: string;
   private defaultModel: string;
 
+  /**
+   * Construit le client Mistral.
+   * Entree: cle API + modele.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
+   */
   constructor(apiKey: string, model: string = DEFAULT_MODEL) {
     if (!apiKey) {
       throw this.createError("MISTRAL_NO_API_KEY", "API key is required");
@@ -44,7 +50,8 @@ export class MistralClient {
   }
 
   /**
-   * Check if Mistral API is accessible
+   * Verifie si l'API Mistral est accessible.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
    */
   async healthCheck(): Promise<{ healthy: boolean; error?: string }> {
     try {
@@ -86,7 +93,9 @@ export class MistralClient {
   }
 
   /**
-   * Call Mistral chat completions API
+   * Appel du endpoint chat de Mistral.
+   * IA: oui (LLM cloud). Donnees: messages + options.
+   * Sortie: LLMResponse.
    */
   async chat(
     messages: LLMMessage[],
@@ -174,7 +183,8 @@ export class MistralClient {
   }
 
   /**
-   * Create a standardized LLM error
+   * Construit une erreur standardisee Mistral.
+   * Cette fonction n'utilise pas d'intelligence artificielle.
    */
   private createError(code: string, details: string = ""): LLMError {
     const errorMessages: Record<string, { en: string; fr: string }> = {

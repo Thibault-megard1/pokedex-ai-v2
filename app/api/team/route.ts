@@ -13,6 +13,7 @@ const TeamBody = z.object({
 });
 
 export async function GET() {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
   // Récupère l'équipe enregistrée pour l'utilisateur courant (ou tableau vide si non connecté).
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ team: [] });
@@ -22,6 +23,7 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
   // Sauvegarde une équipe : valide le payload, vérifie chaque Pokémon, trie et stocke par slot.
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
@@ -47,6 +49,7 @@ export async function PUT(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
   // Ajoute un Pokémon à un slot spécifique
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
@@ -93,6 +96,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  // Cette fonction n'utilise pas d'intelligence artificielle.
   // Supprime un Pokémon d'un slot spécifique
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
