@@ -1,1 +1,65 @@
-{}
+{
+  "104585f3-4600-4efc-88c8-f3c5255edcfd": {
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "result": {
+      "primary": {
+        "id": 337,
+        "name": "lunatone",
+        "name_fr": "Séléroc",
+        "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/337.png",
+        "confidence": 0.76,
+        "reasons": [
+          "Votre stabilité et résilience s'accordent au type Roche",
+          "Votre intelligence et réflexion profonde s'accordent au type Psy"
+        ]
+      },
+      "alternatives": [
+        {
+          "id": 338,
+          "name": "solrock",
+          "name_fr": "Solaroc",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/338.png",
+          "confidence": 0.76,
+          "reasons": [
+            "Votre stabilité et résilience s'accordent au type Roche",
+            "Votre intelligence et réflexion profonde s'accordent au type Psy"
+          ]
+        },
+        {
+          "id": 219,
+          "name": "magcargo",
+          "name_fr": "Volcaropod",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/219.png",
+          "confidence": 0.72,
+          "reasons": [
+            "Votre stabilité et résilience s'accordent au type Roche",
+            "Votre personnalité s'aligne naturellement avec ce Pokémon"
+          ]
+        },
+        {
+          "id": 639,
+          "name": "terrakion",
+          "name_fr": "Terrakium",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/639.png",
+          "confidence": 0.72,
+          "reasons": [
+            "Votre stabilité et résilience s'accordent au type Roche",
+            "Votre personnalité s'aligne naturellement avec ce Pokémon"
+          ]
+        }
+      ],
+      "traits_inferred": [
+        "Introverti",
+        "Déterminé",
+        "Rapide",
+        "Courageux",
+        "Leader",
+        "Altruiste",
+        "Analytique",
+        "Collaboratif",
+        "Fidèle"
+      ]
+    },
+    "completedAt": "2026-02-16T15:49:09.180Z"
+  }
+}

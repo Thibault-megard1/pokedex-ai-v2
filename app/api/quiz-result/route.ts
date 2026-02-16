@@ -1,6 +1,7 @@
+import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { readUserFromSession } from "@/lib/auth";
-import { readJSON, writeJSON } from "@/lib/db";
+import { getUserFromRequest } from "@/lib/auth";
+import { DATA_DIR, readJsonFile, writeJsonFile } from "@/lib/utils";
 
 type QuizResultData = {
   userId: string;
@@ -30,17 +31,17 @@ type QuizResultsDB = {
   [userId: string]: QuizResultData;
 };
 
-const QUIZ_RESULTS_PATH = "data/quiz-results.json";
+const QUIZ_RESULTS_PATH = path.join(DATA_DIR, "quiz-results.json");
 
 // GET - Retrieve user's quiz result
 export async function GET(req: NextRequest) {
-  const user = await readUserFromSession(req);
+  const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const db = await readJSON<QuizResultsDB>(QUIZ_RESULTS_PATH);
+    const db = await readJsonFile<QuizResultsDB>(QUIZ_RESULTS_PATH, {});
     const userResult = db[user.id];
 
     if (!userResult) {
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
 
 // POST - Save user's quiz result
 export async function POST(req: NextRequest) {
-  const user = await readUserFromSession(req);
+  const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Result is required" }, { status: 400 });
     }
 
-    let db = await readJSON<QuizResultsDB>(QUIZ_RESULTS_PATH);
+    let db = await readJsonFile<QuizResultsDB>(QUIZ_RESULTS_PATH, {});
 
     // Check if user already has a result
     if (db[user.id] && !overwrite) {
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
       completedAt: new Date().toISOString()
     };
 
-    await writeJSON(QUIZ_RESULTS_PATH, db);
+    await writeJsonFile(QUIZ_RESULTS_PATH, db);
 
     return NextResponse.json({ success: true, result: db[user.id] });
   } catch (error) {
@@ -100,15 +101,15 @@ export async function POST(req: NextRequest) {
 
 // DELETE - Remove user's quiz result
 export async function DELETE(req: NextRequest) {
-  const user = await readUserFromSession(req);
+  const user = await getUserFromRequest();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    let db = await readJSON<QuizResultsDB>(QUIZ_RESULTS_PATH);
+    let db = await readJsonFile<QuizResultsDB>(QUIZ_RESULTS_PATH, {});
     delete db[user.id];
-    await writeJSON(QUIZ_RESULTS_PATH, db);
+    await writeJsonFile(QUIZ_RESULTS_PATH, db);
 
     return NextResponse.json({ success: true });
   } catch (error) {
