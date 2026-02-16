@@ -9,6 +9,12 @@ import { calculateDamage, applyDamage } from "./damage";
 import { validateBattle } from "./validation";
 import { applyEvolutionPoints } from "./evolution";
 import { chooseMove } from "./ai";
+import { 
+  initializeStatStages, 
+  applyMoveEffects, 
+  MOVE_EFFECTS_DATABASE,
+  type EffectLog 
+} from "./effects";
 
 /**
  * Initializes a new battle
@@ -27,6 +33,16 @@ export function initializeBattle(
   // Apply evolution points to both teams
   applyEvolutionPoints(team1.pokemon, team1.evolutionPoints);
   applyEvolutionPoints(team2.pokemon, team2.evolutionPoints);
+
+  // Initialize stat stages and status for all Pokémon
+  for (const pokemon of [...team1.pokemon, ...team2.pokemon]) {
+    if (!pokemon.statStages) {
+      pokemon.statStages = initializeStatStages();
+    }
+    if (pokemon.statusCondition === undefined) {
+      pokemon.statusCondition = null;
+    }
+  }
 
   // Set starting active Pokémon (first in team)
   team1.activeIndex = 0;
@@ -82,7 +98,7 @@ function determineTurnOrder(
 }
 
 /**
- * Executes a single attack
+ * Executes a single attack with effects
  */
 function executeAttack(
   attackerTeam: BattleTeam,
@@ -95,13 +111,23 @@ function executeAttack(
 
   const hpBefore = defender.currentHp;
   
+  // Calculate and apply damage
   const damageResult = calculateDamage(attacker, defender, move);
   const actualDamage = applyDamage(defender, damageResult.damage);
+  
+  // Add move effects from database if available
+  if (!move.effects && MOVE_EFFECTS_DATABASE[move.name]) {
+    move.effects = MOVE_EFFECTS_DATABASE[move.name];
+  }
+  
+  // Apply move effects (recoil, drain, stat changes, etc.)
+  const effectLogs = applyMoveEffects(attacker, defender, move, actualDamage);
   
   const hpAfter = defender.currentHp;
   const fainted = defender.isFainted;
 
-  return {
+  // Create turn record with effect logs
+  const turn: BattleTurn & { effectLogs?: EffectLog[] } = {
     turnNumber,
     attacker: {
       teamId: attackerTeam.teamId,
@@ -119,8 +145,11 @@ function executeAttack(
     isCritical: damageResult.isCritical,
     hpBefore,
     hpAfter,
-    fainted
+    fainted,
+    effectLogs: effectLogs.length > 0 ? effectLogs : undefined
   };
+
+  return turn as BattleTurn;
 }
 
 /**

@@ -9,6 +9,14 @@ import {
   getBattleSummary 
 } from "@/lib/battle/engine";
 import { createOptimalEvolutionAllocation } from "@/lib/battle/evolution";
+import { 
+  generateOpponentTeam, 
+  type TournamentRules,
+  type TeamGenerationResult 
+} from "@/lib/ai/teamBuilder";
+import { useAdminView } from "@/components/AdminViewProvider";
+import { AdminDebugPanel } from "@/components/AdminDebugComponents";
+import { initializeStatStages } from "@/lib/battle/effects";
 import type { 
   BattleTeam, 
   BattlePokemon, 
@@ -25,7 +33,72 @@ type PokemonSlot = {
   evolutionChain: string[];
 };
 
+// Helper function to fetch real moves for a Pokemon at a specific level
+async function fetchPokemonMoves(pokemonName: string, targetLevel: number) {
+  try {
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`);
+    if (!res.ok) throw new Error(`Failed to fetch ${pokemonName}`);
+    
+    const data = await res.json();
+    const levelUpMoves: Array<{ name: string; level: number; type: string; power: number; damageClass: string; accuracy: number }> = [];
+    
+    if (data.moves && Array.isArray(data.moves)) {
+      for (const moveData of data.moves) {
+        const moveName = moveData.move?.name;
+        if (!moveName) continue;
+        
+        const versionDetail = moveData.version_group_details?.find(
+          (vd: any) => vd.move_learn_method?.name === "level-up"
+        );
+        
+        if (versionDetail) {
+          const learnLevel = versionDetail.level_learned_at || 1;
+          
+          if (learnLevel <= targetLevel) {
+            try {
+              const moveRes = await fetch(moveData.move.url);
+              const moveDetail = await moveRes.json();
+              
+              levelUpMoves.push({
+                name: moveName,
+                level: learnLevel,
+                type: moveDetail.type?.name || "normal",
+                power: moveDetail.power || 60,
+                damageClass: moveDetail.damage_class?.name || "physical",
+                accuracy: moveDetail.accuracy || 100,
+              });
+            } catch {
+              // Skip this move if we can't fetch details
+            }
+          }
+        }
+      }
+    }
+    
+    // Sort by level (highest first) and power
+    levelUpMoves.sort((a, b) => b.level - a.level || b.power - a.power);
+    
+    return levelUpMoves
+      .slice(0, 4)
+      .map(m => ({
+        name: m.name,
+        type: m.type,
+        power: m.power,
+        damageClass: m.damageClass,
+        accuracy: m.accuracy,
+      }));
+  } catch (error) {
+    console.error(`Error fetching moves for ${pokemonName}:`, error);
+    // Return default moves
+    return [
+      { name: "tackle", type: "normal", power: 40, damageClass: "physical", accuracy: 100 },
+      { name: "scratch", type: "normal", power: 40, damageClass: "physical", accuracy: 100 },
+    ];
+  }
+}
+
 export default function TournamentPage() {
+  const { adminViewEnabled } = useAdminView();
   const [playerTeam, setPlayerTeam] = useState<(PokemonSlot | null)[]>(Array(6).fill(null));
   const [searchValues, setSearchValues] = useState<string[]>(Array(6).fill(""));
   const [evolutionPoints, setEvolutionPoints] = useState<number[]>(Array(6).fill(0));
@@ -34,6 +107,74 @@ export default function TournamentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
+  const [tournamentRules, setTournamentRules] = useState<TournamentRules>({
+    allowLegendaries: false,
+    allowMegas: false,
+    allowGigantamax: false,
+    targetLevel: 50,
+  });
+  const [teamGeneration, setTeamGeneration] = useState<TeamGenerationResult | null>(null);
+  const [loadingTeam, setLoadingTeam] = useState(true);
+  const [teamLoaded, setTeamLoaded] = useState(false);
+
+  // Load user's saved team on mount
+  useEffect(() => {
+    loadSavedTeam();
+  }, []);
+
+  // Reload team when target level changes (to update moves)
+  useEffect(() => {
+    if (teamLoaded && !battleState) {
+      loadSavedTeam();
+    }
+  }, [tournamentRules.targetLevel]);
+
+  const loadSavedTeam = async () => {
+    setLoadingTeam(true);
+    try {
+      const teamRes = await fetch("/api/team", { cache: "no-store" });
+      const teamData = await teamRes.json();
+      
+      if (teamRes.ok && teamData.team && teamData.team.length > 0) {
+        // Load each Pokemon from the saved team
+        const loadedTeam: (PokemonSlot | null)[] = Array(6).fill(null);
+        
+        for (const slot of teamData.team) {
+          const res = await fetch(`/api/pokemon?name=${encodeURIComponent(slot.pokemonName)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const pokemon = data.pokemon;
+            
+            // Fetch real moves for this Pokemon at target level
+            const moves = await fetchPokemonMoves(pokemon.name, tournamentRules.targetLevel);
+            
+            loadedTeam[slot.slot - 1] = {
+              name: pokemon.name,
+              sprite: pokemon.sprite,
+              types: pokemon.types,
+              stats: {
+                hp: pokemon.stats.find((s: any) => s.name === "hp")?.value || 50,
+                attack: pokemon.stats.find((s: any) => s.name === "attack")?.value || 50,
+                defense: pokemon.stats.find((s: any) => s.name === "defense")?.value || 50,
+                specialAttack: pokemon.stats.find((s: any) => s.name === "special-attack")?.value || 50,
+                specialDefense: pokemon.stats.find((s: any) => s.name === "special-defense")?.value || 50,
+                speed: pokemon.stats.find((s: any) => s.name === "speed")?.value || 50,
+              },
+              moves,
+              evolutionChain: pokemon.evolutionChain?.map((e: any) => e.name) || [pokemon.name],
+            };
+          }
+        }
+        
+        setPlayerTeam(loadedTeam);
+        setTeamLoaded(true);
+      }
+    } catch (error) {
+      console.error("Error loading saved team:", error);
+    } finally {
+      setLoadingTeam(false);
+    }
+  };
 
   // Auto-play turns
   useEffect(() => {
@@ -52,6 +193,14 @@ export default function TournamentPage() {
         if (lastTurn) {
           const log = `Tour ${lastTurn.turnNumber}: ${lastTurn.attacker.pokemonName} utilise ${lastTurn.attacker.move.name} → ${lastTurn.damage} dégâts${lastTurn.isCritical ? " (Critique!)" : ""} (×${lastTurn.effectiveness})`;
           setBattleLog(prev => [...prev, log]);
+          
+          // Add effect logs if any
+          const effectLogs = (lastTurn as any).effectLogs;
+          if (effectLogs && Array.isArray(effectLogs)) {
+            effectLogs.forEach((effect: any) => {
+              setBattleLog(prev => [...prev, `  ↳ ${effect.description}`]);
+            });
+          }
         }
       }
     }, 1500);
@@ -113,70 +262,12 @@ export default function TournamentPage() {
     const currentTotal = totalPointsUsed;
     const newTotal = currentTotal - evolutionPoints[slot] + newValue;
     
-    if (newTotal > 6) return; // Can't exceed 6 points
-
+    if (newTotal > 6) return; // Don't allow exceeding max points
+    
+    // Update evolution points
     const newPoints = [...evolutionPoints];
     newPoints[slot] = newValue;
     setEvolutionPoints(newPoints);
-  };
-
-  const generateAITeam = async (): Promise<BattleTeam> => {
-    const aiPokemonNames = ["charizard", "blastoise", "venusaur", "pikachu", "lucario", "garchomp"];
-    const aiPokemon: BattlePokemon[] = [];
-
-    for (let i = 0; i < 6; i++) {
-      const name = aiPokemonNames[i];
-      try {
-        const res = await fetch(`/api/pokemon/${name}`);
-        const data = await res.json();
-
-        aiPokemon.push({
-          id: data.id,
-          name: data.name,
-          types: data.types,
-          baseStats: {
-            hp: data.stats.find((s: any) => s.name === "hp")?.value || 80,
-            attack: data.stats.find((s: any) => s.name === "attack")?.value || 80,
-            defense: data.stats.find((s: any) => s.name === "defense")?.value || 80,
-            specialAttack: data.stats.find((s: any) => s.name === "special-attack")?.value || 80,
-            specialDefense: data.stats.find((s: any) => s.name === "special-defense")?.value || 80,
-            speed: data.stats.find((s: any) => s.name === "speed")?.value || 80,
-          },
-          currentStats: {
-            hp: data.stats.find((s: any) => s.name === "hp")?.value || 80,
-            attack: data.stats.find((s: any) => s.name === "attack")?.value || 80,
-            defense: data.stats.find((s: any) => s.name === "defense")?.value || 80,
-            specialAttack: data.stats.find((s: any) => s.name === "special-attack")?.value || 80,
-            specialDefense: data.stats.find((s: any) => s.name === "special-defense")?.value || 80,
-            speed: data.stats.find((s: any) => s.name === "speed")?.value || 80,
-          },
-          moves: [
-            { name: "tackle", type: "normal", power: 40, damageClass: "physical", accuracy: 100 },
-            { name: "fire-blast", type: "fire", power: 110, damageClass: "special", accuracy: 85 },
-            { name: "hydro-pump", type: "water", power: 110, damageClass: "special", accuracy: 80 },
-            { name: "thunderbolt", type: "electric", power: 90, damageClass: "special", accuracy: 100 },
-          ],
-          currentHp: data.stats.find((s: any) => s.name === "hp")?.value || 80,
-          maxHp: data.stats.find((s: any) => s.name === "hp")?.value || 80,
-          evolutionStage: 0,
-          evolutionChain: [data.name],
-          isFainted: false,
-        });
-      } catch (error) {
-        console.error(`Error loading AI Pokemon ${name}:`, error);
-      }
-    }
-
-    const aiEvolutionAllocation = createOptimalEvolutionAllocation(aiPokemon);
-
-    return {
-      teamId: "ai-team",
-      name: "Équipe IA",
-      pokemon: aiPokemon,
-      evolutionPoints: aiEvolutionAllocation,
-      totalEvolutionPointsUsed: aiEvolutionAllocation.reduce((sum, a) => sum + a.points, 0),
-      activeIndex: 0,
-    };
   };
 
   const startBattle = async () => {
@@ -195,44 +286,57 @@ export default function TournamentPage() {
     setCurrentTurnIndex(0);
 
     try {
-      // Create player team
-      const playerBattleTeam: BattleTeam = {
-        teamId: "player-team",
-        name: "Votre Équipe",
-        pokemon: playerTeam.map((p, i) => ({
+      // Convert player team to BattlePokemon format for AI analysis
+      const playerBattlePokemon: BattlePokemon[] = playerTeam
+        .filter((p): p is PokemonSlot => p !== null)
+        .map((p, i) => ({
           id: i + 1,
-          name: p!.name,
-          types: p!.types,
-          baseStats: p!.stats,
-          currentStats: p!.stats,
-          moves: p!.moves.map(m => ({
+          name: p.name,
+          types: p.types,
+          baseStats: p.stats,
+          currentStats: { ...p.stats },
+          statStages: initializeStatStages(),
+          moves: p.moves.map(m => ({
             name: m.name,
             type: m.type,
             power: m.power,
             damageClass: m.damageClass as "physical" | "special" | "status",
             accuracy: m.accuracy,
           })),
-          currentHp: p!.stats.hp,
-          maxHp: p!.stats.hp,
+          currentHp: p.stats.hp,
+          maxHp: p.stats.hp,
           evolutionStage: 0,
-          evolutionChain: p!.evolutionChain,
+          evolutionChain: p.evolutionChain,
           isFainted: false,
-        })),
+          statusCondition: null,
+        }));
+
+      // Generate AI team based on player team analysis
+      console.log("Starting AI team generation...");
+      const result = await generateOpponentTeam(playerBattlePokemon, tournamentRules);
+      console.log("AI team generated:", result);
+      setTeamGeneration(result);
+
+      // Create player battle team
+      const playerBattleTeam: BattleTeam = {
+        teamId: "player-team",
+        name: "Votre Équipe",
+        pokemon: playerBattlePokemon,
         evolutionPoints: evolutionPoints.map((points, index) => ({ pokemonIndex: index, points })),
         totalEvolutionPointsUsed: totalPointsUsed,
         activeIndex: 0,
       };
 
-      // Generate AI team
-      const aiTeam = await generateAITeam();
-
       // Initialize battle
-      const battle = initializeBattle(playerBattleTeam, aiTeam);
+      console.log("Initializing battle...");
+      const battle = initializeBattle(playerBattleTeam, result.team);
       setBattleState(battle);
       setBattleLog(["⚡ Le combat commence !"]);
+      console.log("Battle started successfully");
     } catch (error) {
       console.error("Error starting battle:", error);
-      alert("Erreur lors du démarrage du combat");
+      const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+      alert(`Erreur lors du démarrage du combat: ${errorMessage}\n\nVérifiez la console pour plus de détails.`);
     } finally {
       setIsLoading(false);
     }
@@ -254,11 +358,105 @@ export default function TournamentPage() {
 
         {!battleState ? (
           <>
-            {/* Team Builder */}
+            {loadingTeam ? (
+              <div className="card p-6">
+                <div className="flex items-center justify-center gap-3 py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  <span className="text-lg">Chargement de votre équipe...</span>
+                </div>
+              </div>
+            ) : !teamLoaded ? (
+              <div className="card p-6">
+                <div className="text-center py-12">
+                  <img src="/icons/ui/ic-info.png" alt="Info" className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <h2 className="text-xl font-bold mb-2">Aucune équipe sauvegardée</h2>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    Vous devez d'abord créer une équipe dans la page "Équipe"
+                  </p>
+                  <a href="/team" className="btn btn-primary inline-flex items-center gap-2">
+                    <img src="/icons/ui/ic-pokemon.png" alt="Team" className="w-5 h-5" />
+                    <span>Créer mon équipe</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <>
+            {/* Tournament Rules */}
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-4">
-                <img src="/icons/ui/ic-pokemon.png" alt="Équipe" className="w-6 h-6" />
-                <h2 className="text-xl font-bold">Construisez votre équipe (6 Pokémon)</h2>
+                <img src="/icons/ui/ic-info.png" alt="Règles" className="w-6 h-6" />
+                <h2 className="text-xl font-bold">Règles du Tournoi</h2>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-2">
+                  <span className="text-2xl">🤖</span>
+                  <div>
+                    <h3 className="font-bold mb-1">Génération Intelligente de l'Équipe Adverse</h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      L'IA analysera votre équipe pour détecter vos faiblesses et forces, puis générera une équipe adverse optimisée pour vous contrer. 
+                      Elle sélectionnera des Pokémon avec une couverture de types stratégique, un équilibre défensif/offensif, et des contre-stratégies adaptées.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tournamentRules.allowLegendaries}
+                    onChange={(e) => setTournamentRules({ ...tournamentRules, allowLegendaries: e.target.checked })}
+                    className="w-5 h-5"
+                  />
+                  <span>Autoriser les Légendaires</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tournamentRules.allowMegas}
+                    onChange={(e) => setTournamentRules({ ...tournamentRules, allowMegas: e.target.checked })}
+                    className="w-5 h-5"
+                  />
+                  <span>Autoriser les Méga-Évolutions</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tournamentRules.allowGigantamax}
+                    onChange={(e) => setTournamentRules({ ...tournamentRules, allowGigantamax: e.target.checked })}
+                    className="w-5 h-5"
+                  />
+                  <span>Autoriser les Gigamax</span>
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="font-semibold">Niveau cible</span>
+                  <select
+                    value={tournamentRules.targetLevel}
+                    onChange={(e) => setTournamentRules({ ...tournamentRules, targetLevel: Number(e.target.value) })}
+                    className="border-2 border-gray-300 rounded px-3 py-2"
+                  >
+                    <option value={50}>Niveau 50</option>
+                    <option value={75}>Niveau 75</option>
+                    <option value={100}>Niveau 100</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            {/* Team Display */}
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <img src="/icons/ui/ic-pokemon.png" alt="Équipe" className="w-6 h-6" />
+                  <h2 className="text-xl font-bold">Votre Équipe</h2>
+                </div>
+                <a href="/team" className="btn text-sm">
+                  ✏️ Modifier l'équipe
+                </a>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -304,35 +502,11 @@ export default function TournamentPage() {
                             Max: {pokemon.evolutionChain.length - 1}
                           </div>
                         </div>
-
-                        <button
-                          onClick={() => {
-                            const newTeam = [...playerTeam];
-                            newTeam[index] = null;
-                            setPlayerTeam(newTeam);
-                            const newSearchValues = [...searchValues];
-                            newSearchValues[index] = "";
-                            setSearchValues(newSearchValues);
-                          }}
-                          className="btn text-sm w-full"
-                        >
-                          Retirer
-                        </button>
                       </div>
                     ) : (
-                      <PokemonAutocomplete
-                        id={`slot-${index}`}
-                        value={searchValues[index]}
-                        onChange={(value) => {
-                          const newSearchValues = [...searchValues];
-                          newSearchValues[index] = value;
-                          setSearchValues(newSearchValues);
-                          if (value && value.length > 2) {
-                            loadPokemon(value, index);
-                          }
-                        }}
-                        placeholder="Choisir un Pokémon"
-                      />
+                      <div className="text-center py-8 text-gray-400">
+                        Emplacement vide
+                      </div>
                     )}
                   </div>
                 ))}
@@ -348,7 +522,7 @@ export default function TournamentPage() {
                   disabled={playerTeam.filter(p => p !== null).length !== 6 || totalPointsUsed > 6 || isLoading}
                   className="btn btn-primary text-lg px-6 py-3 flex items-center gap-2"
                 >
-                  {isLoading ? "Chargement..." : (
+                  {isLoading ? "Génération de l'équipe adverse..." : (
                     <>
                       <img src="/icons/ui/nav-battle.png" alt="Battle" className="w-5 h-5" />
                       <span>Lancer le combat</span>
@@ -357,6 +531,8 @@ export default function TournamentPage() {
                 </button>
               </div>
             </div>
+            </>
+            )}
           </>
         ) : (
           <>
@@ -401,32 +577,120 @@ export default function TournamentPage() {
                 </div>
               )}
 
-              {/* Teams Display */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <img src="/icons/ui/ic-trainer.png" alt="Trainer" className="w-5 h-5" />
-                    <span className="font-bold">Votre Équipe</span>
+              {/* Teams Display - 3x2 Grid Layout */}
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                {/* Player Team */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 rounded-lg p-4 border-2 border-blue-400">
+                  <div className="flex items-center gap-2 mb-3">
+                    <img src="/icons/ui/ic-trainer.png" alt="Trainer" className="w-6 h-6" />
+                    <span className="font-bold text-lg">Votre Équipe</span>
                   </div>
-                  <div className="space-y-1">
-                    {battleState.team1.pokemon.map((p, i) => (
-                      <div key={i} className={`flex items-center justify-between text-sm ${p.isFainted ? "opacity-40 line-through" : i === battleState.team1.activeIndex ? "font-bold" : ""}`}>
-                        <span className="capitalize">{p.name}</span>
-                        <span>{p.currentHp} / {p.maxHp}</span>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-3 gap-2">
+                    {battleState.team1.pokemon.map((p, i) => {
+                      const sprite = playerTeam.find(pt => pt?.name === p.name)?.sprite || "/icons/ui/ic-pokemon.png";
+                      const hpPercent = (p.currentHp / p.maxHp) * 100;
+                      const isActive = i === battleState.team1.activeIndex;
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className={`relative bg-white dark:bg-gray-800 rounded-lg p-2 border-2 transition-all ${
+                            p.isFainted ? "opacity-40 grayscale" : 
+                            isActive ? "border-yellow-400 shadow-lg ring-2 ring-yellow-300" : 
+                            "border-gray-300 dark:border-gray-600"
+                          }`}
+                        >
+                          {isActive && (
+                            <div className="absolute -top-2 -right-2 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-full shadow">
+                              ⚡
+                            </div>
+                          )}
+                          <img 
+                            src={sprite} 
+                            alt={p.name} 
+                            className="w-16 h-16 mx-auto pixelated"
+                          />
+                          <div className="text-xs font-semibold text-center capitalize truncate mt-1">
+                            {p.name}
+                          </div>
+                          <div className="text-xs text-center text-gray-600 dark:text-gray-400">
+                            {p.currentHp} / {p.maxHp}
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-1">
+                            <div 
+                              className={`h-1.5 rounded-full transition-all ${
+                                hpPercent > 50 ? "bg-green-500" : 
+                                hpPercent > 20 ? "bg-yellow-500" : 
+                                "bg-red-500"
+                              }`}
+                              style={{ width: `${hpPercent}%` }}
+                            />
+                          </div>
+                          {p.statusCondition && (
+                            <div className="text-xs text-center mt-1 font-bold text-purple-600">
+                              {p.statusCondition.toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
-                  <div className="font-bold mb-2">🤖 Équipe IA</div>
-                  <div className="space-y-1">
-                    {battleState.team2.pokemon.map((p, i) => (
-                      <div key={i} className={`flex items-center justify-between text-sm ${p.isFainted ? "opacity-40 line-through" : i === battleState.team2.activeIndex ? "font-bold" : ""}`}>
-                        <span className="capitalize">{p.name}</span>
-                        <span>{p.currentHp} / {p.maxHp}</span>
-                      </div>
-                    ))}
+                {/* AI Team */}
+                <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 rounded-lg p-4 border-2 border-red-400">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">🤖</span>
+                    <span className="font-bold text-lg">Équipe IA</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {battleState.team2.pokemon.map((p, i) => {
+                      const hpPercent = (p.currentHp / p.maxHp) * 100;
+                      const isActive = i === battleState.team2.activeIndex;
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className={`relative bg-white dark:bg-gray-800 rounded-lg p-2 border-2 transition-all ${
+                            p.isFainted ? "opacity-40 grayscale" : 
+                            isActive ? "border-yellow-400 shadow-lg ring-2 ring-yellow-300" : 
+                            "border-gray-300 dark:border-gray-600"
+                          }`}
+                        >
+                          {isActive && (
+                            <div className="absolute -top-2 -right-2 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-full shadow">
+                              ⚡
+                            </div>
+                          )}
+                          <img 
+                            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                            alt={p.name} 
+                            className="w-16 h-16 mx-auto pixelated"
+                          />
+                          <div className="text-xs font-semibold text-center capitalize truncate mt-1">
+                            {p.name}
+                          </div>
+                          <div className="text-xs text-center text-gray-600 dark:text-gray-400">
+                            {p.currentHp} / {p.maxHp}
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-1">
+                            <div 
+                              className={`h-1.5 rounded-full transition-all ${
+                                hpPercent > 50 ? "bg-green-500" : 
+                                hpPercent > 20 ? "bg-yellow-500" : 
+                                "bg-red-500"
+                              }`}
+                              style={{ width: `${hpPercent}%` }}
+                            />
+                          </div>
+                          {p.statusCondition && (
+                            <div className="text-xs text-center mt-1 font-bold text-purple-600">
+                              {p.statusCondition.toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -441,6 +705,34 @@ export default function TournamentPage() {
                 ))}
               </div>
             </div>
+
+            {/* Admin View - AI Team Generation Reasoning */}
+            {adminViewEnabled && teamGeneration && (
+              <>
+                <AdminDebugPanel
+                  title="🧠 AI Team Analysis"
+                  data={{
+                    playerWeaknesses: teamGeneration.analysis.playerWeaknesses,
+                    playerResistances: teamGeneration.analysis.playerResistances,
+                    playerTypes: teamGeneration.analysis.playerTypesCovered,
+                    opponentTypes: teamGeneration.analysis.opponentTypesCovered,
+                    defensiveBalance: `${teamGeneration.analysis.defensiveBalance.toFixed(0)}%`,
+                    offensiveBalance: `${teamGeneration.analysis.offensiveBalance.toFixed(0)}%`,
+                  }}
+                />
+
+                <AdminDebugPanel
+                  title="⚔️ AI Team Selection Reasoning"
+                  data={teamGeneration.reasoning.map((r) => ({
+                    pokemon: r.pokemonName,
+                    role: r.role,
+                    reason: r.reason,
+                    counters: r.counters.join(", ") || "none",
+                    coverageTypes: r.coverageTypes.join(", "),
+                  }))}
+                />
+              </>
+            )}
           </>
         )}
       </div>

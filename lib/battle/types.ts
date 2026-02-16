@@ -17,12 +17,38 @@ export interface BattlePokemonStats {
   speed: number;
 }
 
+export interface StatStages {
+  attack: number;        // -6 to +6
+  defense: number;
+  specialAttack: number;
+  specialDefense: number;
+  speed: number;
+  accuracy: number;
+  evasion: number;
+}
+
+export type StatusCondition = "burn" | "poison" | "paralysis" | "sleep" | "freeze" | null;
+
+export interface MoveEffect {
+  type: "stat-change" | "recoil" | "drain" | "self-damage" | "status";
+  target: "self" | "opponent";
+  // For stat changes
+  stat?: "attack" | "defense" | "special-attack" | "special-defense" | "speed" | "accuracy" | "evasion";
+  stages?: number; // -6 to +6
+  chance?: number; // 0-100, probability of effect
+  // For recoil/drain
+  percent?: number; // percentage of damage
+  // For status
+  status?: StatusCondition;
+}
+
 export interface BattleMove {
   name: string;
   type: string;
   power: number;
   damageClass: "physical" | "special" | "status";
   accuracy: number;
+  effects?: MoveEffect[]; // Secondary effects
 }
 
 export interface BattlePokemon {
@@ -31,12 +57,14 @@ export interface BattlePokemon {
   types: string[];
   baseStats: BattlePokemonStats;
   currentStats: BattlePokemonStats;
+  statStages: StatStages; // Stat modifications
   moves: BattleMove[];
   currentHp: number;
   maxHp: number;
   evolutionStage: number; // 0 = base, 1 = stage 1, 2 = stage 2
   evolutionChain: string[]; // ["bulbasaur", "ivysaur", "venusaur"]
   isFainted: boolean;
+  statusCondition: StatusCondition;
 }
 
 // ============================================================================
