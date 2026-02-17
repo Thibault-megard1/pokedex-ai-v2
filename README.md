@@ -42,28 +42,40 @@ Ce schema situe les pages principales et leur passage par les routes API.
 ```
 
 ```mermaid
-    graph TD
-        Accueil[Accueil] --> Pokedex
-        Accueil --> Equipe
-        Accueil --> Combat
-        Accueil --> Tournoi
-        Accueil --> Calculateur
-        Accueil --> Progression
-        Accueil --> Favori
-        Accueil --> Comparer
-        Accueil --> Statistique
-        Accueil --> Quizz
-    
-        Pokedex --> Liste, Favori, Comparer
-        Combat --> API
-        Quiz --> API
-        IA --> API
-        Jeu --> API
-        Équipe --> API
-        Favoris --> API
-        Statistiques --> API
-    
-        Auth[Authentification] --> Admin[Admin protégé]
+graph TD
+    Accueil[Accueil] --> Pokedex
+    Accueil --> Equipe
+    Accueil --> Combat
+    Accueil --> Tournoi
+    Accueil --> Calculateur
+    Accueil --> Progression
+    Accueil --> Favori
+    Accueil --> Comparer
+    Accueil --> Statistique
+    Accueil --> Quizz
+
+    Pokedex --> Liste
+    Pokedex --> Favori
+    Pokedex --> Comparer
+
+    Combat --> Tournoi
+    Combat --> Calculateur
+    Combat --> Jeu
+
+    Dresseur --> Equipe
+    Dresseur --> Quizz
+    Dresseur --> Statistique
+
+    Outils --> HubOutils[Hub Outils]
+    Outils --> CalculateurIV[Calculateur IV/EV]
+    Outils --> DegatsPro[Dégâts Pro]
+
+    IA --> HubIA[Hub IA]
+    IA --> AssistantIA[Assistant IA]
+    IA --> Equipe
+
+    HubIA --> AssistantIA
+    HubIA --> Equipe
 
 ```
 
