@@ -30,7 +30,7 @@ graph TD
     Accueil --> Favoris[Favoris]
     Accueil --> Stats[Statistiques]
 
-    Auth[Authentification] --> Admin[Admin (protégé)]
+    Auth[Authentification] --> Admin[Admin protégé]
 
     Pokedex --> API[API /api/*]
     Combat --> API
