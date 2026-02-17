@@ -30,11 +30,13 @@ Ce schema situe les pages principales et leur passage par les routes API.
     
         Auth[Authentification] --> Admin[Admin protégé]
     
-        Pokedex --> API["/api/*"]
+        Pokedex --> API
         Combat --> API
         Quiz --> API
         IA --> API
         Jeu --> API
+
+        API --> API["/api/*"]
 ```
 
 Le diagramme met en evidence la navigation centrale et le role transversal des endpoints `/api/*`.
