@@ -35,6 +35,9 @@ Ce schema situe les pages principales et leur passage par les routes API.
         Quiz --> API
         IA --> API
         Jeu --> API
+        Équipe --> API
+        Favoris --> API
+        Statistiques --> API
 
 ```
 
