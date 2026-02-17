@@ -1,11 +1,11 @@
 /**
  * Master Agent - Multi-Agent Principal
  * 
- * Orchestrateur intelligent qui utilise Ollama pour la réflexion
+ * Orchestrateur intelligent qui utilise Ollama ou Mistral pour la réflexion
  * et décide quel sous-agent utiliser selon le contexte.
  * 
  * Architecture:
- * - MasterAgent (réflexion Ollama)
+ * - MasterAgent (réflexion LLM)
  *   ├── TeamBuildingAgent (génération d'équipes)
  *   │   ├── OurTeamAgent (optimisation de notre équipe)
  *   │   └── OpponentTeamAgent (analyse/génération équipe adverse)
@@ -13,8 +13,20 @@
  */
 
 import { OllamaClient } from "@/lib/llm/ollama";
-import { TeamBuildingAgent, TeamBuildingRequest, TeamBuildingResponse } from "./subAgents/TeamBuildingAgent";
-import { BattleAgent, BattleRequest, BattleResponse } from "./subAgents/BattleAgent";
+import { MistralClient } from "@/lib/llm/mistral-client";
+import { 
+  TeamBuildingAgent, 
+  TeamBuildingRequest, 
+  TeamBuildingResponse 
+} from "./subAgents";
+import { 
+  BattleAgent, 
+  BattleRequest, 
+  BattleResponse 
+} from "./subAgents";
+
+// Type pour un client LLM générique (Ollama ou Mistral)
+type LLMClient = OllamaClient | MistralClient;
 
 // ============================================================================
 // TYPES
@@ -56,25 +68,54 @@ export interface MasterAgentResponse {
 // ============================================================================
 
 export class MasterAgent {
-  private ollama: OllamaClient;
+  private llmClient: LLMClient;
   private teamBuildingAgent: TeamBuildingAgent;
   private battleAgent: BattleAgent;
   private reflectionEnabled: boolean;
 
-  constructor(options: { enableReflection?: boolean } = {}) {
-    this.ollama = new OllamaClient();
+  constructor(options: { 
+    enableReflection?: boolean;
+    llmClient?: LLMClient;
+  } = {}) {
+    // Utiliser le client fourni ou créer un selon la config
+    this.llmClient = options.llmClient || this.createDefaultLLMClient();
     this.teamBuildingAgent = new TeamBuildingAgent();
     this.battleAgent = new BattleAgent();
     this.reflectionEnabled = options.enableReflection ?? true;
   }
 
   /**
+   * Crée un client LLM par défaut selon la variable d'environnement
+   */
+  private createDefaultLLMClient(): LLMClient {
+    const provider = process.env.LLM_PROVIDER || "ollama";
+    
+    if (provider === "mistral") {
+      const apiKey = process.env.MISTRAL_API_KEY;
+      const model = process.env.MISTRAL_MODEL;
+      
+      if (!apiKey) {
+        console.warn("[MasterAgent] MISTRAL_API_KEY not found, falling back to Ollama");
+        return new OllamaClient();
+      }
+      
+      return new MistralClient(apiKey, model);
+    }
+    
+    // Par défaut: Ollama
+    return new OllamaClient(
+      process.env.OLLAMA_BASE_URL,
+      process.env.OLLAMA_MODEL
+    );
+  }
+
+  /**
    * Point d'entrée principal
-   * Analyse la requête, réfléchit via Ollama, et délègue au bon sous-agent
+   * Analyse la requête, réfléchit via LLM, et délègue au bon sous-agent
    */
   async process(request: MasterAgentRequest): Promise<MasterAgentResponse> {
     try {
-      // 1. Déterminer la tâche (si pas explicite, utiliser Ollama pour réfléchir)
+      // 1. Déterminer la tâche (si pas explicite, utiliser LLM pour réfléchir)
       let task = request.task;
       let reflection: ReflectionResult | undefined;
 
@@ -110,24 +151,23 @@ export class MasterAgent {
       return {
         success: false,
         task: request.task || "unknown",
-        error: error.message || "Erreur inconnue dans MasterAgent"
+        error: error.message || "Erreur inconnue"
       };
     }
   }
 
   /**
-   * Réflexion via Ollama
-   * Analyse le contexte et détermine la meilleure action
+   * Réflexion via LLM (Ollama ou Mistral)
+   * Analyse le contexte et détermine quelle tâche effectuer
    */
   private async reflect(request: MasterAgentRequest): Promise<ReflectionResult> {
-    const systemPrompt = `Tu es un assistant Pokémon expert. Analyse la requête et détermine quelle action effectuer.
+    const systemPrompt = `Tu es MasterAgent, un orchestrateur intelligent pour une application Pokémon.
+Ton rôle est d'analyser les requêtes et de déterminer quelle tâche effectuer:
+- "team_building": construction/analyse/suggestion d'équipe
+- "battle": décisions de combat, switch, attaques
+- "analysis": analyse pure sans action
 
-Tâches possibles:
-- "team_building": Construire/optimiser une équipe Pokémon
-- "battle": Prendre une décision en combat (attaque, switch)
-- "analysis": Analyser une situation sans action immédiate
-
-Réponds en JSON avec ce format:
+Réponds en JSON:
 {
   "task": "team_building" | "battle" | "analysis",
   "reasoning": "Explication courte de ton choix",
@@ -138,7 +178,7 @@ Réponds en JSON avec ce format:
     const userMessage = this.buildReflectionPrompt(request);
 
     try {
-      const response = await this.ollama.chat(
+      const response = await this.llmClient.chat(
         [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage }
@@ -154,11 +194,11 @@ Réponds en JSON avec ce format:
         suggestedActions: parsed.suggestedActions || []
       };
     } catch (error) {
-      // Fallback si Ollama échoue
+      // Fallback si LLM échoue
       console.warn("[MasterAgent] Reflection failed, using inference fallback");
       return {
         task: this.inferTask(request),
-        reasoning: "Inférence locale (Ollama indisponible)",
+        reasoning: "Inférence locale (LLM indisponible)",
         confidence: 0.7,
         suggestedActions: []
       };
@@ -199,7 +239,7 @@ Réponds en JSON avec ce format:
   }
 
   /**
-   * Inférence locale sans Ollama
+   * Inférence locale sans LLM
    * Utilisé comme fallback ou si reflection désactivée
    */
   private inferTask(request: MasterAgentRequest): AgentTask {
@@ -299,25 +339,27 @@ Réponds en JSON avec ce format:
     request: MasterAgentRequest,
     reflection?: ReflectionResult
   ): Promise<MasterAgentResponse> {
-    // Pour l'analyse, on peut utiliser les deux agents
-    const analysisResults: any = {};
-
+    // Pour l'analyse, utiliser le mode "analyze" du TeamBuildingAgent
     if (request.context?.currentTeam) {
-      const teamAnalysis = await this.teamBuildingAgent.analyzeTeam(
-        request.context.currentTeam
-      );
-      analysisResults.teamAnalysis = teamAnalysis;
+      const analysisResponse = await this.teamBuildingAgent.process({
+        mode: "analyze",
+        currentTeam: request.context.currentTeam,
+        opponentTeam: request.context.opponentTeam
+      });
+
+      return {
+        success: analysisResponse.success,
+        task: "analysis",
+        reflection,
+        teamBuildingResponse: analysisResponse
+      };
     }
 
     return {
-      success: true,
+      success: false,
       task: "analysis",
       reflection,
-      teamBuildingResponse: {
-        success: true,
-        mode: "analyze",
-        analysis: analysisResults
-      }
+      error: "Aucune équipe à analyser"
     };
   }
 
@@ -326,14 +368,14 @@ Réponds en JSON avec ce format:
   // ============================================================================
 
   /**
-   * Vérifie si Ollama est disponible
+   * Vérifie si le client LLM est disponible
    */
-  async checkOllamaHealth(): Promise<{ healthy: boolean; error?: string }> {
-    return this.ollama.healthCheck();
+  async checkLLMHealth(): Promise<{ healthy: boolean; error?: string }> {
+    return this.llmClient.healthCheck();
   }
 
   /**
-   * Active/désactive la réflexion Ollama
+   * Active/désactive la réflexion LLM
    */
   setReflectionEnabled(enabled: boolean): void {
     this.reflectionEnabled = enabled;

@@ -1,10 +1,12 @@
 /**
  * Sub-Agents Index
  * 
- * Exports tous les sous-agents utilisés par le MasterAgent.
+ * Exports des 2 sous-agents principaux utilisés par le MasterAgent:
+ * - TeamBuildingAgent: Construction et analyse d'équipes
+ * - BattleAgent: Décisions de combat
  */
 
-// Team Building
+// Team Building Agent
 export { TeamBuildingAgent } from "./TeamBuildingAgent";
 export type { 
   TeamBuildingRequest, 
@@ -14,15 +16,7 @@ export type {
   TeamAnalysis
 } from "./TeamBuildingAgent";
 
-export { OurTeamAgent } from "./OurTeamAgent";
-export { OpponentTeamAgent } from "./OpponentTeamAgent";
-export type { 
-  ThreatAnalysis, 
-  MatchupAnalysis, 
-  OpponentStrategy 
-} from "./OpponentTeamAgent";
-
-// Battle
+// Battle Agent
 export { BattleAgent } from "./BattleAgent";
 export type { 
   BattleRequest, 

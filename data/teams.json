@@ -7,28 +7,28 @@
     },
     {
       "slot": 2,
-      "pokemonName": "articuno",
-      "pokemonId": 144
+      "pokemonName": "gyarados",
+      "pokemonId": 130
     },
     {
       "slot": 3,
-      "pokemonName": "moltres",
-      "pokemonId": 146
+      "pokemonName": "tyranitar",
+      "pokemonId": 248
     },
     {
       "slot": 4,
-      "pokemonName": "latias",
-      "pokemonId": 380
+      "pokemonName": "blissey",
+      "pokemonId": 242
     },
     {
       "slot": 5,
-      "pokemonName": "wailord",
-      "pokemonId": 321
+      "pokemonName": "metagross",
+      "pokemonId": 376
     },
     {
       "slot": 6,
-      "pokemonName": "tyranitar",
-      "pokemonId": 248
+      "pokemonName": "dragonite",
+      "pokemonId": 149
     }
   ],
   "104585f3-4600-4efc-88c8-f3c5255edcfd": [
