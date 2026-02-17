@@ -1,362 +1,722 @@
-═══════════════════════════════════════════════════════════════════════════════
-                    EXPLICATION SIMPLE DE CHAQUE TOOL
-═══════════════════════════════════════════════════════════════════════════════
-
-
-🔧 TEAMBUILDING TOOLS (lib/agents/tools/)
-═══════════════════════════════════════════════════════════════════════════════
-
-
-1️⃣  TypeAnalysisTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Analyser les TYPES de tes Pokémon pour savoir:
-   • Quels types tu dois craindre (faiblesses)
-   • Quels types tu résistes bien (résistances)
-   • Quels types tu couvres avec tes attaques (couverture)
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Tu as: [Pikachu (Electric), Squirtle (Water)]
-   
-   TypeAnalysisTool répond:
-   ✓ Couverture offensive: Water couvre Fire, Ground, Rock → bon!
-   ✗ Faiblesse sévère: Aucun pour Ground, Grass, Dark
-   ✓ Résistance: Electric résiste à Flying, Steel, Grass
-
-   ANALOGIE:
-   ────────
-   C'est comme une table de "qui domine qui":
-   • Pierre écrase Ciseaux
-   • Ciseaux coupe Papier
-   • Papier couvre Pierre
-   
-   Le Tool dit: "Tu as Pierre et Papier, donc tu manques Ciseaux!"
-
-
-2️⃣  RoleClassifierTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Classer chaque Pokémon par son RÔLE dans l'équipe:
-   • Sweeper (attaque rapide + forte) → finit les ennemis
-   • Wall (très défense) → résiste et bloque
-   • Tank (HP + défense) → absorbe les coups
-   • Pivot (vitesse + spécial attack) → passe les infos
-   • Support (boosts allies) → aide l'équipe
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Alakazam Stats: Speed:135 SpAtk:135 HP:55 Defense:45
-   RoleClassifier: → "C'est un SWEEPER" (très rapide + très attaque spéciale)
-   
-   Blissey Stats: HP:255 SpDef:135 Speed:55 Attack:10
-   RoleClassifier: → "C'est un WALL" (énorme HP + défense spéciale)
-
-   ANALOGIE:
-   ────────
-   Dans une équipe de foot:
-   • Sweeper = Attaquant rapide
-   • Wall = Défenseur solide
-   • Tank = Gardien de but
-   • Pivot = Milieu de terrain
-   • Support = Entraîneur
-
-   Le Tool dit: "Ce Pokémon joue ce rôle-là dans l'équipe"
-
-
-3️⃣  SynergyTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Vérifier si tes Pokémon travaillent BIEN ENSEMBLE:
-   • Est-ce qu'ils se couvrent les uns les autres?
-   • Est-ce qu'ils ont des combos puissants?
-   • Est-ce qu'ils partagent les faiblesses?
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Équipe A: [Pikachu (Electric), Lapras (Water/Ice)]
-   ✓ BONNE SYNERGIE!
-     - Pikachu frappe super-efficace les Flying/Water
-     - Lapras couvre les Ground (faiblesse d'Electric)
-     - Ensemble: presque tout le jeu est couvert!
-
-   Équipe B: [Pikachu (Electric), Zapdos (Electric/Flying)]
-   ✗ MAUVAISE SYNERGIE!
-     - Même type (Electric) = doublon inutile
-     - Tous les deux faibles à Ground
-     - Pas de diversité = facile à counter
-
-   ANALOGIE:
-   ────────
-   C'est comme les couleurs:
-   • BONNE COMBO: Bleu + Orange = couleurs complémentaires (beau!)
-   • MAUVAISE COMBO: Bleu + Bleu clair = trop similaire (ennuyeux)
-
-   Le Tool dit: "Ces Pokémon forment une bonne équipe" ou "Attention, trop similaires!"
-
-
-4️⃣  TeamScorerTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   COMBINER tous les autres Tools pour donner un SCORE GLOBAL:
-   • Utilise TypeAnalysisTool
-   • Utilise RoleClassifierTool
-   • Utilise SynergyTool
-   • Puis: VOTE → Score final (0-100)
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Équipe: [Alakazam, Blissey, Dragonite, Gengar, Scizor, Lapras]
-   
-   TeamScorerTool fait:
-   ✓ TypeAnalysis → 85/100 (bonne couverture de types)
-   ✓ RoleClassifier → 90/100 (bon équilibre roles)
-   ✓ SynergyTool → 78/100 (OK, quelques doublons type)
-   ✓ Overall → (85 + 90 + 78) / 3 = 84/100 → GRADE "A"
-
-   ANALOGIE:
-   ────────
-   C'est comme une note à l'école:
-   • Math: 17/20
-   • Français: 18/20
-   • Sport: 14/20
-   • Moyenne = 16.3/20 = Mention Bien!
-
-   Le Tool dit: "Cette équipe est très bonne (Note A)"
-
-
-═══════════════════════════════════════════════════════════════════════════════
-
-
-🔧 BATTLE TOOLS (lib/agents/battleEngine/tools/)
-═══════════════════════════════════════════════════════════════════════════════
-
-
-1️⃣  BattleDecisionTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Décider LA MEILLEURE ACTION pendant le combat:
-   • Quel move utiliser? (attaque à choisir)
-   • Faut-il switch? (changer de Pokémon?)
-   • Quelle est ma chance de gagner?
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Ton Pikachu (Electric) face à Dragonite (Dragon/Flying)
-   
-   BattleDecisionTool évalue:
-   ✓ Thunderbolt (Electric move) → 120 dégâts (super efficace contre Flying!)
-   ✓ Prendre le hit → Dragonite fait ~80 dégâts avec Dragon Claw
-   ✓ Win chance: 72% (tu es plus rapide + super efficace)
-   
-   Décision: → "Utilise Thunderbolt!"
-
-   ANALOGIE:
-   ────────
-   C'est comme aux échecs:
-   • "Si je bouge mon cavalier là" → j'ai 80% de chance de gagner
-   • "Si je bouge ma tour là" → j'ai 40% de chance
-   • Décision: "Bouge le cavalier!" (meilleur pourcentage)
-
-   Le Tool dit: "Fais ça, c'est l'action la plus probablement gagnante"
-
-
-2️⃣  DamageCalculatorTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Calculer EXACTEMENT combien de dégâts fait une attaque:
-   • Base damage (force du move)
-   • Multiplicateurs (type efficace?)
-   • Stats (ta puissance vs sa défense)
-   → Résultat: combien de HP il perd?
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Pikachu utilise Thunderbolt contre Dragonite
-   
-   Calcul:
-   • Base damage: 90
-   • STAB (Same Type Attack Bonus): ×1.5 (Pikachu est Electric)
-   • Type effectiveness: ×2 (Electric super-efficace contre Flying)
-   • Pikachu SpAtk: 145 vs Dragonite SpDef: 100
-   • Variance: +/- un peu aléatoire
-   
-   Résultat: 120-145 dégâts
-   Dragonite: 120/130 HP
-   → "Dragonite prend entre 92% et 100% de ses HP en dégâts = KO possible!"
-
-   ANALOGIE:
-   ────────
-   C'est comme une calculatrice de tir au jeu vidéo:
-   • Puissance du fusil: 50
-   • Distance: ×0.8
-   • Critique: ×1.5
-   • Résultat final: 60 dégâts exacts
-
-   Le Tool dit: "Cet attaque fait exactement X dégâts"
-
-
-3️⃣  SpeedComparatorTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Déterminer QUI ATTAQUE EN PREMIER:
-   • Vérifie les stats Speed
-   • Applique les multiplicateurs (paralysie ralentit)
-   • Prend en compte la priorité des moves
-   → Qui gagne le "premier coup"?
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Tour 1: Pikachu vs Dragonite
-   
-   Pikachu: Speed 120, move = Thunderbolt (priorité 0)
-   Dragonite: Speed 80, move = Extreme Speed (priorité +2)
-   
-   SpeedComparator:
-   ✓ Dragonite a priorité +2 → attaque d'abord MÊME s'il est plus lent!
-   → "Dragonite attaque en premier"
-
-   Deuxième exemple:
-   Pikachu (Speed 120, Extreme Speed priorité +2) vs Dragonite (80)
-   → "Pikachu attaque en premier" (même priorité mais plus rapide)
-
-   ANALOGIE:
-   ────────
-   C'est comme une course:
-   • Pikachu court à 120km/h (priorité 0)
-   • Dragonite court à 80km/h MAIS a des rollers (+priorité)
-   • Résultat: Dragonite arrive en premier!
-
-   Le Tool dit: "Qui attaque en premier ce tour?"
-
-
-4️⃣  StatusEffectTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Gérer les MALUS STATUS (burn, poison, paralysis, sleep, freeze):
-   • Tu es paralysé? → 25% de chance d'être stuck
-   • Tu es en sleep? → -1 tour avant de te réveiller
-   • Tu es burned? → perte de HP à chaque tour
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Ton Pikachu est paralysé (paralyse = 50% ralentissement + 25% chance d'bloquer)
-   
-   StatusEffectTool:
-   ✓ Tour 1: 75% chance d'agir normalement → tu attaques!
-   ✓ Tour 2: 25% chance d'être paralysé → tu ne peux rien faire (stuck)
-   ✓ Tour 3: 75% chance d'agir → tu attaques!
-   
-   Résultat: Tu perds des tours aléatoirement
-
-   Autre exemple:
-   Tu es en SLEEP (endormi):
-   ✓ Tour 1-3: Tu dors (ne peux rien faire)
-   ✓ Tour 4: 33% chance de te réveiller → tu réveilles!
-   ✓ Après: tu es normal
-
-   ANALOGIE:
-   ────────
-   C'est comme un jeu avec des malus:
-   • Poison: ✗ -2 HP chaque tour
-   • Sleep: ✗ -3 tours de repos
-   • Paralysis: ✗ -50% vitesse + 25% chance de freeze
-   • Burn: ✗ -1/8 HP chaque tour
-
-   Le Tool dit: "Tu as ce malus, voici comment ça t'affecte"
-
-
-5️⃣  StatModifierTool
-────────────────────────────────────────────────────────────────────────────────
-
-   À QUOI ÇA SERT?
-   ───────────────
-   Gérer les BOOSTS/DEBUFFS temporaires:
-   • Swords Dance → +Attack ×2
-   • Calm Mind → +SpAtk + SpDef
-   • -6 stat → très affaibli
-
-   EXEMPLE CONCRET:
-   ───────────────
-   Ton Alakazam utilise Calm Mind:
-   ✓ SpAtk: 135 → boosted de +1 → 135 × (3/2) = 202
-   ✓ SpDef: 95 → boosted de +1 → 95 × (3/2) = 142
-   
-   Tour suivant:
-   ✓ Ton move Psychic fait beaucoup plus de dégâts!
-   ✓ Tu encaisses mieux les spéciales!
-
-   Autre exemple (DEBUFF):
-   L'adversaire utilise Growl:
-   ✗ Ton Attack: 130 → debuff de -1 → 130 × (2/3) = 86
-   ✗ Tes physical moves font beaucoup moins mal!
-
-   ANALOGIE:
-   ────────
-   C'est comme un jeu RPG:
-   • Buff: "Double ton attaque ce tour!" → +×2 puissance
-   • Debuff: "Réduis sa défense!" → ÷2 résistance
-   • Stages: -6 = très mauvais, 0 = normal, +6 = exceptionnel
-
-   Le Tool dit: "Ce stat est modifié, voici le multiplicateur"
-
-
-═══════════════════════════════════════════════════════════════════════════════
-                            RÉSUMÉ SIMPLIFIÉ
-═══════════════════════════════════════════════════════════════════════════════
-
-TEAMBUILDING TOOLS:
-───────────────────
-✓ TypeAnalysisTool ......... "Quels types manquent à mon équipe?"
-✓ RoleClassifierTool ....... "Quel est le rôle de ce Pokémon?"
-✓ SynergyTool .............. "Est-ce que mes Pokémon travaillent bien ensemble?"
-✓ TeamScorerTool ........... "Quelle est la note globale de mon équipe?" (combine tout)
-
-
-BATTLE TOOLS:
-─────────────
-✓ BattleDecisionTool ....... "Quelle action je dois faire maintenant?"
-✓ DamageCalculatorTool ..... "Combien de dégâts cette attaque fait?"
-✓ SpeedComparatorTool ...... "Qui attaque en premier?"
-✓ StatusEffectTool ......... "Je suis paralysé, comment ça m'affecte?"
-✓ StatModifierTool ......... "Mon attack est boosté/debuffé, de combien?"
-
-
-═══════════════════════════════════════════════════════════════════════════════
-                            FLUX D'UTILISATION
-═══════════════════════════════════════════════════════════════════════════════
-
-AVANT LE COMBAT (TeamBuilding):
-──────────────────────────────
-1. TypeAnalysisTool → "Quels types couvre mon équipe?"
-2. RoleClassifierTool → "J'ai quels rôles?"
-3. SynergyTool → "Ils se couvrent-ils?"
-4. TeamScorerTool → "Note globale?" → Affiche le résultat
-
-PENDANT LE COMBAT (Battle):
-────────────────────────────
-1. StatusEffectTool → "Suis-je affecté?" → Non = continue
-2. SpeedComparatorTool → "Qui attaque?" → Moi en premier
-3. BattleDecisionTool → "Quel move?" → Thunderbolt
-4. DamageCalculatorTool → "Combien de dégâts?" → 120 HP
-5. StatModifierTool → "Est-ce que ma stat change?" → Non
-6. Fin du tour → Retour à l'étape 1
-
-
-═══════════════════════════════════════════════════════════════════════════════
+# 🛠️ Documentation des Tools - Guide Détaillé
+
+> Explication complète de chaque outil utilisé par les agents
+
+## 📋 Table des matières
+
+### TeamBuilding Tools
+- [🎨 TypeAnalysisTool](#type-analysis)
+- [🎭 RoleClassifierTool](#role-classifier)
+- [🤝 SynergyTool](#synergy)
+- [⭐ TeamScorerTool](#team-scorer)
+
+### Battle Tools
+- [🎯 BattleDecisionTool](#battle-decision)
+- [💥 DamageCalculatorTool](#damage-calculator)
+- [⚡ SpeedComparatorTool](#speed-comparator)
+- [🤒 StatusEffectTool](#status-effect)
+- [📈 StatModifierTool](#stat-modifier)
+
+---
+
+## 🔧 TeamBuilding Tools
+
+<div align="center">
+
+![Category](https://img.shields.io/badge/Category-Team%20Building-10B981)
+![Location](https://img.shields.io/badge/Location-lib%2Fagents%2Ftools-blue)
+
+</div>
+
+---
+
+### 🎨 TypeAnalysisTool {#type-analysis}
+
+#### 📝 À quoi ça sert ?
+
+Analyse les **types** d'une équipe Pokémon pour identifier :
+- ✅ **Couverture offensive** (types que tu peux frapper efficacement)
+- ⚠️ **Faiblesses défensives** (types dangereux contre ton équipe)
+- 🛡️ **Résistances** (types contre lesquels tu es solide)
+
+#### 🎯 Exemple Concret
+
+**Input:**
+```typescript
+{
+  team: [
+    { name: "Pikachu", types: ["electric"] },
+    { name: "Squirtle", types: ["water"] }
+  ]
+}
+```
+
+**Output:**
+```typescript
+{
+  coverage: {
+    strong: ["water", "flying", "fire", "ground", "rock"],  // 5 types couverts
+    percentage: 27.8  // 5/18 types = 27.8%
+  },
+  weaknesses: {
+    severe: ["ground", "grass"],        // Double faiblesse
+    moderate: ["electric", "dark"]      // Faiblesse simple
+  },
+  resistances: {
+    strong: ["steel", "fire", "ice"],
+    immune: []
+  }
+}
+```
+
+#### 🎭 Analogie
+
+> **C'est comme le jeu Pierre-Papier-Ciseaux étendu:**
+> 
+> - 🪨 Pierre écrase Ciseaux ✂️
+> - ✂️ Ciseaux coupe Papier 📄
+> - 📄 Papier couvre Pierre 🪨
+> 
+> Le Tool dit: _"Tu as Pierre et Papier, donc il te manque Ciseaux !"_
+
+#### 📊 Visualisation
+
+```mermaid
+flowchart LR
+    Team[👥 Équipe] --> Analyze[🔍 Analyse Types]
+    Analyze --> Coverage[✅ Couverture: 27.8%]
+    Analyze --> Weak[⚠️ Faiblesses: Ground, Grass]
+    Analyze --> Resist[🛡️ Résistances: Steel, Fire, Ice]
+    
+    style Coverage fill:#10B981,color:#fff
+    style Weak fill:#EF4444,color:#fff
+    style Resist fill:#3B82F6,color:#fff
+```
+
+---
+
+### 🎭 RoleClassifierTool {#role-classifier}
+
+#### 📝 À quoi ça sert ?
+
+Classifie chaque Pokémon selon son **rôle tactique** dans l'équipe :
+
+| Rôle | Stats Clés | Fonction |
+|------|-----------|----------|
+| 💨 **Sweeper** | Speed + Attack/SpAtk | Finir les ennemis rapidement |
+| 🛡️ **Wall** | Defense/SpDef + HP | Bloquer et encaisser |
+| 🏰 **Tank** | HP + Defense | Absorber les dégâts |
+| 🔄 **Pivot** | Speed + SpAtk | Switcher intelligemment |
+| 💊 **Support** | Movepool utility | Booster l'équipe |
+
+#### 🎯 Exemple Concret
+
+**Input:**
+```typescript
+{
+  pokemon: "Alakazam",
+  stats: {
+    hp: 55,
+    attack: 50,
+    defense: 45,
+    spAtk: 135,  // 🔥 Très élevé
+    spDef: 95,
+    speed: 120   // ⚡ Très rapide
+  }
+}
+```
+
+**Output:**
+```typescript
+{
+  role: "sweeper",
+  confidence: 0.95,
+  reasoning: "High Speed (120) + High SpAtk (135) = Perfect Sweeper"
+}
+```
+
+**Contre-exemple - Blissey:**
+```typescript
+{
+  pokemon: "Blissey",
+  stats: {
+    hp: 255,      // 🏆 Énorme !
+    spDef: 135,   // 🛡️ Excellent
+    speed: 55,
+    attack: 10
+  }
+}
+// → Role: "wall" (Special Defense Wall)
+```
+
+#### 🎭 Analogie
+
+> **Équipe de football:**
+> 
+> - 💨 **Sweeper** = Attaquant rapide (Mbappé)
+> - 🛡️ **Wall** = Défenseur solide (Van Dijk)
+> - 🏰 **Tank** = Gardien de but (Donnarumma)
+> - 🔄 **Pivot** = Milieu de terrain (De Bruyne)
+> - 💊 **Support** = Entraîneur sur le terrain
+
+---
+
+### 🤝 SynergyTool {#synergy}
+
+#### 📝 À quoi ça sert ?
+
+Vérifie si les Pokémon **travaillent bien ensemble** :
+
+- ✅ Couvrent mutuellement leurs faiblesses
+- ✅ Ont des combos puissants
+- ❌ Ne partagent PAS les mêmes faiblesses
+- ❌ Pas de doublons de type inutiles
+
+#### 🎯 Exemple Concret
+
+<table>
+<tr>
+<td width="50%">
+
+**✅ BONNE SYNERGIE**
+
+```typescript
+{
+  team: [
+    "Pikachu",  // Electric
+    "Lapras"    // Water/Ice
+  ]
+}
+```
+
+**Analyse:**
+- ✅ Pikachu frappe Flying/Water (super-efficace)
+- ✅ Lapras couvre Ground (faiblesse de Pikachu)
+- ✅ Diversité de types
+- ✅ Pas de faiblesse commune critique
+
+**Score:** 🟢 92/100
+
+</td>
+<td width="50%">
+
+**❌ MAUVAISE SYNERGIE**
+
+```typescript
+{
+  team: [
+    "Pikachu",  // Electric
+    "Zapdos"    // Electric/Flying
+  ]
+}
+```
+
+**Analyse:**
+- ❌ Même type (Electric) = doublon
+- ❌ Tous deux faibles à Ground
+- ❌ Pas de diversité
+- ❌ Facile à counter
+
+**Score:** 🔴 45/100
+
+</td>
+</tr>
+</table>
+
+#### 🎭 Analogie
+
+> **C'est comme les couleurs:**
+> 
+> - 🟦 **Bleu** + 🟧 **Orange** = Couleurs complémentaires (beau !)
+> - 🟦 **Bleu** + 🟦 **Bleu** = Monotone (ennuyeux)
+
+#### 📊 Calcul de Synergie
+
+```mermaid
+flowchart TD
+    Start[🤝 SynergyTool] --> Check1{Doublons<br/>de type?}
+    Check1 -->|Oui| Penality1[-15 points]
+    Check1 -->|Non| Check2{Faiblesses<br/>communes?}
+    
+    Check2 -->|Oui| Penality2[-20 points]
+    Check2 -->|Non| Check3{Couverture<br/>mutuelle?}
+    
+    Check3 -->|Oui| Bonus1[+25 points]
+    Check3 -->|Non| Check4{Rôles<br/>variés?}
+    
+    Check4 -->|Oui| Bonus2[+15 points]
+    Check4 -->|Non| Final[📊 Score Final]
+    
+    Penality1 --> Final
+    Penality2 --> Final
+    Bonus1 --> Final
+    Bonus2 --> Final
+    
+    style Penality1 fill:#EF4444,color:#fff
+    style Penality2 fill:#EF4444,color:#fff
+    style Bonus1 fill:#10B981,color:#fff
+    style Bonus2 fill:#10B981,color:#fff
+```
+
+---
+
+### ⭐ TeamScorerTool {#team-scorer}
+
+#### 📝 À quoi ça sert ?
+
+**Agrège tous les outils** pour donner un **score global** à l'équipe :
+
+```
+Score Final = TypeCoverage × 0.3 
+            + RoleBalance × 0.25 
+            + Synergy × 0.25 
+            + StatTotal × 0.2
+```
+
+#### 🎯 Exemple Concret
+
+**Input:**
+```typescript
+{
+  team: [
+    "Pikachu",
+    "Squirtle",
+    "Venusaur",
+    "Charizard",
+    "Alakazam",
+    "Machamp"
+  ]
+}
+```
+
+**Output:**
+```typescript
+{
+  overall: 85,
+  grade: "A",
+  breakdown: {
+    typeCoverage: 88,    // 15.8/18 types couverts
+    roleBalance: 90,     // 2 sweepers, 2 walls, 1 pivot, 1 support
+    synergy: 82,         // Bonne complémentarité
+    statTotal: 80        // Stats moyennes solides
+  },
+  strengths: [
+    "Excellent type coverage (88%)",
+    "Balanced team roles",
+    "No critical shared weaknesses"
+  ],
+  weaknesses: [
+    "Slightly weak to Ground (2/6 weak)",
+    "Low average Speed (75)"
+  ],
+  recommendations: [
+    "Consider adding a faster Pokémon",
+    "Replace one Ground-weak member"
+  ]
+}
+```
+
+#### 📊 Échelle de Grades
+
+| Score | Grade | Qualité |
+|-------|-------|---------|
+| 90-100 | S | 🏆 Exceptionnel |
+| 85-89 | A+ | ⭐ Excellent |
+| 80-84 | A | ✅ Très bon |
+| 75-79 | B+ | 👍 Bon |
+| 70-74 | B | 😊 Correct |
+| 65-69 | C+ | 😐 Passable |
+| 60-64 | C | ⚠️ Faible |
+| < 60 | F | ❌ À refaire |
+
+---
+
+## ⚔️ Battle Tools
+
+<div align="center">
+
+![Category](https://img.shields.io/badge/Category-Battle%20Engine-EF4444)
+![Location](https://img.shields.io/badge/Location-lib%2Fagents%2FbattleEngine%2Ftools-orange)
+
+</div>
+
+---
+
+### 🎯 BattleDecisionTool {#battle-decision}
+
+#### 📝 À quoi ça sert ?
+
+**Outil principal** qui décide de l'action optimale en combat :
+
+- 🎮 Quel move utiliser ?
+- 🔄 Faut-il switch ?
+- 💊 Utiliser un item ?
+
+#### 🎯 Exemple Concret
+
+**Situation:**
+```typescript
+{
+  myPokemon: {
+    name: "Pikachu",
+    hp: 75,
+    maxHp: 100,
+    moves: [
+      { name: "Thunderbolt", type: "electric", power: 90 },
+      { name: "Quick Attack", type: "normal", power: 40 },
+      { name: "Thunder Wave", type: "electric", power: 0 }
+    ]
+  },
+  opponent: {
+    name: "Dragonite",
+    hp: 120,
+    maxHp: 150,
+    types: ["dragon", "flying"]
+  }
+}
+```
+
+**Processus de décision:**
+
+```mermaid
+flowchart TD
+    Start[🎯 BattleDecisionTool] --> EvalAll[📊 Évalue tous les moves]
+    
+    EvalAll --> Move1[⚡ Thunderbolt]
+    EvalAll --> Move2[💨 Quick Attack]
+    EvalAll --> Move3[😴 Thunder Wave]
+    
+    Move1 --> Calc1[💥 Calcul dégâts<br/>vs Flying: 2x]
+    Move2 --> Calc2[💥 Calcul dégâts<br/>Normal damage]
+    Move3 --> Calc3[💥 Pas de dégâts<br/>Status move]
+    
+    Calc1 --> Score1[Score: 95/100]
+    Calc2 --> Score2[Score: 40/100]
+    Calc3 --> Score3[Score: 60/100]
+    
+    Score1 --> Best[🏆 Meilleur:<br/>THUNDERBOLT]
+    
+    style Score1 fill:#10B981,color:#fff
+    style Best fill:#4F46E5,color:#fff
+```
+
+**Output:**
+```typescript
+{
+  decision: {
+    action: "attack",
+    moveIndex: 0,
+    moveName: "Thunderbolt"
+  },
+  score: 95,
+  reasoning: "Super effective (2x) + High damage (expected 118 HP)",
+  alternatives: [
+    { move: "Thunder Wave", score: 60, reason: "Paralyze for control" },
+    { move: "Quick Attack", score: 40, reason: "Low damage" }
+  ]
+}
+```
+
+---
+
+### 💥 DamageCalculatorTool {#damage-calculator}
+
+#### 📝 À quoi ça sert ?
+
+Calcule les **dégâts précis** d'une attaque avec la **formule officielle Pokémon** :
+
+```
+Damage = ((2 * Level / 5 + 2) * Power * A/D / 50 + 2) 
+         × STAB × Type × Critical × Random × Other
+```
+
+#### 🎯 Exemple Concret
+
+**Input:**
+```typescript
+{
+  attacker: {
+    name: "Pikachu",
+    level: 50,
+    attack: 55,      // Physical stat (pas utilisé ici)
+    spAtk: 90,       // Special stat (utilisé)
+    statStages: {
+      spAtk: +1      // +50% boost
+    }
+  },
+  defender: {
+    name: "Dragonite",
+    spDef: 100,
+    types: ["dragon", "flying"]
+  },
+  move: {
+    name: "Thunderbolt",
+    type: "electric",
+    power: 90,
+    category: "special"
+  },
+  battlefield: {
+    weather: "none",
+    terrain: "none"
+  }
+}
+```
+
+**Calcul étape par étape:**
+
+1. **Base damage:** `((2×50/5 + 2) × 90 × (90×1.5)/100 / 50 + 2)` = `≈78`
+2. **STAB (Same Type Attack Bonus):** `78 × 1.5` = `117` _(Pikachu est Electric)_
+3. **Type effectiveness:** `117 × 2.0` = `234` _(Super efficace contre Flying)_
+4. **Random factor:** `234 × (0.85 à 1.00)` = **`199 - 234`**
+
+**Output:**
+```typescript
+{
+  damage: {
+    min: 199,
+    max: 234,
+    average: 217
+  },
+  koChance: 0.98,  // 98% de KO (Dragonite a 120 HP)
+  breakdown: {
+    baseDamage: 78,
+    stab: 1.5,
+    typeEffectiveness: 2.0,
+    critical: false,
+    other: []
+  }
+}
+```
+
+#### 📊 Formule Visualisée
+
+```mermaid
+flowchart LR
+    A[⚡ Power: 90] --> B[📊 Stats Ratio<br/>A/D]
+    B --> C[🎲 Base  Calculation]
+    C --> D[⭐ STAB ×1.5]
+    D --> E[🎨 Type ×2.0]
+    E --> F[🎯 Critical?]
+    F --> G[🎲 Random ×0.85-1.0]
+    G --> H[💥 Final Damage<br/>199-234]
+    
+    style H fill:#EF4444,color:#fff
+```
+
+---
+
+### ⚡ SpeedComparatorTool {#speed-comparator}
+
+#### 📝 À quoi ça sert ?
+
+Détermine **l'ordre d'attaque** en comparant les vitesses :
+
+```
+Effective Speed = Base Speed × Stage Multiplier × Status × Item × Ability
+```
+
+#### 🎯 Exemple Concret
+
+**Situation:**
+```typescript
+{
+  pokemon1: {
+    name: "Pikachu",
+    baseSpeed: 90,
+    statStages: { speed: 0 },  // Neutral
+    status: null
+  },
+  pokemon2: {
+    name: "Dragonite",
+    baseSpeed: 80,
+    statStages: { speed: +1 }, // +50% boost
+    status: null
+  }
+}
+```
+
+**Calcul:**
+- Pikachu: `90 × 1.0` = **90**
+- Dragonite: `80 × 1.5` = **120** ✅ Plus rapide !
+
+**Output:**
+```typescript
+{
+  firstAttacker: "Dragonite",
+  order: ["Dragonite", "Pikachu"],
+  speedDifference: 30,
+  reasoning: "Dragonite has +1 Speed stage (+50%)"
+}
+```
+
+#### 🎭 Analogie
+
+> **Course de voitures:**
+> 
+> - 🏎️ Pikachu: Vitesse 90 km/h
+> - 🏁 Dragonite: Vitesse 80 km/h, mais avec Nitro! (+50%) = 120 km/h
+> 
+> → Dragonite arrive en premier !
+
+---
+
+### 🤒 StatusEffectTool {#status-effect}
+
+#### 📝 À quoi ça sert ?
+
+Gère les **statuts** et leurs effets :
+
+| Status | Effet | Durée |
+|--------|-------|-------|
+| 😴 **Sleep** | Cannot move (50% wake chance each turn) | 1-3 tours |
+| 🥶 **Freeze** | Cannot move (20% thaw chance) | Permanent |
+| ⚡ **Paralysis** | 25% chance fail move, Speed ÷2 | Permanent |
+| 🔥 **Burn** | Attack ÷2, lose 1/16 HP/turn | Permanent |
+| 🤢 **Poison** | Lose 1/8 HP/turn | Permanent |
+| 😵 **Confusion** | 33% chance hit self | 1-4 tours |
+
+#### 🎯 Exemple Concret
+
+**Avant tour:**
+```typescript
+{
+  pokemon: "Pikachu",
+  status: "paralysis",
+  hp: 80/100
+}
+```
+
+**Checks:**
+1. ⚡ **Paralysis Check:** `Math.random() < 0.25` → `false` ✅ Can move!
+2. 🏃 **Speed Modifier:** `90 → 45` (÷2)
+
+**Output:**
+```typescript
+{
+  canMove: true,
+  speedModifier: 0.5,
+  damageThisTurn: 0,
+  message: "Pikachu is paralyzed but can move this turn"
+}
+```
+
+**Scénario Burn:**
+```typescript
+{
+  pokemon: "Charizard",
+  status: "burn",
+  hp: 100/120
+}
+```
+
+**Output:**
+```typescript
+{
+  canMove: true,
+  attackModifier: 0.5,        // Attack ÷2
+  damageThisTurn: 7,          // 120/16 = 7.5 → 7
+  message: "Charizard is hurt by its burn! (7 HP)"
+}
+```
+
+---
+
+### 📈 StatModifierTool {#stat-modifier}
+
+#### 📝 À quoi ça sert ?
+
+Gère les **stages de stats** (boosts/debuffs) :
+
+```
+Stage:  -6   -5   -4   -3   -2   -1    0   +1   +2   +3   +4   +5   +6
+Multiplier: 0.25 0.28 0.33 0.40 0.50 0.66 1.0 1.5 2.0 2.5 3.0 3.5 4.0
+```
+
+####  Exemple Concret
+
+**Scénario: Swords Dance**
+
+```typescript
+// Before
+{
+  pokemon: "Machamp",
+  attack: 130,
+  statStages: { attack: 0 }
+}
+
+// Action: Use Swords Dance (+2 Attack stages)
+{
+  statStages: { attack: +2 }
+}
+
+// Effect
+effectiveAttack = 130 × 2.0 = 260 🔥🔥
+```
+
+**Calcul complet:**
+
+```mermaid
+flowchart LR
+    A[Base Attack:<br/>130] --> B{Stat Stage:<br/>+2}
+    B --> C[Multiplier:<br/>2.0x]
+    C --> D[Effective Attack:<br/>260]
+    
+    style D fill:#EF4444,color:#fff,stroke:#991B1B,stroke-width:3px
+```
+
+---
+
+## 🎓 Résumé Final
+
+### 🔧 TeamBuilding Tools
+
+| Tool | Mission | Output |
+|------|---------|--------|
+| 🎨 TypeAnalysisTool | Analyse types | Coverage, Weaknesses, Resistances |
+| 🎭 RoleClassifierTool | Classifie rôles | Sweeper, Wall, Tank, Pivot, Support |
+| 🤝 SynergyTool | Vérifie synergie | Score de complémentarité |
+| ⭐ TeamScorerTool | Score global | Grade A-F + recommandations |
+
+### ⚔️ Battle Tools
+
+| Tool | Mission | Output |
+|------|---------|--------|
+| 🎯 BattleDecisionTool | Décision optimale | Meilleure action + score |
+| 💥 DamageCalculatorTool | Calcul dégâts | Min/Max/Avg damage + KO % |
+| ⚡ SpeedComparatorTool | Ordre d'attaque | Qui attaque en premier |
+| 🤒 StatusEffectTool | Gestion statuts | Can move? Dégâts? Modifiers? |
+| 📈 StatModifierTool | Stages de stats | Multiplicateurs effectifs |
+
+---
+
+## 🎯 Comment les Tools sont Utilisés
+
+```mermaid
+sequenceDiagram
+    participant SA as 🔧 SubAgent
+    participant T1 as 🎨 Tool 1
+    participant T2 as 🎭 Tool 2
+    participant T3 as ⭐ Tool 3
+    
+    SA->>T1: Input data
+    T1-->>SA: Analysis result
+    
+    SA->>T2: Based on T1 result
+    T2-->>SA: Classification
+    
+    SA->>T3: Aggregate all
+    T3-->>SA: Final score
+    
+    SA->>SA: Make decision
+```
+
+**Principe:** Les SubAgents **orchestrent** les Tools pour accomplir des tâches complexes.
+
+---
+
+<div align="center">
+
+🔗 **Voir aussi:**
+[Documentation Agents](agent.md) • [Architecture Complète](ok.md) • [Multi-Agent Diagram](multi-agent-architecture.md)
+
+</div>

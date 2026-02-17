@@ -1,461 +1,497 @@
-═══════════════════════════════════════════════════════════════════════════════
-                  SUBAGENT vs MASTERAGENT - EXPLICATION SIMPLE
-═══════════════════════════════════════════════════════════════════════════════
+# 🤖 Architecture des Agents - Guide Complet
 
+> Documentation complète sur l'architecture MasterAgent et SubAgents du Pokédex AI
 
-🤖 MASTERAGENT - L'ORCHESTRATEUR PRINCIPAL
-═══════════════════════════════════════════════════════════════════════════════
+## 📋 Table des matières
 
-À QUOI ÇA SERT?
-───────────────
-C'est le CHEF D'ORCHESTRE qui décide:
-• Quelle tâche tu veux faire? (team_building ou battle?)
-• Quel SubAgent appeler pour le faire?
-• Utiliser le LLM (Mistral/Ollama) pour réfléchir ou pas?
+- [🎯 MasterAgent - L'Orchestrateur](#masteragent)
+- [🔧 TeamBuildingAgent](#teambuilding-agent)
+- [⚔️ BattleAgent](#battle-agent)
+- [📊 Comparaison des Agents](#comparaison)
 
-ANALOGIE #1 - Le Restaurant:
-────────────────────────────
-MasterAgent = Le maître d'hôtel
-├─ Tu arrives: "Je veux une bonne équipe Pokémon"
-├─ Maître d'hôtel pense: "Hmm, c'est une tâche de TEAM_BUILDING"
-├─ Il appelle: "Chef TeamBuilding, prépare une bonne équipe!"
-└─ Chef revient: "Voilà, équipe prête!"
+---
 
-ANALOGIE #2 - L'Hôpital:
-────────────────────────
-MasterAgent = L'infirmier d'accueil
-├─ Patient arrive: "J'ai mal à la tête!"
-├─ Infirmier décide: "C'est un cas pour le NEUROLOGUE"
-├─ Il envoie au: "Service Neurologie (SubAgent)"
-├─ Neurologue traite et revient avec diagnostic
-└─ Infirmier présente le résultat au patient
+## 🎯 MasterAgent - L'Orchestrateur Principal {#masteragent}
 
-ANALOGIE #3 - Le Détective:
-────────────────────────────
-MasterAgent = Chef de la police (commissaire)
-├─ Quelqu'un vole une voiture → il pense: "Cas de CAMBRIOLAGE"
-├─ Il appelle: "Inspecteur Cambriolage!"
-├─ Inspecteur enquête et revient: "Le coupable c'est..."
-└─ Chef présente: "Voici la solution!"
+<div align="center">
 
+![Status](https://img.shields.io/badge/Status-Production-success)
+![Type](https://img.shields.io/badge/Type-Orchestrator-blue)
+![LLM](https://img.shields.io/badge/LLM-Mistral%20%7C%20Ollama-purple)
 
-COMMENT ÇA MARCHE?
-──────────────────
+</div>
 
-┌─────────────────────────────────────────┐
-│        CLIENT (Ton App / Frontend)       │
-├─────────────────────────────────────────┤
-│ POST /api/team/suggest                  │
-│ { team: [...] }                         │
-└────────────┬────────────────────────────┘
-             │ JSON Body
-             ▼
-┌─────────────────────────────────────────┐
-│  MASTERAGENT (lib/agents/MasterAgent.ts)│
-├─────────────────────────────────────────┤
-│ 1. new MasterAgent()                    │
-│    ├─ LLM client = Mistral ou Ollama   │
-│    └─ Crée les 2 SubAgents            │
-│                                         │
-│ 2. agent.process(request)               │
-│    ├─ Analyse: c'est quoi la tâche?    │
-│    ├─ Si reflection=true:               │
-│    │  └─ Appelle LLM → "Qu'est-ce que  │
-│    │     l'utilisateur demande?"       │
-│    ├─ Détermine: team_building/battle  │
-│    └─ Appelle le bon SubAgent          │
-│                                         │
-│ 3. return MasterAgentResponse           │
-└────────────┬────────────────────────────┘
-             │
-             ▼
-        SUBAGENT
+### 🎯 Rôle et Responsabilités
 
-════════════════════════════════════════════════════════════════════════════════
+Le **MasterAgent** est le point d'entrée central qui :
 
-🎯 SUBAGENT #1 - TeamBuildingAgent
-════════════════════════════════════════════════════════════════════════════════
+| Responsabilité | Description |
+|----------------|-------------|
+| 🎭 **Classification** | Identifie le type de tâche demandée |
+| 🔀 **Délégation** | Route vers le SubAgent approprié |
+| 🧠 **Réflexion** | Utilise le LLM pour l'analyse complexe |
+| 📊 **Agrégation** | Compile les résultats finaux |
 
-À QUOI ÇA SERT?
-───────────────
-SPÉCIALISTE de la construction d'équipes Pokémon:
-• Suggère des Pokémon pour compléter l'équipe
-• Analyse ton équipe
-• Counter une équipe adverse
-• Génère une équipe complète
+### 🎭 Analogies pour Comprendre le MasterAgent
 
-ANALOGIE - Le Formateur en Gym:
-────────────────────────────────
-Tu viens au gym et dis: "Je veux une bonne équipe musculaire"
-├─ Formateur: "Montrez-vous vos muscles"
-├─ Il analyse: "Vous êtes faible aux jambes"
-├─ Il propose: "3 exos de jambes pour équilibrer"
-└─ Résultat: Équipe d'exercices équilibrée!
+<table>
+<tr>
+<td width="33%">
 
-MODES DE TRAVAIL:
-─────────────────
+#### 🍴 Le Restaurant
 
-MODE 1 - SUGGEST (Suggère des Pokémon)
-┌─────────────────────────────────────┐
-│ Tu as: [Pikachu, Squirtle] │
-│ Demande: "C'est quoi le 3e?" │
-│ │
-│ TeamBuildingAgent: │
-│ 1. Regarde tes 2 Pokémon │
-│ 2. Utilise TypeAnalysisTool │
-│ → "Tu manques Grass coverage" │
-│ 3. Utilise TeamScorerTool │
-│ → Score chaque candidat │
-│ 4. Classement: │
-│ Rank 1: Venusaur (85/100) │
-│ Rank 2: Exeggcutor (82/100) │
-│ Rank 3: Vileplume (79/100) │
-│ │
-│ Réponse: "Venusaur est le meilleur"│
-└─────────────────────────────────────┘
+```
+MasterAgent = Maître d'hôtel
+```
 
-MODE 2 - ANALYZE (Analyse une équipe)
-┌─────────────────────────────────────┐
-│ Tu as: [6 Pokémon] │
-│ Demande: "C'est bon mon équipe?" │
-│ │
-│ TeamBuildingAgent: │
-│ 1. Utilise TypeAnalysisTool │
-│ → "Couverture: 85%, Faiblesses: │
-│ Ground, Rock" │
-│ 2. Utilise RoleClassifierTool │
-│ → "Types: 2 sweepers, 2 walls, │
-│ 1 pivot, 1 support" │
-│ 3. Utilise SynergyTool │
-│ → "Mauvaise synergie: 2 electric"│
-│ 4. Utilise TeamScorerTool │
-│ → Note: 72/100 → Grade: B │
-│ │
-│ Réponse: "Équipe correcte mais │
-│ trop d'electrics, équilibre mieux" │
-└─────────────────────────────────────┘
+**Scénario:**
+1. 👤 Client: _"Je veux une bonne équipe Pokémon"_
+2. 🤵 Maître: _"C'est du TEAM_BUILDING"_
+3. 👨‍🍳 Appelle: _"Chef TeamBuilding!"_
+4. ✅ Résultat: _"Équipe prête!"_
 
-MODE 3 - COUNTER (Counter l'adversaire)
-┌─────────────────────────────────────┐
-│ Adversaire a: [Dragonite, Alakazam]│
-│ Demande: "Fais-moi une équipe pour │
-│ le counter!" │
-│ │
-│ TeamBuildingAgent: │
-│ 1. Utilise TypeAnalysisTool │
-│ → "Dragonite faible à Ice/Rock" │
-│ → "Alakazam faible à Dark/Bug" │
-│ 2. Cherche Pokémon qui: │
-│ ✓ Frappent super-efficace │
-│ ✓ Résistent à leurs attaques │
-│ 3. Sélectionne automatiquement │
-│ Lapras (Ice), Tyranitar (Rock) │
-│ Alakazam counter, etc. │
-│ │
-│ Réponse: "Voici une équipe pour │
-│ counter: [...]" │
-└─────────────────────────────────────┘
+</td>
+<td width="33%">
 
-MODE 4 - GENERATE (Crée une équipe)
-┌─────────────────────────────────────┐
-│ Demande: "Génère-moi une équipe de │
-│ dragons legendaires!" │
-│ │
-│ TeamBuildingAgent: │
-│ 1. Filter le pool: sur-dragons │
-│ 2. Utilise RoleClassifierTool │
-│ → Sélectionne roles variés │
-│ 3. Utilise SynergyTool │
-│ → Assemble une bonne équipe │
-│ 4. Utilise TeamScorerTool │
-│ → Valide la note globale │
-│ │
-│ Réponse: "Voici une équipe dragons │
-│ équilibrée: [Dragonite, Salamence]"│
-└─────────────────────────────────────┘
+#### 🏥 L'Hôpital
 
-════════════════════════════════════════════════════════════════════════════════
+```
+MasterAgent = Infirmier d'accueil
+```
 
-🎯 SUBAGENT #2 - BattleAgent
-════════════════════════════════════════════════════════════════════════════════
+**Scénario:**
+1. 🤒 Patient: _"J'ai mal à la tête!"_
+2. 👩‍⚕️ Infirmier: _"Cas pour le NEUROLOGUE"_
+3. 👨‍⚕️ Envoi au service spécialisé
+4. ✅ Diagnostic prêt
 
-À QUOI ÇA SERT?
-───────────────
-SPÉCIALISTE des décisions pendant le combat:
-• Décide quel move utiliser au tour X
-• Décide s'il faut switch de Pokémon
-• Évalue la probabilité de gagner
-• Simule des combats complets 6v6
+</td>
+<td width="33%">
 
-ANALOGIE - Le Commentateur de Sport:
-─────────────────────────────────────
-Tour 1 du match de boxe:
-Commentateur analysé:
-├─ "Le champion A va attaquer à droite (BattleDecisionTool)"
-├─ "Ça fera environ 80 dégâts (DamageCalculatorTool)"
-├─ "Le champion B sera plus rapide (SpeedComparatorTool)"
-├─ "Attention, il est fatigué (StatusEffectTool)"
-└─ "Probabilité de victoire: 65% pour A (WinProbabilityTool)"
+#### 🕵️ Le Détective
 
-MÉTHODES PRINCIPALES:
-──────────────────────
+```
+MasterAgent = Chef de police
+```
 
-MÉTHODE 1 - executeTurn()
-┌─────────────────────────────────────┐
-│ Ton Pikachu vs Dragonite (tour 3) │
-│ Demande: "Qu'est-ce que je fais?" │
-│ │
-│ BattleAgent: │
-│ 1. Utilise StatusEffectTool │
-│ → "Pas de malus, tu peux agir" │
-│ 2. Utilise SpeedComparatorTool │
-│ → "Tu es plus rapide, tu attaques│
-│ en premier" │
-│ 3. Utilise BattleDecisionTool │
-│ → Évalue TOUS les moves: │
-│ • Thunderbolt: 95/100 (super │
-│ efficace contre Flying) │
-│ • Thunder Wave: 60/100 │
-│ • Quick Attack: 40/100 │
-│ → Meilleur: Thunderbolt │
-│ 4. Utilise DamageCalculatorTool │
-│ → "Thunderbolt fait 118 dégâts" │
-│ → "Dragonite a 120 HP" │
-│ → "98% de chance de KO!" │
-│ │
-│ Réponse: "Utilise THUNDERBOLT!" │
-│ Raison: "Super-efficace + peut KO" │
-└─────────────────────────────────────┘
+**Scénario:**
+1. 🚨 Vol de voiture signalé
+2. 👮 Chef: _"Cas de CAMBRIOLAGE"_
+3. 🔍 Inspecteur enquête
+4. ✅ Coupable identifié
 
-MÉTHODE 2 - autoBattle() [Simulation]
-┌─────────────────────────────────────┐
-│ Demande: "Simule le combat complet" │
-│ (sans joueur humain) │
-│ │
-│ BattleAgent: │
-│ Tour 1: │
-│ ✓ executeTurn() → "Utilise move X" │
-│ ✓ Applique dégâts │
-│ ✓ IA adverse répond │
-│ │
-│ Tour 2: │
-│ ✓ Même processus │
-│ ✓ Quelqu'un meurt? → Switch auto │
-│ │
-│ ... (tant qu'il y a des Pokémon) │
-│ │
-│ Résultat final: │
-│ "Joueur gagne en 6 tours!" │
-│ "IA gagne en 8 tours!" │
-│ "Match nul après 100 tours" │
-└─────────────────────────────────────┘
+</td>
+</tr>
+</table>
 
-MÉTHODE 3 - analyzeCurrentState()
-┌─────────────────────────────────────┐
-│ Demande: "Analyse la situation" │
-│ │
-│ BattleAgent répond: │
-│ Avantage: PLAYER (65%) │
-│ Momentum: PLAYER (tu as l'initiative)│
-│ Facteurs critiques: │
-│ ✓ Tu as +1 Attack │
-│ ✗ Tu es faible à Ground │
-│ ✓ L'IA est faible contre toi │
-│ Recommandations: │
-│ • Attaque agressivement │
-│ • Attention au Ground move │
-│ • Tu peux potentiellement KO │
-└─────────────────────────────────────┘
+### 💬 Comment ça marche ?
 
-════════════════════════════════════════════════════════════════════════════════
+```mermaid
+sequenceDiagram
+    participant Client as 👤 Client/Frontend
+    participant API as 🌐 API Endpoint
+    participant Master as 🤖 MasterAgent
+    participant SubAgent as 🔧 SubAgent
+    
+    Client->>API: POST /api/team/suggest<br/>{ team: [...] }
+    API->>Master: JSON Body
+    Note over Master: 1. new MasterAgent()<br/>- Init LLM (Mistral/Ollama)<br/>- Crée SubAgents
+    Note over Master: 2. process(request)<br/>- Analyse la tâche<br/>- Réflexion LLM (optionnel)<br/>- Détermine type
+    Master->>SubAgent: Délégation
+    SubAgent-->>Master: Résultats
+    Master-->>API: MasterAgentResponse
+    API-->>Client: JSON Response
+```
 
-📊 MASTERAGENT vs SUBAGENT - RÉSUMÉ COMPARATIF
-════════════════════════════════════════════════════════════════════════════════
+### 📦 Structure du MasterAgent
 
-─────────────────────────────────────────────────────────────
-RÔLE Orchestrateur Spécialiste
-NIVEAU Haut niveau Détails techniques
-DÉCISIONS Quel SubAgent? Comment faire?
-LLM Oui (réflexion) Non (exécution)
-NOMBRE 1 seul 2 (ou plus)
-─────────────────────────────────────────────────────────────
-Exemple #1:
+```typescript
+class MasterAgent {
+  private llmClient: LLMChatClient;        // Mistral ou Ollama
+  private teamBuildingAgent: TeamBuildingAgent;
+  private battleAgent: BattleAgent;
+  
+  async process(request: MasterAgentRequest): Promise<MasterAgentResponse> {
+    // 1. Analyse de la requête
+    // 2. Réflexion LLM (si activée)
+    // 3. Délégation au SubAgent
+    // 4. Retour de la réponse
+  }
+}
+```
 
-CLIENT: "Je veux une équipe!"
-↓
-MASTERAGENT: "OK, c'est TEAM_BUILDING"
-↓
-SUBAGENT (TeamBuildingAgent): "Je vais scorer tous les candidats"
-↓
-TOOLS: "TypeAnalysisTool dit..."
-↓
-RÉPONSE: "Voici les 10 meilleurs Pokémon"
+---
 
-─────────────────────────────────────────────────────────────
-Exemple #2:
+## 🔧 SubAgents - Les Spécialistes
 
-CLIENT: "Pikachu vs Dragonite, quoi faire?"
-↓
-MASTERAGENT: "C'est BATTLE"
-↓
-SUBAGENT (BattleAgent): "Je évalue les options"
-↓
-TOOLS: "DamageCalculator dit 120 dégâts"
-"SpeedComparator dit tu attaques en premier"
-"BattleDecision dit Thunderbolt"
-↓
-RÉPONSE: "Utilise THUNDERBOLT (95/100)"
+### TeamBuildingAgent - Expert Construction d'Équipes {#teambuilding-agent}
 
-════════════════════════════════════════════════════════════════════════════════
+<div align="center">
 
-🔗 FLUX COMPLET - D'ACCUEIL À RÉPONSE
-════════════════════════════════════════════════════════════════════════════════
+![Type](https://img.shields.io/badge/Type-SubAgent-10B981)
+![Specialization](https://img.shields.io/badge/Specialization-Team%20Building-blue)
 
-┌────────────────────────────────────────────────────────────────┐
-│ 1. CLIENT envoie requête JSON │
-│ POST /api/team/suggest │
-│ { team: [Pikachu, Squirtle] } │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 2. MASTERAGENT reçoit │
-│ • task: "team_building" (détecté) │
-│ • enableReflection: false (pour performance) │
-│ • Crée les Tools + SubAgents │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 3. MASTERAGENT.process() │
-│ • Si reflection=true: Appelle LLM Mistral/Ollama │
-│ • Parse: "C'est TEAM_BUILDING" │
-│ • Appelle: handleTeamBuilding() │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 4. SUBAGENT (TeamBuildingAgent) reçoit │
-│ • currentTeam: [Pikachu, Squirtle] │
-│ • mode: "suggest" │
-│ • handleSuggest() │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 5. TEAMBUILDING AGENT utilise les TOOLS │
-│ • TypeAnalysisTool.analyzeTeam() │
-│ → "Tu manques Grass" │
-│ • RoleClassifierTool.classify() │
-│ → "Pikachu=Sweeper, Squirtle=Wall" │
-│ • SynergyTool.analyzeSynergy() │
-│ → "Bonne synergie, types variés" │
-│ • TeamScorerTool.rankCandidates() │
-│ → Score chaque pokemon possible │
-│ → Ranking: [Venusaur:85, Exeggutor:82, ...] │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 6. TOOLS retournent les résultats │
-│ → Best = Venusaur (Grass type) │
-│ → Top 10 suggestions avec scores │
-│ → Analysis de l'équipe finale │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 7. SUBAGENT assemble la réponse │
-│ { │
-│ success: true, │
-│ suggestions: [Venusaur, Exeggutor, ...], │
-│ analysis: { strengths, weaknesses, grade } │
-│ } │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 8. MASTERAGENT retourne au CLIENT │
-│ { │
-│ success: true, │
-│ task: "team_building", │
-│ teamBuildingResponse: {...} │
-│ } │
-└────────────────────┬─────────────────────────────────────────┘
-│
-┌────────────────────▼─────────────────────────────────────────┐
-│ 9. API /api/team/suggest retourne au CLIENT │
-│ HTTP 200 │
-│ { success, suggestions, analysis } │
-└────────────────────────────────────────────────────────────────┘
+</div>
 
-════════════════════════════════════════════════════════════════════════════════
+#### 🎯 Mission
 
-💡 CAS D'USAGE - DES SCÉNARIOS RÉELS
-════════════════════════════════════════════════════════════════════════════════
+Spécialiste de la construction d'équipes Pokémon avec 4 capacités principales :
 
-SCÉNARIO 1 - "Suggère-moi un 3e Pokémon"
-─────────────────────────────────────────
-Client: POST /api/team/suggest
-Body: { team: [Pikachu, Squirtle] }
+| Mode | Description | Cas d'usage |
+|------|-------------|-------------|
+| 💡 **SUGGEST** | Suggère des Pokémon complémentaires | "À ajouter dans mon équipe ?" |
+| 🔍 **ANALYZE** | Analyse une équipe complète | "Mon équipe est-elle équilibrée ?" |
+| 🛡️ **COUNTER** | Crée un counter à une équipe adverse | "Comment battre cette équipe ?" |
+| ✨ **GENERATE** | Génère une équipe complète | "Crée-moi une équipe !" |
 
-Flux:
-MasterAgent → "C'est SUGGEST"
-→ TeamBuildingAgent → handleSuggest()
-→ TypeAnalysisTool: "Manques Grass"
-→ TeamScorerTool: "Venusaur=85, Exeggutor=82, ..."
-→ Retour: Top 10
+#### 🎭 Analogie - Le Coach Sportif
 
-Réponse: "Top suggestions: Venusaur (85/100), Exeggutor..."
+> Tu vas au gym et dis: **"Je veux une bonne équipe musculaire"**
+> 
+> - 👨‍🏫 Coach: "Montre-moi tes muscles"
+> - 📊 Analyse: "Tu es faible aux jambes"
+> - 💡 Conseil: "3 exos de jambes pour équilibrer"
+> - ✅ Résultat: Équipe d'exercices équilibrée !
 
-SCÉNARIO 2 - "Analyse mon équipe"
-──────────────────────────────────
-Client: POST /api/team/suggest
-Body: { team: [6 pokemons], mode: "analyze" }
+---
 
-Flux:
-MasterAgent → "C'est ANALYZE"
-→ TeamBuildingAgent → handleAnalyze()
-→ TypeAnalysisTool: "Couverture: 85%"
-→ RoleClassifierTool: "Distribution: 2 sweeper, 2 wall..."
-→ SynergyTool: "Mauvaise synergie: 3 electrics"
-→ TeamScorerTool: "Score: 72/100 = Grade B"
-→ Retour: Analyse complète
+### 📄 MODE 1 - SUGGEST (Suggestion)
 
-Réponse: "Grade: B - Trop d'electrics, équilibre mieux"
+**Contexte:** Tu as `[Pikachu, Squirtle]` et cherches un 3ème membre.
 
-SCÉNARIO 3 - "Qu'est-ce que je fais au combat?"
-────────────────────────────────────────────────
-Client: POST /api/battle/ai-action
-Body: { state: battleState }
+```mermaid
+flowchart LR
+    A[👥 Équipe actuelle] --> B[🔍 TypeAnalysisTool]
+    B --> C{Manque Grass<br/>coverage}
+    C --> D[⭐ TeamScorerTool]
+    D --> E[🏆 Classement]
+    
+    E --> F[1️⃣ Venusaur 85/100]
+    E --> G[2️⃣ Exeggcutor 82/100]
+    E --> H[3️⃣ Vileplume 79/100]
+    
+    style F fill:#10B981,color:#fff
+    style C fill:#F59E0B,color:#000
+```
 
-Flux:
-MasterAgent → "C'est BATTLE"
-→ BattleAgent → executeTurn()
-→ StatusEffectTool: "Pas paralysé"
-→ SpeedComparatorTool: "Tu attaques en premier"
-→ BattleDecisionTool: "Meilleur move = Thunderbolt"
-→ DamageCalculatorTool: "118-145 dégâts"
-→ Retour: Décision + analyse
+**Processus détaillé:**
 
-Réponse: "Utilise THUNDERBOLT (super efficace contre Flying)"
+1. 📊 **Analyse** des 2 Pokémon existants
+2. 🔍 **TypeAnalysisTool** détecte: _"Manque Grass coverage"_
+3. ⭐ **TeamScorerTool** évalue chaque candidat Grass
+4. 🏆 **Classement** par score
+5. ✅ **Réponse**: _"Venusaur est le meilleur choix"_
 
-════════════════════════════════════════════════════════════════════════════════
+---
 
-📋 RÉSUMÉ FINAL - EN 30 SECONDES
-════════════════════════════════════════════════════════════════════════════════
+### 📄 MODE 2 - ANALYZE (Analyse Complète)
 
-MasterAgent:
-= Le MANAGER qui décide quelle équipe (SubAgent) appeler
-= Utilise LLM pour penser ("Is this team_building or battle?")
-= Appelle le bon SubAgent
+**Contexte:** Tu as une équipe de 6 Pokémon et demandes: _"C'est bon mon équipe ?"_
 
-TeamBuildingAgent (SubAgent #1):
-= EXPERT en équipes
-= Suggère / Analyse / Counter / Génère
-= Utilise TypeAnalysisTool, RoleClassifierTool, etc.
+**Outils utilisés:**
 
-BattleAgent (SubAgent #2):
-= EXPERT en combat
-= Décide: quel move / switch?
-= Utilise BattleDecisionTool, DamageCalculator, etc.
+| Outil | Fonction | Résultat |
+|-------|----------|----------|
+| 🎨 TypeAnalysisTool | Couverture de types | _"Couverture: 85%, Faiblesses: Ground, Rock"_ |
+| 🎭 RoleClassifierTool | Classification des rôles | _"2 sweepers, 2 walls, 1 pivot, 1 support"_ |
+| 🤝 SynergyTool | Synergie d'équipe | _"Mauvaise synergie: 2 electric"_ |
+| ⭐ TeamScorerTool | Score global | _"Note: 72/100 → Grade: B"_ |
 
-Tools:
-= Les OUTILS spécialisés que les SubAgents utilisent
-= Jamais appelés directement par le client
-= Toujours appelés par un SubAgent
+> **📋 Réponse finale:** _"Équipe correcte mais trop d'electrics, équilibre mieux les types"_
 
-════════════════════════════════════════════════════════════════════════════════
+---
+
+### 📄 MODE 3 - COUNTER (Counter l'Adversaire)
+
+**Contexte:** Adversaire a `[Dragonite, Alakazam, ...]` - Comment le contrer ?
+
+```mermaid
+flowchart TD
+    A[👁️ Équipe adverse] --> B{Analyse faiblesses}
+    B -->|Dragonite| C[❄️ Ice/🪨 Rock]
+    B -->|Alakazam| D[🌑 Dark/🐛 Bug]
+    C & D --> E[🔍 Cherche counters]
+    E --> F[✅ Lapras]
+    E --> G[✅ Tyranitar]
+    E --> H[✅ Umbreon]
+    F & G & H --> I[🏆 Équipe counter prête]
+    
+    style I fill:#10B981,color:#fff
+    style A fill:#EF4444,color:#fff
+```
+
+**Stratégie:**
+1. 🎨 **TypeAnalysisTool** identifie les faiblesses de chaque ennemi
+2. 🔍 **Recherche** de Pokémon avec super-effectiveness
+3. 🛡️ **Sélection** de Pokémon résistants aux attaques adverses
+4. ⭐ **Validation** avec TeamScorerTool
+
+---
+
+### 📄 MODE 4 - GENERATE (Génération Complète)
+
+**Contexte:** _"Génère-moi une équipe de dragons légendaires!"_
+
+<table>
+<tr>
+<td>
+
+**📝 Étapes:**
+
+1. 🔍 **Filtrage** du pool (type Dragon)
+2. 🎭 **RoleClassifierTool** → Rôles variés
+3. 🤝 **SynergyTool** → Synergie optimale
+4. ⭐ **TeamScorerTool** → Validation finale
+
+</td>
+<td>
+
+**🏆 Résultat:**
+
+```json
+{
+  "team": [
+    "Dragonite",    // Sweeper
+    "Salamence",    // Sweeper
+    "Garchomp",     // Physical
+    "Dialga",       // Tank
+    "Latios",       // Special
+    "Altaria"       // Support
+  ],
+  "score": 88
+}
+```
+
+</td>
+</tr>
+</table>
+
+---
+
+## ⚔️ BattleAgent - Expert Combat {#battle-agent}
+
+<div align="center">
+
+![Type](https://img.shields.io/badge/Type-SubAgent-EF4444)
+![Specialization](https://img.shields.io/badge/Specialization-Battle%20Strategy-orange)
+
+</div>
+
+### 🎯 Mission
+
+Spécialiste des décisions en combat temps réel :
+
+| Capacité | Description |
+|----------|-------------|
+| 🎮 **Décision de Move** | Choisit l'attaque optimale |
+| 🔄 **Switch Strategy** | Décide quand changer de Pokémon |
+| 📊 **Win Probability** | Calcule les chances de victoire |
+| 🤖 **Auto-Battle** | Simule combats complets 6v6 |
+
+### 🎭 Analogie - Le Commentateur Sportif
+
+> **Tour 1 du match de boxe:**
+> 
+> 🎤 Le commentateur analyse en direct :
+> - 👊 _"Le champion A va attaquer à droite"_ (BattleDecisionTool)
+> - 💥 _"Ça fera environ 80 dégâts"_ (DamageCalculatorTool)
+> - ⚡ _"Le champion B sera plus rapide"_ (SpeedComparatorTool)
+> - 😴 _"Attention, il est fatigué"_ (StatusEffectTool)
+> - 📈 _"Probabilité de victoire: 65% pour A"_ (WinProbabilityTool)
+
+---
+
+### ⚙️ Méthode 1: executeTurn()
+
+**Contexte:** `Pikachu vs Dragonite` au tour 3 - _"Qu'est-ce que je fais ?"_
+
+```mermaid
+flowchart TD
+    Start[Pikachu vs Dragonite] --> A[Analyse État]
+    
+    subgraph Analyse
+        B[StatusEffectTool]
+        C[SpeedComparatorTool]
+        D[BattleDecisionTool]
+    end
+    
+    A --> B
+    B -->|Pas de malus| C
+    C -->|Plus rapide| D
+    D --> E{Eval moves}
+    
+    E -->|95/100| F[⚡ Thunderbolt]
+    E -->|60/100| G[💥 Thunder Wave]
+    E -->|40/100| H[👊 Quick Attack]
+    
+    F --> I[DamageCalculatorTool]
+    I --> J{118 dommages<br/>Dragonite: 120 HP<br/>98% KO}
+    J --> K[✅ Réponse:<br/>THUNDERBOLT!]
+    
+    style F fill:#10B981,color:#fff
+    style K fill:#4F46E5,color:#fff
+    style J fill:#F59E0B,color:#000
+```
+
+**🎯 Décision finale:** _"Utilise **THUNDERBOLT** - Super efficace + peut KO!"_
+
+---
+
+### ⚙️ Méthode 2: autoBattle() - Simulation
+
+**Contexte:** Simulation complète sans joueur humain
+
+<table>
+<tr>
+<td width="50%">
+
+**🔄 Procédure:**
+
+```typescript
+while (teamA.alive > 0 && teamB.alive > 0) {
+  // Tour N
+  executeTurn(teamA, teamB);
+  
+  if (pokemon.hp <= 0) {
+    autoSwitch();
+  }
+  
+  turn++;
+}
+
+return winner;
+```
+
+</td>
+<td width="50%">
+
+**🏆 Résultats possibles:**
+
+- ✅ _"Joueur gagne en 6 tours!"_
+- ❌ _"IA gagne en 8 tours!"_
+- 🤝 _"Match nul après 100 tours"_
+
+**📊 Statistiques:**
+- Dommages totaux
+- Kills par Pokémon
+- MVP du match
+
+</td>
+</tr>
+</table>
+
+---
+
+### ⚙️ Méthode 3: analyzeCurrentState()
+
+**Contexte:** _"Analyse la situation actuelle"_
+
+```mermaid
+pie title Distribution des Avantages
+    "Player" : 65
+    "IA" : 35
+```
+
+**📊 Analyse détaillée:**
+
+| Critère | Valeur | Impact |
+|---------|--------|--------|
+| 🏆 **Avantage** | PLAYER | 65% |
+| 🔥 **Momentum** | PLAYER | Initiative |
+| 💪 **Buffs** | +1 Attack | Positif |
+| ⚠️ **Risques** | Faible Ground | Critique |
+| 🎯 **Matchup** | Favorable | Très bon |
+
+> **💡 Recommandations:**
+> - 💥 Attaque agressivement
+> - ⚠️ Attention au Ground move
+> - ✅ Tu peux potentiellement KO
+
+---
+
+## 📊 Comparaison MasterAgent vs SubAgents {#comparaison}
+
+<div align="center">
+
+### Tableau Comparatif
+
+</div>
+
+| Critère | 🤖 MasterAgent | 🔧 SubAgents |
+|---------|------------------|-------------|
+| **Rôle** | 🎭 Orchestrateur | 💼 Spécialiste |
+| **Niveau** | 📊 Haut niveau | 🔧 Détails techniques |
+| **Décisions** | "❓ Quel SubAgent?" | "🛠️ Comment faire?" |
+| **LLM** | ✅ Oui (réflexion) | ❌ Non (exécution) |
+| **Nombre** | 1️⃣ Un seul | 2️⃣+ Plusieurs |
+| **Fichier** | `MasterAgent.ts` | `subAgents/*.ts` |
+| **Outils** | ❌ Aucun | ✅ TeamBuilding/Battle Tools |
+
+---
+
+### 🔄 Flux Complet - Exemple 1
+
+```mermaid
+sequenceDiagram
+    participant C as 👤 Client
+    participant M as 🤖 MasterAgent
+    participant S as 🔧 TeamBuildingAgent<br/>(SubAgent)
+    participant T as 🛠️ Tools
+    
+    C->>M: "Je veux une équipe!"
+    Note over M: Classification:<br/>TEAM_BUILDING
+    M->>S: Délégation
+    S->>T: TypeAnalysisTool
+    S->>T: TeamScorerTool
+    S->>T: SynergyTool
+    T-->>S: Résultats
+    S-->>M: Top 10 Pokémon
+    M-->>C: "Voici les 10 meilleurs"
+```
+
+---
+
+### ⚔️ Flux Complet - Exemple 2
+
+```mermaid
+sequenceDiagram
+    participant C as 👤 Client
+    participant M as 🤖 MasterAgent
+    participant B as ⚔️ BattleAgent<br/>(SubAgent)
+    participant T as 🛠️ Battle Tools
+    
+    C->>M: "Pikachu vs Dragonite,<br/>quoi faire?"
+    Note over M: Classification:<br/>BATTLE
+    M->>B: Délégation
+    B->>T: BattleDecisionTool
+    B->>T: DamageCalculatorTool
+    B->>T: SpeedComparatorTool
+    T-->>B: Résultats calculs
+    B-->>M: "Use THUNDERBOLT"
+    M-->>C: "Attaque avec Thunderbolt!"
+```
+
+---
+
+## 🎓 Conclusion
+
+<div align="center">
+
+**L'architecture multi-agent permet:**
+
+🧩 **Modularité** • 🎯 **Spécialisation** • 🔄 **Scalabilité** • 🧑‍💻 **Maintenabilité**
+
+</div>
+
+> Le **MasterAgent** orchestre intelligemment les **SubAgents** spécialisés,
+> qui utilisent des **Tools** précis pour accomplir des tâches complexes
+> de manière efficace et maintenable.
+
+---
+
+<div align="center">
+
+🔗 **Voir aussi:**
+[Architecture Complète](ok.md) • [Documentation Tools](tool.md) • [Multi-Agent Diagram](multi-agent-architecture.md)
+
+</div>
