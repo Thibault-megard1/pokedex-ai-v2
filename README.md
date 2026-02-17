@@ -28,7 +28,7 @@ Ce schema situe les pages principales et leur passage par les routes API.
         Accueil --> Favoris[Favoris]
         Accueil --> Stats[Statistiques]
     
-        Auth[Authentification] --> Admin[Admin (protégé)]
+        Auth[Authentification] --> Admin[Admin protégé]
     
         Pokedex --> API["/api/*"]
         Combat --> API
