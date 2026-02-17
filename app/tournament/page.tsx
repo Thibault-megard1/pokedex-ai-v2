@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PokemonAutocomplete from "@/components/PokemonAutocomplete";
 import TypeLogo from "@/components/TypeLogo";
 import { 
@@ -117,6 +117,7 @@ export default function TournamentPage() {
   const [teamGeneration, setTeamGeneration] = useState<TeamGenerationResult | null>(null);
   const [loadingTeam, setLoadingTeam] = useState(true);
   const [teamLoaded, setTeamLoaded] = useState(false);
+  const battleLogRef = useRef<HTMLDivElement>(null);
 
   // Charge l'equipe sauvegardee au montage.
   useEffect(() => {
@@ -190,42 +191,76 @@ export default function TournamentPage() {
         setCurrentTurnIndex(prev => prev + 1);
       } else if (!battleState.isFinished) {
         // Execute next turn
+        const turnsBefore = battleState.turnHistory.length;
         executeTurn(battleState);
         setBattleState({ ...battleState });
         
-        // Add log entry
-        const lastTurn = battleState.turnHistory[battleState.turnHistory.length - 1];
-        if (lastTurn) {
+        // Get all new turns added (usually 2 per executeTurn call)
+        const newTurns = battleState.turnHistory.slice(turnsBefore);
+        
+        // Add turn separator
+        if (newTurns.length > 0) {
+          const turnNumber = newTurns[0].turnNumber;
+          setBattleLog(prev => [...prev, `━━━ Tour ${turnNumber} ━━━`]);
+        }
+        
+        // Add log entries for each new turn
+        newTurns.forEach((turn) => {
+          // Determine which team is attacking
+          const isPlayerAttacking = turn.attacker.teamId === "player-team";
+          const teamIcon = isPlayerAttacking ? "🔵" : "🔴";
+          const attackerName = turn.attacker.pokemonName;
+          const defenderName = turn.defender.pokemonName;
+          
           // Build log message based on move type
-          let log = `Tour ${lastTurn.turnNumber}: ${lastTurn.attacker.pokemonName} utilise ${lastTurn.attacker.move.name}`;
+          let log = `${teamIcon} ${attackerName} utilise ${turn.attacker.move.name}`;
           
           // Only show damage for damaging moves
-          if (lastTurn.attacker.move.damageClass !== "status") {
-            if (lastTurn.damage > 0) {
-              log += ` → ${lastTurn.damage} dégâts${lastTurn.isCritical ? " (Critique!)" : ""}`;
-              if (lastTurn.effectiveness !== 1) {
-                log += ` (×${lastTurn.effectiveness})`;
+          if (turn.attacker.move.damageClass !== "status") {
+            if (turn.damage > 0) {
+              log += ` sur ${defenderName} → ${turn.damage} dégâts`;
+              if (turn.isCritical) {
+                log += " 💥 CRITIQUE!";
+              }
+              if (turn.effectiveness !== 1) {
+                if (turn.effectiveness > 1) {
+                  log += ` (Super efficace ×${turn.effectiveness})`;
+                } else if (turn.effectiveness < 1) {
+                  log += ` (Peu efficace ×${turn.effectiveness})`;
+                }
+              }
+              if (turn.fainted) {
+                log += ` 💀 ${defenderName} est K.O.!`;
               }
             } else {
               log += " → Raté!";
             }
+          } else {
+            log += ` (Statut)`;
           }
           
           setBattleLog(prev => [...prev, log]);
           
           // Add effect logs if any
-          const effectLogs = (lastTurn as any).effectLogs;
+          const effectLogs = (turn as any).effectLogs;
           if (effectLogs && Array.isArray(effectLogs)) {
             effectLogs.forEach((effect: any) => {
               setBattleLog(prev => [...prev, `  ↳ ${effect.description}`]);
             });
           }
-        }
+        });
       }
     }, 1500);
 
     return () => clearTimeout(timer);
   }, [autoPlay, battleState, currentTurnIndex]);
+
+  // Auto-scroll to bottom when new logs are added
+  useEffect(() => {
+    if (battleLogRef.current) {
+      battleLogRef.current.scrollTop = battleLogRef.current.scrollHeight;
+    }
+  }, [battleLog]);
 
   const totalPointsUsed = evolutionPoints.reduce((sum, p) => sum + p, 0);
 
@@ -730,13 +765,75 @@ export default function TournamentPage() {
               </div>
 
               {/* Battle Log */}
-              <div className="bg-gray-100 rounded-lg p-4 h-96 overflow-y-auto">
-                <div className="font-bold mb-2">📜 Journal de combat</div>
-                {battleLog.map((log, i) => (
-                  <div key={i} className="text-sm py-1 border-b border-gray-300">
-                    {log}
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-700">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">📜</span>
+                  <span className="font-bold text-lg">Journal de combat</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 ml-auto">
+                    Tour {battleState.currentTurn}
+                  </span>
+                </div>
+                
+                {/* Legend */}
+                <div className="flex gap-4 mb-3 text-xs">
+                  <div className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-blue-500 rounded"></span>
+                    <span className="text-gray-600 dark:text-gray-400">🔵 Votre équipe</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-red-500 rounded"></span>
+                    <span className="text-gray-600 dark:text-gray-400">🔴 Équipe IA</span>
+                  </div>
+                </div>
+                
+                <div 
+                  ref={battleLogRef}
+                  className="bg-white dark:bg-gray-800 rounded-lg p-3 h-96 overflow-y-auto space-y-1 font-mono text-sm"
+                >
+                  {battleLog.length === 0 ? (
+                    <div className="text-center text-gray-400 py-8">
+                      Aucune action pour le moment...
+                    </div>
+                  ) : (
+                    battleLog.map((log, i) => {
+                      // Check if it's a turn separator
+                      const isTurnSeparator = log.startsWith("━━━");
+                      // Check if it's a sub-log (effect)
+                      const isEffect = log.startsWith("  ↳");
+                      // Check which team is acting based on emoji
+                      const isPlayerAction = log.startsWith("🔵");
+                      const isAIAction = log.startsWith("🔴");
+                      
+                      if (isTurnSeparator) {
+                        return (
+                          <div 
+                            key={i} 
+                            className="text-center font-bold text-gray-500 dark:text-gray-400 py-2 my-2 border-y border-gray-300 dark:border-gray-600"
+                          >
+                            {log}
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className={`py-1.5 px-2 rounded transition-colors ${
+                            isEffect 
+                              ? "text-gray-600 dark:text-gray-400 text-xs ml-4 border-l-2 border-purple-300 dark:border-purple-700 pl-3" 
+                              : isPlayerAction 
+                                ? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500"
+                                : isAIAction
+                                  ? "bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500"
+                                  : "border-l-4 border-gray-300 dark:border-gray-600"
+                          }`}
+                        >
+                          {log}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </div>
 

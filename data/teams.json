@@ -1,1 +1,34 @@
-{}
+{
+  "104585f3-4600-4efc-88c8-f3c5255edcfd": [
+    {
+      "slot": 1,
+      "pokemonName": "nidoqueen",
+      "pokemonId": 31
+    },
+    {
+      "slot": 2,
+      "pokemonName": "articuno",
+      "pokemonId": 144
+    },
+    {
+      "slot": 3,
+      "pokemonName": "mewtwo",
+      "pokemonId": 150
+    },
+    {
+      "slot": 4,
+      "pokemonName": "dragonite",
+      "pokemonId": 149
+    },
+    {
+      "slot": 5,
+      "pokemonName": "chansey",
+      "pokemonId": 113
+    },
+    {
+      "slot": 6,
+      "pokemonName": "poliwrath",
+      "pokemonId": 62
+    }
+  ]
+}
