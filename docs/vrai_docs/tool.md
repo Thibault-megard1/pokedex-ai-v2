@@ -1,722 +1,767 @@
-# 🛠️ Documentation des Tools - Guide Détaillé
+# 🔧 Documentation des Tools LangChain
 
-> Explication complète de chaque outil utilisé par les agents
+> Documentation complète de tous les tools disponibles dans l'architecture multi-agent
 
 ## 📋 Table des matières
 
-### TeamBuilding Tools
-- [🎨 TypeAnalysisTool](#type-analysis)
-- [🎭 RoleClassifierTool](#role-classifier)
-- [🤝 SynergyTool](#synergy)
-- [⭐ TeamScorerTool](#team-scorer)
-
-### Battle Tools
-- [🎯 BattleDecisionTool](#battle-decision)
-- [💥 DamageCalculatorTool](#damage-calculator)
-- [⚡ SpeedComparatorTool](#speed-comparator)
-- [🤒 StatusEffectTool](#status-effect)
-- [📈 StatModifierTool](#stat-modifier)
+- [🎯 Pattern Tool](#pattern-tool)
+- [🔧 TeamBuilding Tools](#teambuilding-tools)
+- [⚔️ Battle Tools](#battle-tools)
+- [📝 Création de nouveaux tools](#creation-tools)
 
 ---
 
-## 🔧 TeamBuilding Tools
+## 🎯 Pattern Tool {#pattern-tool}
 
-<div align="center">
+### Syntaxe LangChain
 
-![Category](https://img.shields.io/badge/Category-Team%20Building-10B981)
-![Location](https://img.shields.io/badge/Location-lib%2Fagents%2Ftools-blue)
+Les tools sont créés avec la fonction `tool()` de `@langchain/core/tools` :
 
-</div>
+```typescript
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+export const myTool = tool(
+  // 1. Fonction async qui exécute la logique
+  async (input: InputType): Promise<string> => {
+    const { param1, param2 } = input;
+    
+    // Logique métier
+    const result = await doSomething(param1, param2);
+    
+    // Toujours retourner une string JSON
+    return JSON.stringify(result);
+  },
+  // 2. Métadonnées du tool
+  {
+    name: "my_tool_name",           // Nom unique (snake_case)
+    description: "Description...",   // Description pour le LLM
+    schema: z.object({              // Schéma Zod des paramètres
+      param1: z.string().describe("Description param1"),
+      param2: z.number().describe("Description param2")
+    })
+  }
+);
+```
+
+### Bonnes pratiques
+
+| Règle | Description |
+|-------|-------------|
+| ✅ Nom unique | Utiliser `snake_case` pour les noms |
+| ✅ Description claire | Le LLM l'utilise pour décider quand appeler le tool |
+| ✅ Schéma Zod | Valider tous les inputs avec `.describe()` |
+| ✅ Retour JSON | Toujours `JSON.stringify()` le résultat |
+| ✅ Gestion erreurs | Capturer les erreurs et retourner un message clair |
 
 ---
 
-### 🎨 TypeAnalysisTool {#type-analysis}
+## 🔧 TeamBuilding Tools {#teambuilding-tools}
 
-#### 📝 À quoi ça sert ?
+### 1. `type_analysis`
 
-Analyse les **types** d'une équipe Pokémon pour identifier :
-- ✅ **Couverture offensive** (types que tu peux frapper efficacement)
-- ⚠️ **Faiblesses défensives** (types dangereux contre ton équipe)
-- 🛡️ **Résistances** (types contre lesquels tu es solide)
+Analyse les faiblesses et résistances de type d'une équipe.
 
-#### 🎯 Exemple Concret
+```typescript
+export const typeAnalysisTool = tool(
+  async (input: { team: SimplePokemon[] }) => {
+    const { team } = input;
+    
+    // Calculer les faiblesses cumulées
+    const weaknesses: Record<string, number> = {};
+    const resistances: Record<string, number> = {};
+    const coverage: string[] = [];
+    
+    for (const pokemon of team) {
+      for (const type of pokemon.types) {
+        // Ajouter les attaques couvertes
+        coverage.push(type);
+        
+        // Calculer faiblesses/résistances
+        const typeData = TYPE_CHART[type];
+        for (const weak of typeData.weakTo) {
+          weaknesses[weak] = (weaknesses[weak] || 0) + 1;
+        }
+        for (const resist of typeData.resistsTo) {
+          resistances[resist] = (resistances[resist] || 0) + 1;
+        }
+      }
+    }
+    
+    // Score basé sur la couverture
+    const uniqueCoverage = [...new Set(coverage)];
+    const coverageScore = Math.round((uniqueCoverage.length / 18) * 100);
+    
+    return JSON.stringify({
+      weaknesses: Object.entries(weaknesses)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+      resistances: Object.entries(resistances)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+      coverage: uniqueCoverage,
+      coverageScore,
+      teamSize: team.length
+    });
+  },
+  {
+    name: "type_analysis",
+    description: "Analyse les types d'une équipe Pokémon pour identifier les faiblesses communes, résistances et couverture offensive",
+    schema: z.object({
+      team: z.array(SimplePokemonSchema)
+        .min(1).max(6)
+        .describe("L'équipe à analyser (1-6 Pokémon)")
+    })
+  }
+);
+```
 
 **Input:**
-```typescript
+```json
 {
-  team: [
-    { name: "Pikachu", types: ["electric"] },
-    { name: "Squirtle", types: ["water"] }
+  "team": [
+    { "id": 6, "name": "Charizard", "types": ["fire", "flying"] },
+    { "id": 9, "name": "Blastoise", "types": ["water"] }
   ]
 }
 ```
 
 **Output:**
-```typescript
+```json
 {
-  coverage: {
-    strong: ["water", "flying", "fire", "ground", "rock"],  // 5 types couverts
-    percentage: 27.8  // 5/18 types = 27.8%
+  "weaknesses": [["rock", 2], ["electric", 1]],
+  "resistances": [["fire", 2], ["grass", 1]],
+  "coverage": ["fire", "flying", "water"],
+  "coverageScore": 17,
+  "teamSize": 2
+}
+```
+
+---
+
+### 2. `role_classifier`
+
+Classifie les rôles stratégiques des Pokémon.
+
+```typescript
+export const roleClassifierTool = tool(
+  async (input: { team: SimplePokemon[] }) => {
+    const { team } = input;
+    
+    const roles = team.map(pokemon => {
+      const stats = pokemon.stats || getDefaultStats(pokemon.id);
+      
+      // Déterminer le rôle basé sur les stats
+      let role: string;
+      if (stats.speed > 100 && stats.attack > 100) {
+        role = 'physical_sweeper';
+      } else if (stats.speed > 100 && stats.specialAttack > 100) {
+        role = 'special_sweeper';
+      } else if (stats.defense > 100 && stats.hp > 90) {
+        role = 'physical_wall';
+      } else if (stats.specialDefense > 100 && stats.hp > 90) {
+        role = 'special_wall';
+      } else if (stats.hp > 100 && stats.defense > 80 && stats.specialDefense > 80) {
+        role = 'tank';
+      } else {
+        role = 'support';
+      }
+      
+      return {
+        name: pokemon.name,
+        role,
+        confidence: calculateConfidence(stats)
+      };
+    });
+    
+    // Distribution des rôles
+    const distribution = roles.reduce((acc, r) => {
+      acc[r.role] = (acc[r.role] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return JSON.stringify({
+      roles,
+      distribution,
+      balanced: checkRoleBalance(distribution)
+    });
   },
-  weaknesses: {
-    severe: ["ground", "grass"],        // Double faiblesse
-    moderate: ["electric", "dark"]      // Faiblesse simple
-  },
-  resistances: {
-    strong: ["steel", "fire", "ice"],
-    immune: []
+  {
+    name: "role_classifier",
+    description: "Classifie les rôles de chaque Pokémon (sweeper, wall, tank, support, pivot) basé sur leurs stats",
+    schema: z.object({
+      team: z.array(SimplePokemonSchema).describe("L'équipe à classifier")
+    })
   }
-}
+);
 ```
 
-#### 🎭 Analogie
-
-> **C'est comme le jeu Pierre-Papier-Ciseaux étendu:**
-> 
-> - 🪨 Pierre écrase Ciseaux ✂️
-> - ✂️ Ciseaux coupe Papier 📄
-> - 📄 Papier couvre Pierre 🪨
-> 
-> Le Tool dit: _"Tu as Pierre et Papier, donc il te manque Ciseaux !"_
-
-#### 📊 Visualisation
-
-```mermaid
-flowchart LR
-    Team[👥 Équipe] --> Analyze[🔍 Analyse Types]
-    Analyze --> Coverage[✅ Couverture: 27.8%]
-    Analyze --> Weak[⚠️ Faiblesses: Ground, Grass]
-    Analyze --> Resist[🛡️ Résistances: Steel, Fire, Ice]
-    
-    style Coverage fill:#10B981,color:#fff
-    style Weak fill:#EF4444,color:#fff
-    style Resist fill:#3B82F6,color:#fff
-```
+**Rôles possibles:**
+- `physical_sweeper` - Attaquant physique rapide
+- `special_sweeper` - Attaquant spécial rapide
+- `physical_wall` - Tank défense physique
+- `special_wall` - Tank défense spéciale
+- `tank` - Équilibré défensif
+- `support` - Utilitaire/Setup
+- `pivot` - Switch-in stratégique
 
 ---
 
-### 🎭 RoleClassifierTool {#role-classifier}
+### 3. `synergy_analysis`
 
-#### 📝 À quoi ça sert ?
-
-Classifie chaque Pokémon selon son **rôle tactique** dans l'équipe :
-
-| Rôle | Stats Clés | Fonction |
-|------|-----------|----------|
-| 💨 **Sweeper** | Speed + Attack/SpAtk | Finir les ennemis rapidement |
-| 🛡️ **Wall** | Defense/SpDef + HP | Bloquer et encaisser |
-| 🏰 **Tank** | HP + Defense | Absorber les dégâts |
-| 🔄 **Pivot** | Speed + SpAtk | Switcher intelligemment |
-| 💊 **Support** | Movepool utility | Booster l'équipe |
-
-#### 🎯 Exemple Concret
-
-**Input:**
-```typescript
-{
-  pokemon: "Alakazam",
-  stats: {
-    hp: 55,
-    attack: 50,
-    defense: 45,
-    spAtk: 135,  // 🔥 Très élevé
-    spDef: 95,
-    speed: 120   // ⚡ Très rapide
-  }
-}
-```
-
-**Output:**
-```typescript
-{
-  role: "sweeper",
-  confidence: 0.95,
-  reasoning: "High Speed (120) + High SpAtk (135) = Perfect Sweeper"
-}
-```
-
-**Contre-exemple - Blissey:**
-```typescript
-{
-  pokemon: "Blissey",
-  stats: {
-    hp: 255,      // 🏆 Énorme !
-    spDef: 135,   // 🛡️ Excellent
-    speed: 55,
-    attack: 10
-  }
-}
-// → Role: "wall" (Special Defense Wall)
-```
-
-#### 🎭 Analogie
-
-> **Équipe de football:**
-> 
-> - 💨 **Sweeper** = Attaquant rapide (Mbappé)
-> - 🛡️ **Wall** = Défenseur solide (Van Dijk)
-> - 🏰 **Tank** = Gardien de but (Donnarumma)
-> - 🔄 **Pivot** = Milieu de terrain (De Bruyne)
-> - 💊 **Support** = Entraîneur sur le terrain
-
----
-
-### 🤝 SynergyTool {#synergy}
-
-#### 📝 À quoi ça sert ?
-
-Vérifie si les Pokémon **travaillent bien ensemble** :
-
-- ✅ Couvrent mutuellement leurs faiblesses
-- ✅ Ont des combos puissants
-- ❌ Ne partagent PAS les mêmes faiblesses
-- ❌ Pas de doublons de type inutiles
-
-#### 🎯 Exemple Concret
-
-<table>
-<tr>
-<td width="50%">
-
-**✅ BONNE SYNERGIE**
+Analyse la synergie globale de l'équipe.
 
 ```typescript
-{
-  team: [
-    "Pikachu",  // Electric
-    "Lapras"    // Water/Ice
-  ]
-}
-```
-
-**Analyse:**
-- ✅ Pikachu frappe Flying/Water (super-efficace)
-- ✅ Lapras couvre Ground (faiblesse de Pikachu)
-- ✅ Diversité de types
-- ✅ Pas de faiblesse commune critique
-
-**Score:** 🟢 92/100
-
-</td>
-<td width="50%">
-
-**❌ MAUVAISE SYNERGIE**
-
-```typescript
-{
-  team: [
-    "Pikachu",  // Electric
-    "Zapdos"    // Electric/Flying
-  ]
-}
-```
-
-**Analyse:**
-- ❌ Même type (Electric) = doublon
-- ❌ Tous deux faibles à Ground
-- ❌ Pas de diversité
-- ❌ Facile à counter
-
-**Score:** 🔴 45/100
-
-</td>
-</tr>
-</table>
-
-#### 🎭 Analogie
-
-> **C'est comme les couleurs:**
-> 
-> - 🟦 **Bleu** + 🟧 **Orange** = Couleurs complémentaires (beau !)
-> - 🟦 **Bleu** + 🟦 **Bleu** = Monotone (ennuyeux)
-
-#### 📊 Calcul de Synergie
-
-```mermaid
-flowchart TD
-    Start[🤝 SynergyTool] --> Check1{Doublons<br/>de type?}
-    Check1 -->|Oui| Penality1[-15 points]
-    Check1 -->|Non| Check2{Faiblesses<br/>communes?}
+export const synergyTool = tool(
+  async (input: { team: SimplePokemon[] }) => {
+    const { team } = input;
     
-    Check2 -->|Oui| Penality2[-20 points]
-    Check2 -->|Non| Check3{Couverture<br/>mutuelle?}
+    // Détecter les doublons de type
+    const typeCount: Record<string, number> = {};
+    team.forEach(p => p.types.forEach(t => {
+      typeCount[t] = (typeCount[t] || 0) + 1;
+    }));
     
-    Check3 -->|Oui| Bonus1[+25 points]
-    Check3 -->|Non| Check4{Rôles<br/>variés?}
+    const duplicates = Object.entries(typeCount)
+      .filter(([_, count]) => count > 1)
+      .map(([type, count]) => ({ type, count }));
     
-    Check4 -->|Oui| Bonus2[+15 points]
-    Check4 -->|Non| Final[📊 Score Final]
+    // Faiblesses partagées
+    const sharedWeaknesses = findSharedWeaknesses(team);
     
-    Penality1 --> Final
-    Penality2 --> Final
-    Bonus1 --> Final
-    Bonus2 --> Final
+    // Synergies positives
+    const cores = identifyCores(team);
     
-    style Penality1 fill:#EF4444,color:#fff
-    style Penality2 fill:#EF4444,color:#fff
-    style Bonus1 fill:#10B981,color:#fff
-    style Bonus2 fill:#10B981,color:#fff
-```
-
----
-
-### ⭐ TeamScorerTool {#team-scorer}
-
-#### 📝 À quoi ça sert ?
-
-**Agrège tous les outils** pour donner un **score global** à l'équipe :
-
-```
-Score Final = TypeCoverage × 0.3 
-            + RoleBalance × 0.25 
-            + Synergy × 0.25 
-            + StatTotal × 0.2
-```
-
-#### 🎯 Exemple Concret
-
-**Input:**
-```typescript
-{
-  team: [
-    "Pikachu",
-    "Squirtle",
-    "Venusaur",
-    "Charizard",
-    "Alakazam",
-    "Machamp"
-  ]
-}
-```
-
-**Output:**
-```typescript
-{
-  overall: 85,
-  grade: "A",
-  breakdown: {
-    typeCoverage: 88,    // 15.8/18 types couverts
-    roleBalance: 90,     // 2 sweepers, 2 walls, 1 pivot, 1 support
-    synergy: 82,         // Bonne complémentarité
-    statTotal: 80        // Stats moyennes solides
+    // Score de synergie (0-100)
+    let score = 70;
+    score -= duplicates.length * 5;
+    score -= sharedWeaknesses.length * 10;
+    score += cores.length * 10;
+    score = Math.max(0, Math.min(100, score));
+    
+    return JSON.stringify({
+      score,
+      duplicates,
+      sharedWeaknesses,
+      cores,
+      issues: generateSynergyIssues(duplicates, sharedWeaknesses)
+    });
   },
-  strengths: [
-    "Excellent type coverage (88%)",
-    "Balanced team roles",
-    "No critical shared weaknesses"
-  ],
-  weaknesses: [
-    "Slightly weak to Ground (2/6 weak)",
-    "Low average Speed (75)"
-  ],
-  recommendations: [
-    "Consider adding a faster Pokémon",
-    "Replace one Ground-weak member"
-  ]
-}
-```
-
-#### 📊 Échelle de Grades
-
-| Score | Grade | Qualité |
-|-------|-------|---------|
-| 90-100 | S | 🏆 Exceptionnel |
-| 85-89 | A+ | ⭐ Excellent |
-| 80-84 | A | ✅ Très bon |
-| 75-79 | B+ | 👍 Bon |
-| 70-74 | B | 😊 Correct |
-| 65-69 | C+ | 😐 Passable |
-| 60-64 | C | ⚠️ Faible |
-| < 60 | F | ❌ À refaire |
-
----
-
-## ⚔️ Battle Tools
-
-<div align="center">
-
-![Category](https://img.shields.io/badge/Category-Battle%20Engine-EF4444)
-![Location](https://img.shields.io/badge/Location-lib%2Fagents%2FbattleEngine%2Ftools-orange)
-
-</div>
-
----
-
-### 🎯 BattleDecisionTool {#battle-decision}
-
-#### 📝 À quoi ça sert ?
-
-**Outil principal** qui décide de l'action optimale en combat :
-
-- 🎮 Quel move utiliser ?
-- 🔄 Faut-il switch ?
-- 💊 Utiliser un item ?
-
-#### 🎯 Exemple Concret
-
-**Situation:**
-```typescript
-{
-  myPokemon: {
-    name: "Pikachu",
-    hp: 75,
-    maxHp: 100,
-    moves: [
-      { name: "Thunderbolt", type: "electric", power: 90 },
-      { name: "Quick Attack", type: "normal", power: 40 },
-      { name: "Thunder Wave", type: "electric", power: 0 }
-    ]
-  },
-  opponent: {
-    name: "Dragonite",
-    hp: 120,
-    maxHp: 150,
-    types: ["dragon", "flying"]
+  {
+    name: "synergy_analysis",
+    description: "Analyse la synergie d'équipe: doublons de types, faiblesses partagées, cores défensifs/offensifs",
+    schema: z.object({
+      team: z.array(SimplePokemonSchema).describe("L'équipe à analyser")
+    })
   }
-}
-```
-
-**Processus de décision:**
-
-```mermaid
-flowchart TD
-    Start[🎯 BattleDecisionTool] --> EvalAll[📊 Évalue tous les moves]
-    
-    EvalAll --> Move1[⚡ Thunderbolt]
-    EvalAll --> Move2[💨 Quick Attack]
-    EvalAll --> Move3[😴 Thunder Wave]
-    
-    Move1 --> Calc1[💥 Calcul dégâts<br/>vs Flying: 2x]
-    Move2 --> Calc2[💥 Calcul dégâts<br/>Normal damage]
-    Move3 --> Calc3[💥 Pas de dégâts<br/>Status move]
-    
-    Calc1 --> Score1[Score: 95/100]
-    Calc2 --> Score2[Score: 40/100]
-    Calc3 --> Score3[Score: 60/100]
-    
-    Score1 --> Best[🏆 Meilleur:<br/>THUNDERBOLT]
-    
-    style Score1 fill:#10B981,color:#fff
-    style Best fill:#4F46E5,color:#fff
-```
-
-**Output:**
-```typescript
-{
-  decision: {
-    action: "attack",
-    moveIndex: 0,
-    moveName: "Thunderbolt"
-  },
-  score: 95,
-  reasoning: "Super effective (2x) + High damage (expected 118 HP)",
-  alternatives: [
-    { move: "Thunder Wave", score: 60, reason: "Paralyze for control" },
-    { move: "Quick Attack", score: 40, reason: "Low damage" }
-  ]
-}
+);
 ```
 
 ---
 
-### 💥 DamageCalculatorTool {#damage-calculator}
+### 4. `team_scorer`
 
-#### 📝 À quoi ça sert ?
+Score global de l'équipe avec grade.
 
-Calcule les **dégâts précis** d'une attaque avec la **formule officielle Pokémon** :
-
-```
-Damage = ((2 * Level / 5 + 2) * Power * A/D / 50 + 2) 
-         × STAB × Type × Critical × Random × Other
-```
-
-#### 🎯 Exemple Concret
-
-**Input:**
 ```typescript
-{
-  attacker: {
-    name: "Pikachu",
-    level: 50,
-    attack: 55,      // Physical stat (pas utilisé ici)
-    spAtk: 90,       // Special stat (utilisé)
-    statStages: {
-      spAtk: +1      // +50% boost
+export const teamScorerTool = tool(
+  async (input: { team: SimplePokemon[] }) => {
+    const { team } = input;
+    
+    // Appeler les autres analyses
+    const typeAnalysis = await typeAnalysisTool.invoke({ team });
+    const roles = await roleClassifierTool.invoke({ team });
+    const synergy = await synergyTool.invoke({ team });
+    
+    const parsed = {
+      type: JSON.parse(typeAnalysis),
+      roles: JSON.parse(roles),
+      synergy: JSON.parse(synergy)
+    };
+    
+    // Calculer le score final
+    const weights = {
+      coverage: 0.25,
+      balance: 0.25,
+      synergy: 0.30,
+      diversity: 0.20
+    };
+    
+    const scores = {
+      coverage: parsed.type.coverageScore,
+      balance: parsed.roles.balanced ? 80 : 50,
+      synergy: parsed.synergy.score,
+      diversity: calculateDiversity(team)
+    };
+    
+    const finalScore = Math.round(
+      scores.coverage * weights.coverage +
+      scores.balance * weights.balance +
+      scores.synergy * weights.synergy +
+      scores.diversity * weights.diversity
+    );
+    
+    // Déterminer le grade
+    const grade = 
+      finalScore >= 90 ? 'S' :
+      finalScore >= 80 ? 'A' :
+      finalScore >= 70 ? 'B' :
+      finalScore >= 60 ? 'C' :
+      finalScore >= 50 ? 'D' : 'F';
+    
+    return JSON.stringify({
+      score: finalScore,
+      grade,
+      breakdown: scores,
+      strengths: identifyStrengths(parsed),
+      improvements: suggestImprovements(parsed)
+    });
+  },
+  {
+    name: "team_scorer",
+    description: "Calcule un score global (0-100) et un grade (S-F) pour l'équipe avec détail par catégorie",
+    schema: z.object({
+      team: z.array(SimplePokemonSchema).describe("L'équipe à noter")
+    })
+  }
+);
+```
+
+---
+
+### 5. `pokemon_suggester`
+
+Suggère des Pokémon pour compléter l'équipe.
+
+```typescript
+export const pokemonSuggesterTool = tool(
+  async (input: { 
+    currentTeam: SimplePokemon[], 
+    candidatePool?: SimplePokemon[] 
+  }) => {
+    const { currentTeam, candidatePool } = input;
+    
+    // Analyser les besoins de l'équipe
+    const typeAnalysis = JSON.parse(await typeAnalysisTool.invoke({ team: currentTeam }));
+    const roleAnalysis = JSON.parse(await roleClassifierTool.invoke({ team: currentTeam }));
+    
+    // Identifier les faiblesses à couvrir
+    const neededTypes = identifyNeededTypes(typeAnalysis.weaknesses);
+    const neededRoles = identifyNeededRoles(roleAnalysis.distribution);
+    
+    // Pool de candidats (ou tous les Pokémon populaires)
+    const pool = candidatePool || await getPopularPokemon();
+    
+    // Scorer chaque candidat
+    const scored = pool.map(pokemon => {
+      let score = 50;
+      
+      // Bonus si couvre une faiblesse
+      for (const type of pokemon.types) {
+        if (neededTypes.includes(type)) score += 20;
+      }
+      
+      // Bonus si remplit un rôle manquant
+      const role = classifyRole(pokemon);
+      if (neededRoles.includes(role)) score += 15;
+      
+      // Malus si doublon de type
+      const existingTypes = currentTeam.flatMap(p => p.types);
+      for (const type of pokemon.types) {
+        if (existingTypes.includes(type)) score -= 10;
+      }
+      
+      return { pokemon, score, role, reasoning: generateReasoning(pokemon, score) };
+    });
+    
+    // Top 5 suggestions
+    const suggestions = scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+    
+    return JSON.stringify({
+      suggestions,
+      neededTypes,
+      neededRoles,
+      currentTeamSize: currentTeam.length
+    });
+  },
+  {
+    name: "pokemon_suggester",
+    description: "Suggère les meilleurs Pokémon pour compléter une équipe basé sur les faiblesses et rôles manquants",
+    schema: z.object({
+      currentTeam: z.array(SimplePokemonSchema).describe("L'équipe actuelle"),
+      candidatePool: z.array(SimplePokemonSchema).optional()
+        .describe("Pool de candidats (optionnel, sinon utilise les Pokémon populaires)")
+    })
+  }
+);
+```
+
+---
+
+## ⚔️ Battle Tools {#battle-tools}
+
+### 1. `damage_calculator`
+
+Calcule les dégâts d'une attaque.
+
+```typescript
+export const damageCalculatorTool = tool(
+  async (input: DamageCalculatorInput) => {
+    const { attacker, defender, move } = input;
+    
+    // Formule de dégâts Pokémon
+    const level = attacker.level || 50;
+    const attack = move.category === 'physical' 
+      ? attacker.stats.attack 
+      : attacker.stats.specialAttack;
+    const defense = move.category === 'physical'
+      ? defender.stats.defense
+      : defender.stats.specialDefense;
+    
+    // Calcul de base
+    const baseDamage = Math.floor(
+      ((2 * level / 5 + 2) * move.power * attack / defense) / 50 + 2
+    );
+    
+    // Multiplicateur de type
+    const effectiveness = calculateTypeEffectiveness(move.type, defender.types);
+    
+    // STAB (Same Type Attack Bonus)
+    const stab = attacker.types.includes(move.type) ? 1.5 : 1;
+    
+    // Dégâts min/max (random 0.85-1.0)
+    const minDamage = Math.floor(baseDamage * 0.85 * effectiveness * stab);
+    const maxDamage = Math.floor(baseDamage * 1.0 * effectiveness * stab);
+    
+    // Chance de KO
+    const koChance = maxDamage >= defender.stats.hp ? 100 :
+                     minDamage >= defender.stats.hp ? 50 : 0;
+    
+    return JSON.stringify({
+      minDamage,
+      maxDamage,
+      effectiveness,
+      effectivenessText: getEffectivenessText(effectiveness),
+      stab: stab > 1,
+      koChance,
+      hpPercent: {
+        min: Math.round((minDamage / defender.stats.hp) * 100),
+        max: Math.round((maxDamage / defender.stats.hp) * 100)
+      }
+    });
+  },
+  {
+    name: "damage_calculator",
+    description: "Calcule les dégâts exacts d'une attaque avec multiplicateurs de type, STAB et chance de KO",
+    schema: DamageCalculatorSchema
+  }
+);
+```
+
+---
+
+### 2. `speed_comparator`
+
+Compare les vitesses pour l'ordre d'attaque.
+
+```typescript
+export const speedComparatorTool = tool(
+  async (input: { pokemon1: BattlePokemon, pokemon2: BattlePokemon }) => {
+    const { pokemon1, pokemon2 } = input;
+    
+    // Vitesses effectives
+    const speed1 = calculateEffectiveSpeed(pokemon1);
+    const speed2 = calculateEffectiveSpeed(pokemon2);
+    
+    // Déterminer le premier
+    const first = speed1 > speed2 ? pokemon1.name :
+                  speed2 > speed1 ? pokemon2.name : 'speed_tie';
+    
+    // Facteurs modificateurs
+    const factors1 = getSpeedFactors(pokemon1);
+    const factors2 = getSpeedFactors(pokemon2);
+    
+    return JSON.stringify({
+      [pokemon1.name]: { 
+        baseSpeed: pokemon1.stats.speed,
+        effectiveSpeed: speed1,
+        factors: factors1
+      },
+      [pokemon2.name]: {
+        baseSpeed: pokemon2.stats.speed,
+        effectiveSpeed: speed2,
+        factors: factors2
+      },
+      first,
+      speedDifference: Math.abs(speed1 - speed2)
+    });
+  },
+  {
+    name: "speed_comparator",
+    description: "Compare les vitesses de deux Pokémon pour déterminer l'ordre d'attaque, incluant modificateurs",
+    schema: z.object({
+      pokemon1: BattlePokemonSchema.describe("Premier Pokémon"),
+      pokemon2: BattlePokemonSchema.describe("Second Pokémon")
+    })
+  }
+);
+```
+
+---
+
+### 3. `status_effect`
+
+Évalue les effets de statut.
+
+```typescript
+export const statusEffectTool = tool(
+  async (input: { pokemon: BattlePokemon }) => {
+    const { pokemon } = input;
+    const status = pokemon.status;
+    
+    const effects = {
+      paralysis: {
+        speedMod: 0.5,
+        skipChance: 25,
+        canMove: true,
+        damage: 0
+      },
+      burn: {
+        attackMod: 0.5,
+        damage: Math.floor(pokemon.stats.hp / 16),
+        canMove: true
+      },
+      poison: {
+        damage: Math.floor(pokemon.stats.hp / 8),
+        canMove: true
+      },
+      toxic: {
+        damage: Math.floor(pokemon.stats.hp / 16), // Augmente chaque tour
+        canMove: true,
+        stacking: true
+      },
+      sleep: {
+        canMove: false,
+        turnsRemaining: pokemon.sleepTurns || 2
+      },
+      freeze: {
+        canMove: false,
+        thawChance: 20
+      }
+    };
+    
+    const currentEffect = status ? effects[status] : null;
+    
+    return JSON.stringify({
+      status: status || 'none',
+      effect: currentEffect,
+      canAttack: currentEffect?.canMove ?? true,
+      damagePerTurn: currentEffect?.damage ?? 0,
+      turnsToKO: currentEffect?.damage 
+        ? Math.ceil(pokemon.currentHp / currentEffect.damage)
+        : null
+    });
+  },
+  {
+    name: "status_effect",
+    description: "Évalue les effets du statut actuel d'un Pokémon (dégâts par tour, immobilisation, modificateurs)",
+    schema: z.object({
+      pokemon: BattlePokemonSchema.describe("Le Pokémon à évaluer")
+    })
+  }
+);
+```
+
+---
+
+### 4. `battle_decision`
+
+Tool principal de décision en combat.
+
+```typescript
+export const battleDecisionTool = tool(
+  async (input: BattleDecisionInput) => {
+    const { myPokemon, opponent, myTeam } = input;
+    
+    // Analyser chaque move possible
+    const moveAnalysis = await Promise.all(
+      myPokemon.moves.map(async move => {
+        const damage = JSON.parse(await damageCalculatorTool.invoke({
+          attacker: myPokemon,
+          defender: opponent,
+          move
+        }));
+        
+        return {
+          move: move.name,
+          ...damage,
+          score: calculateMoveScore(damage, move)
+        };
+      })
+    );
+    
+    // Analyser les switchs possibles
+    const switchAnalysis = myTeam
+      .filter((p, i) => i !== 0 && p.currentHp > 0)
+      .map(pokemon => ({
+        pokemon: pokemon.name,
+        score: calculateSwitchScore(pokemon, opponent),
+        reasoning: generateSwitchReasoning(pokemon, opponent)
+      }));
+    
+    // Décision optimale
+    const bestMove = moveAnalysis.reduce((a, b) => a.score > b.score ? a : b);
+    const bestSwitch = switchAnalysis.length > 0
+      ? switchAnalysis.reduce((a, b) => a.score > b.score ? a : b)
+      : null;
+    
+    const decision = bestMove.score >= (bestSwitch?.score || 0)
+      ? { action: 'attack', move: bestMove }
+      : { action: 'switch', target: bestSwitch };
+    
+    return JSON.stringify({
+      decision,
+      moveAnalysis,
+      switchAnalysis,
+      reasoning: generateDecisionReasoning(decision, moveAnalysis, switchAnalysis)
+    });
+  },
+  {
+    name: "battle_decision",
+    description: "Analyse toutes les options (attaques et switchs) et recommande la meilleure décision tactique",
+    schema: BattleDecisionSchema
+  }
+);
+```
+
+---
+
+### 5. `win_probability`
+
+Calcule la probabilité de victoire.
+
+```typescript
+export const winProbabilityTool = tool(
+  async (input: { myTeam: BattlePokemon[], opponentTeam: BattlePokemon[] }) => {
+    const { myTeam, opponentTeam } = input;
+    
+    // Facteurs de calcul
+    const factors = {
+      hpAdvantage: calculateHpAdvantage(myTeam, opponentTeam),
+      aliveAdvantage: calculateAliveAdvantage(myTeam, opponentTeam),
+      typeMatchup: calculateTypeMatchup(myTeam, opponentTeam),
+      statsAdvantage: calculateStatsAdvantage(myTeam, opponentTeam)
+    };
+    
+    // Poids des facteurs
+    const weights = {
+      hpAdvantage: 0.30,
+      aliveAdvantage: 0.35,
+      typeMatchup: 0.20,
+      statsAdvantage: 0.15
+    };
+    
+    // Score de probabilité
+    let winProb = 50; // Base
+    winProb += factors.hpAdvantage * weights.hpAdvantage;
+    winProb += factors.aliveAdvantage * weights.aliveAdvantage;
+    winProb += factors.typeMatchup * weights.typeMatchup;
+    winProb += factors.statsAdvantage * weights.statsAdvantage;
+    
+    winProb = Math.max(5, Math.min(95, winProb)); // Clamp 5-95%
+    
+    return JSON.stringify({
+      winProbability: Math.round(winProb),
+      factors,
+      myTeamStats: {
+        alive: myTeam.filter(p => p.currentHp > 0).length,
+        totalHp: myTeam.reduce((s, p) => s + p.currentHp, 0)
+      },
+      opponentTeamStats: {
+        alive: opponentTeam.filter(p => p.currentHp > 0).length,
+        totalHp: opponentTeam.reduce((s, p) => s + p.currentHp, 0)
+      }
+    });
+  },
+  {
+    name: "win_probability",
+    description: "Calcule la probabilité de victoire basée sur les HP, Pokémon KO, matchups de type et stats",
+    schema: z.object({
+      myTeam: z.array(BattlePokemonSchema).describe("Mon équipe"),
+      opponentTeam: z.array(BattlePokemonSchema).describe("Équipe adverse")
+    })
+  }
+);
+```
+
+---
+
+## 📝 Création de nouveaux tools {#creation-tools}
+
+### Template de base
+
+```typescript
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+// 1. Définir le schéma d'entrée
+const MyToolSchema = z.object({
+  param1: z.string().describe("Description du paramètre 1"),
+  param2: z.number().optional().describe("Paramètre optionnel")
+});
+
+// 2. Type TypeScript (optionnel mais recommandé)
+type MyToolInput = z.infer<typeof MyToolSchema>;
+
+// 3. Créer le tool
+export const myNewTool = tool(
+  async (input: MyToolInput): Promise<string> => {
+    const { param1, param2 } = input;
+    
+    try {
+      // Logique métier
+      const result = await myBusinessLogic(param1, param2);
+      
+      // Retourner JSON
+      return JSON.stringify({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      return JSON.stringify({
+        success: false,
+        error: error.message
+      });
     }
   },
-  defender: {
-    name: "Dragonite",
-    spDef: 100,
-    types: ["dragon", "flying"]
-  },
-  move: {
-    name: "Thunderbolt",
-    type: "electric",
-    power: 90,
-    category: "special"
-  },
-  battlefield: {
-    weather: "none",
-    terrain: "none"
+  {
+    name: "my_new_tool",
+    description: "Description claire de ce que fait le tool pour le LLM",
+    schema: MyToolSchema
   }
-}
+);
+
+// 4. Exporter dans l'array de tools
+export const myTools = [myNewTool, ...otherTools];
 ```
 
-**Calcul étape par étape:**
+### Checklist avant commit
 
-1. **Base damage:** `((2×50/5 + 2) × 90 × (90×1.5)/100 / 50 + 2)` = `≈78`
-2. **STAB (Same Type Attack Bonus):** `78 × 1.5` = `117` _(Pikachu est Electric)_
-3. **Type effectiveness:** `117 × 2.0` = `234` _(Super efficace contre Flying)_
-4. **Random factor:** `234 × (0.85 à 1.00)` = **`199 - 234`**
-
-**Output:**
-```typescript
-{
-  damage: {
-    min: 199,
-    max: 234,
-    average: 217
-  },
-  koChance: 0.98,  // 98% de KO (Dragonite a 120 HP)
-  breakdown: {
-    baseDamage: 78,
-    stab: 1.5,
-    typeEffectiveness: 2.0,
-    critical: false,
-    other: []
-  }
-}
-```
-
-#### 📊 Formule Visualisée
-
-```mermaid
-flowchart LR
-    A[⚡ Power: 90] --> B[📊 Stats Ratio<br/>A/D]
-    B --> C[🎲 Base  Calculation]
-    C --> D[⭐ STAB ×1.5]
-    D --> E[🎨 Type ×2.0]
-    E --> F[🎯 Critical?]
-    F --> G[🎲 Random ×0.85-1.0]
-    G --> H[💥 Final Damage<br/>199-234]
-    
-    style H fill:#EF4444,color:#fff
-```
-
----
-
-### ⚡ SpeedComparatorTool {#speed-comparator}
-
-#### 📝 À quoi ça sert ?
-
-Détermine **l'ordre d'attaque** en comparant les vitesses :
-
-```
-Effective Speed = Base Speed × Stage Multiplier × Status × Item × Ability
-```
-
-#### 🎯 Exemple Concret
-
-**Situation:**
-```typescript
-{
-  pokemon1: {
-    name: "Pikachu",
-    baseSpeed: 90,
-    statStages: { speed: 0 },  // Neutral
-    status: null
-  },
-  pokemon2: {
-    name: "Dragonite",
-    baseSpeed: 80,
-    statStages: { speed: +1 }, // +50% boost
-    status: null
-  }
-}
-```
-
-**Calcul:**
-- Pikachu: `90 × 1.0` = **90**
-- Dragonite: `80 × 1.5` = **120** ✅ Plus rapide !
-
-**Output:**
-```typescript
-{
-  firstAttacker: "Dragonite",
-  order: ["Dragonite", "Pikachu"],
-  speedDifference: 30,
-  reasoning: "Dragonite has +1 Speed stage (+50%)"
-}
-```
-
-#### 🎭 Analogie
-
-> **Course de voitures:**
-> 
-> - 🏎️ Pikachu: Vitesse 90 km/h
-> - 🏁 Dragonite: Vitesse 80 km/h, mais avec Nitro! (+50%) = 120 km/h
-> 
-> → Dragonite arrive en premier !
-
----
-
-### 🤒 StatusEffectTool {#status-effect}
-
-#### 📝 À quoi ça sert ?
-
-Gère les **statuts** et leurs effets :
-
-| Status | Effet | Durée |
-|--------|-------|-------|
-| 😴 **Sleep** | Cannot move (50% wake chance each turn) | 1-3 tours |
-| 🥶 **Freeze** | Cannot move (20% thaw chance) | Permanent |
-| ⚡ **Paralysis** | 25% chance fail move, Speed ÷2 | Permanent |
-| 🔥 **Burn** | Attack ÷2, lose 1/16 HP/turn | Permanent |
-| 🤢 **Poison** | Lose 1/8 HP/turn | Permanent |
-| 😵 **Confusion** | 33% chance hit self | 1-4 tours |
-
-#### 🎯 Exemple Concret
-
-**Avant tour:**
-```typescript
-{
-  pokemon: "Pikachu",
-  status: "paralysis",
-  hp: 80/100
-}
-```
-
-**Checks:**
-1. ⚡ **Paralysis Check:** `Math.random() < 0.25` → `false` ✅ Can move!
-2. 🏃 **Speed Modifier:** `90 → 45` (÷2)
-
-**Output:**
-```typescript
-{
-  canMove: true,
-  speedModifier: 0.5,
-  damageThisTurn: 0,
-  message: "Pikachu is paralyzed but can move this turn"
-}
-```
-
-**Scénario Burn:**
-```typescript
-{
-  pokemon: "Charizard",
-  status: "burn",
-  hp: 100/120
-}
-```
-
-**Output:**
-```typescript
-{
-  canMove: true,
-  attackModifier: 0.5,        // Attack ÷2
-  damageThisTurn: 7,          // 120/16 = 7.5 → 7
-  message: "Charizard is hurt by its burn! (7 HP)"
-}
-```
-
----
-
-### 📈 StatModifierTool {#stat-modifier}
-
-#### 📝 À quoi ça sert ?
-
-Gère les **stages de stats** (boosts/debuffs) :
-
-```
-Stage:  -6   -5   -4   -3   -2   -1    0   +1   +2   +3   +4   +5   +6
-Multiplier: 0.25 0.28 0.33 0.40 0.50 0.66 1.0 1.5 2.0 2.5 3.0 3.5 4.0
-```
-
-####  Exemple Concret
-
-**Scénario: Swords Dance**
-
-```typescript
-// Before
-{
-  pokemon: "Machamp",
-  attack: 130,
-  statStages: { attack: 0 }
-}
-
-// Action: Use Swords Dance (+2 Attack stages)
-{
-  statStages: { attack: +2 }
-}
-
-// Effect
-effectiveAttack = 130 × 2.0 = 260 🔥🔥
-```
-
-**Calcul complet:**
-
-```mermaid
-flowchart LR
-    A[Base Attack:<br/>130] --> B{Stat Stage:<br/>+2}
-    B --> C[Multiplier:<br/>2.0x]
-    C --> D[Effective Attack:<br/>260]
-    
-    style D fill:#EF4444,color:#fff,stroke:#991B1B,stroke-width:3px
-```
-
----
-
-## 🎓 Résumé Final
-
-### 🔧 TeamBuilding Tools
-
-| Tool | Mission | Output |
-|------|---------|--------|
-| 🎨 TypeAnalysisTool | Analyse types | Coverage, Weaknesses, Resistances |
-| 🎭 RoleClassifierTool | Classifie rôles | Sweeper, Wall, Tank, Pivot, Support |
-| 🤝 SynergyTool | Vérifie synergie | Score de complémentarité |
-| ⭐ TeamScorerTool | Score global | Grade A-F + recommandations |
-
-### ⚔️ Battle Tools
-
-| Tool | Mission | Output |
-|------|---------|--------|
-| 🎯 BattleDecisionTool | Décision optimale | Meilleure action + score |
-| 💥 DamageCalculatorTool | Calcul dégâts | Min/Max/Avg damage + KO % |
-| ⚡ SpeedComparatorTool | Ordre d'attaque | Qui attaque en premier |
-| 🤒 StatusEffectTool | Gestion statuts | Can move? Dégâts? Modifiers? |
-| 📈 StatModifierTool | Stages de stats | Multiplicateurs effectifs |
-
----
-
-## 🎯 Comment les Tools sont Utilisés
-
-```mermaid
-sequenceDiagram
-    participant SA as 🔧 SubAgent
-    participant T1 as 🎨 Tool 1
-    participant T2 as 🎭 Tool 2
-    participant T3 as ⭐ Tool 3
-    
-    SA->>T1: Input data
-    T1-->>SA: Analysis result
-    
-    SA->>T2: Based on T1 result
-    T2-->>SA: Classification
-    
-    SA->>T3: Aggregate all
-    T3-->>SA: Final score
-    
-    SA->>SA: Make decision
-```
-
-**Principe:** Les SubAgents **orchestrent** les Tools pour accomplir des tâches complexes.
+- [ ] Nom en `snake_case`
+- [ ] Description claire et concise
+- [ ] Schéma Zod complet avec `.describe()`
+- [ ] Gestion des erreurs
+- [ ] Retour JSON stringifié
+- [ ] Tests unitaires
+- [ ] Ajouté à l'export des tools
 
 ---
 
 <div align="center">
 
-🔗 **Voir aussi:**
-[Documentation Agents](agent.md) • [Architecture Complète](ok.md) • [Multi-Agent Diagram](multi-agent-architecture.md)
+**🔗 Voir aussi:**
+[Documentation Agents](agent.md) • [Architecture Complète](ok.md)
 
 </div>

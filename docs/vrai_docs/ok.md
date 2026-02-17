@@ -1,521 +1,409 @@
-# 🏗️ Architecture Complète - Flux de Données
+# 🏗️ Architecture Complète LangChain
 
-> Vue d'ensemble du système multi-agent avec diagrammes et flux détaillés
+> Documentation détaillée de l'architecture multi-agent avec LangChain et Mistral AI
 
 ## 📋 Table des matières
 
-- [🌐 Vue d'ensemble](#vue-ensemble)
+- [🎯 Vue globale](#vue-globale)
 - [🔄 Flux de données](#flux-donnees)
-- [🧩 Intégration LLM](#integration-llm)
-- [📝 Exemple complet](#exemple-complet)
-- [📂 Fichiers clés](#fichiers-cles)
+- [⚙️ Configuration](#configuration)
+- [📊 Types TypeScript](#types)
 
 ---
 
-## 🌐 Vue d'ensemble {#vue-ensemble}
+## 🎯 Vue globale {#vue-globale}
 
-<div align="center">
+### Diagramme d'architecture
 
 ```mermaid
 flowchart TB
-    Client[👤 Client / Frontend]
-    API[🌐 API Endpoints]
-    Master[🤖 MasterAgent]
-    TB[🔧 TeamBuildingAgent]
-    BA[⚔️ BattleAgent]
-    Tools[🛠️ Tools Layer]
-    
-    Client -->|HTTP Request| API
-    API -->|JSON Body| Master
-    Master -->|team_building| TB
-    Master -->|battle| BA
-    TB -->|Uses| Tools
-    BA -->|Uses| Tools
-    Tools -->|Results| Master
-    Master -->|Response| API
-    API -->|JSON| Client
-    
-    style Master fill:#4F46E5,stroke:#312E81,color:#fff
-    style TB fill:#10B981,stroke:#065F46,color:#fff
-    style BA fill:#EF4444,stroke:#991B1B,color:#fff
-    style Tools fill:#F59E0B,stroke:#92400E,color:#000
-```
-
-</div>
-
----
-
-## 🔄 Flux de données détaillé {#flux-donnees}
-
-### 📥 Entrée - Requête Client
-
-<table>
-<tr>
-<td width="50%">
-
-**🔧 TeamBuilding Request**
-
-```typescript
-POST /api/team/suggest
-
-{
-  "team": [
-    { "id": 25, "name": "Pikachu" },
-    { "id": 7, "name": "Squirtle" }
-  ],
-  "mode": "suggest"
-}
-```
-
-</td>
-<td width="50%">
-
-**⚔️ Battle Request**
-
-```typescript
-POST /api/battle/ai-action
-
-{
-  "state": {
-    "playerTeam": [...],
-    "opponentTeam": [...],
-    "turn": 3,
-    "weather": "none"
-  },
-  "side": "player"
-}
-```
-
-</td>
-</tr>
-</table>
-
----
-
-### 🎯 Traitement par MasterAgent
-
-```mermaid
-flowchart TD
-    Start[📥 Requête JSON] --> Parse[🔍 Parse Request]
-    Parse --> Reflect{Reflection<br/>enabled?}
-    
-    Reflect -->|Yes| LLM[🧠 LLM Analysis<br/>Mistral/Ollama]
-    Reflect -->|No| Local[💻 Local Inference]
-    
-    LLM --> Classify[🎭 Classification]
-    Local --> Classify
-    
-    Classify -->|team_building| TB[🔧 TeamBuildingAgent]
-    Classify -->|battle| BA[⚔️ BattleAgent]
-    
-    TB --> Process[⚙️ Process]
-    BA --> Process
-    
-    Process --> Response[📤 MasterAgentResponse]
-    
-    style LLM fill:#A855F7,color:#fff
-    style TB fill:#10B981,color:#fff
-    style BA fill:#EF4444,color:#fff
-    style Response fill:#4F46E5,color:#fff
-```
-
----
-
-### 🛠️ Couche Tools - Utilitaires Métier
-
-<table>
-<tr>
-<td width="50%">
-
-#### 🔧 TeamBuilding Tools
-
-| Tool | Location | Fonction |
-|------|----------|----------|
-| 🎨 **TypeAnalysisTool** | `tools/` | Analyse couverture de types |
-| 🎭 **RoleClassifierTool** | `tools/` | Classification des rôles |
-| 🤝 **SynergyTool** | `tools/` | Analyse synergies d'équipe |
-| ⭐ **TeamScorerTool** | `tools/` | Scoring agrégé |
-
-</td>
-<td width="50%">
-
-#### ⚔️ Battle Tools
-
-| Tool | Location | Fonction |
-|------|----------|----------|
-| 🎯 **BattleDecisionTool** | `battleEngine/tools/` | Décision principale |
-| 💥 **DamageCalculatorTool** | `battleEngine/tools/` | Formule de dégâts |
-| ⚡ **SpeedComparatorTool** | `battleEngine/tools/` | Ordre de tour |
-| 🤒 **StatusEffectTool** | `battleEngine/tools/` | Gestion des statuts |
-| 📈 **StatModifierTool** | `battleEngine/tools/` | Stages de stats |
-
-</td>
-</tr>
-</table>
-
----
-
-### 📤 Sortie - Réponse Structurée
-
-```typescript
-// TeamBuilding Response
-{
-  "success": true,
-  "task": "team_building",
-  "teamBuildingResponse": {
-    "suggestions": [
-      { "pokemon": "Venusaur", "score": 85, "reasons": [...] },
-      { "pokemon": "Exeggutor", "score": 82, "reasons": [...] }
-    ],
-    "analysis": {
-      "strengths": ["Good type coverage", "Balanced roles"],
-      "weaknesses": ["Weak to Ground"],
-      "grade": "B+"
-    }
-  }
-}
-
-// Battle Response
-{
-  "success": true,
-  "task": "battle",
-  "battleResponse": {
-    "action": {
-      "type": "attack",
-      "moveIndex": 0,
-      "moveName": "Thunderbolt"
-    },
-    "reasoning": "Super effective + 98% KO chance",
-    "expectedDamage": { "min": 118, "max": 145 },
-    "winProbability": 0.65
-  }
-}
-```
-
----
-
-## 🧩 Intégration LLM {#integration-llm}
-
-### 🎯 MasterAgent Réflexion (Optionnelle)
-
-```mermaid
-sequenceDiagram
-    participant MA as 🤖 MasterAgent
-    participant LLM as 🧠 LLM Client<br/>(Mistral/Ollama)
-    participant SA as 🔧 SubAgent
-    
-    MA->>MA: enableReflection?
-    
-    alt Reflection ON
-        MA->>LLM: System Prompt + User Message
-        Note over LLM: GPT-4, Mistral,<br/>or Local Ollama
-        LLM-->>MA: ReflectionResult {task, intent}
-        MA->>MA: Parse JSON response
-    else Reflection OFF
-        MA->>MA: Local classification<br/>(keyword matching)
+    subgraph Client["📱 Client Application"]
+        UI[Interface Utilisateur]
+        API[API Routes]
     end
     
-    MA->>SA: Delegate to SubAgent
-    SA-->>MA: Results
+    subgraph LangChainLayer["🔗 LangChain Layer"]
+        direction TB
+        
+        subgraph Master["🤖 MasterAgent"]
+            M_LLM[ChatMistralAI]
+            M_Router[Task Router]
+            M_Tools[Meta Tools]
+        end
+        
+        subgraph SubAgents["Sub-Agents"]
+            direction LR
+            
+            subgraph TBA["TeamBuildingAgent"]
+                TBA_LLM[ChatMistralAI]
+                TBA_Exec[AgentExecutor]
+                TBA_Tools[5 Tools]
+            end
+            
+            subgraph BA["BattleAgent"]
+                BA_LLM[ChatMistralAI]
+                BA_Exec[AgentExecutor]
+                BA_Tools[5 Tools]
+            end
+        end
+    end
+    
+    subgraph DataLayer["💾 Data Layer"]
+        Pokemon[(Pokemon Data)]
+        Moves[(Moves Data)]
+        Types[(Type Chart)]
+    end
+    
+    Client --> LangChainLayer
+    Master --> TBA
+    Master --> BA
+    TBA_Tools --> DataLayer
+    BA_Tools --> DataLayer
+    
+    style M_LLM fill:#A855F7,color:#fff
+    style TBA_LLM fill:#10B981,color:#fff
+    style BA_LLM fill:#EF4444,color:#fff
 ```
 
-### ⚙️ Configuration LLM
+### Stack Technologique
+
+| Composant | Technologie | Version |
+|-----------|-------------|---------|
+| Framework | Next.js | 14.x |
+| LangChain Core | @langchain/core | ^0.3.0 |
+| LangChain Mistral | @langchain/mistralai | ^0.1.0 |
+| LangChain | langchain | ^0.3.0 |
+| Validation | Zod | ^3.22 |
+| Runtime | Node.js | 18+ |
+
+---
+
+## 🔄 Flux de données {#flux-donnees}
+
+### Séquence de requête
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant M as MasterAgent
+    participant T as TeamBuildingAgent
+    participant B as BattleAgent
+    participant Tools as LangChain Tools
+    participant Data as Pokemon Data
+    
+    C->>M: process(request)
+    
+    alt Task: Team Building
+        M->>T: process(teamRequest)
+        T->>T: createToolCallingAgent()
+        loop Tool Calls
+            T->>Tools: invoke(tool)
+            Tools->>Data: fetch data
+            Data-->>Tools: response
+            Tools-->>T: result
+        end
+        T-->>M: TeamBuildingResponse
+    else Task: Battle
+        M->>B: process(battleRequest)
+        B->>B: createToolCallingAgent()
+        loop Tool Calls
+            B->>Tools: invoke(tool)
+            Tools->>Data: fetch data
+            Data-->>Tools: response
+            Tools-->>B: result
+        end
+        B-->>M: BattleResponse
+    end
+    
+    M-->>C: MasterAgentResponse
+```
+
+### Cycle de vie d'un Agent
+
+```mermaid
+stateDiagram-v2
+    [*] --> Created: new Agent()
+    Created --> Initialized: initAgent()
+    Initialized --> Processing: process(request)
+    Processing --> ToolExecution: AgentExecutor.invoke()
+    ToolExecution --> Reasoning: LLM analyzes results
+    Reasoning --> ToolExecution: Need more data
+    Reasoning --> Processing: Generate response
+    Processing --> [*]: Return response
+```
+
+---
+
+## ⚙️ Configuration {#configuration}
+
+### Variables d'environnement
+
+```env
+# Mistral AI Configuration
+MISTRAL_API_KEY=your_mistral_api_key
+MISTRAL_MODEL=mistral-large-latest
+
+# Agent Configuration (optionnel)
+AGENT_VERBOSE=true
+AGENT_TEMPERATURE=0.1
+AGENT_MAX_ITERATIONS=10
+```
+
+### Configuration des Agents
 
 ```typescript
-// lib/agents/MasterAgent.ts
-export class MasterAgent {
-  private llmClient: LLMChatClient;
+// Configuration par défaut
+const DEFAULT_CONFIG = {
+  model: 'mistral-large-latest',
+  temperature: 0.1,
+  maxIterations: 10,
+  verbose: process.env.NODE_ENV === 'development'
+};
 
-  constructor(config?: {
-    enableReflection?: boolean;
-    llmConfig?: LLMConfig;
-  }) {
-    if (config?.llmConfig) {
-      this.llmClient = new LLMChatClient(config.llmConfig);
-    } else {
-      // Fallback: Ollama local ou Mistral
-      this.llmClient = this.createDefaultLLMClient();
-    }
-  }
+// Initialisation ChatMistralAI
+const model = new ChatMistralAI({
+  apiKey: process.env.MISTRAL_API_KEY,
+  model: process.env.MISTRAL_MODEL || DEFAULT_CONFIG.model,
+  temperature: DEFAULT_CONFIG.temperature
+});
 
-  private createDefaultLLMClient(): LLMChatClient {
-    return new LLMChatClient({
-      provider: process.env.LLM_PROVIDER || 'ollama',
-      model: process.env.LLM_MODEL || 'mistral',
-      apiKey: process.env.MISTRAL_API_KEY,
-      baseURL: process.env.OLLAMA_URL || 'http://localhost:11434'
+// Configuration AgentExecutor
+const executor = new AgentExecutor({
+  agent,
+  tools,
+  verbose: DEFAULT_CONFIG.verbose,
+  maxIterations: DEFAULT_CONFIG.maxIterations,
+  returnIntermediateSteps: true
+});
+```
+
+---
+
+## 📊 Types TypeScript {#types}
+
+### Interfaces principales
+
+```typescript
+// ===== Request Types =====
+
+interface MasterAgentRequest {
+  task: 'team_building' | 'battle' | 'auto';
+  teamBuildingRequest?: TeamBuildingRequest;
+  battleRequest?: BattleRequest;
+  query?: string;
+}
+
+interface TeamBuildingRequest {
+  mode: 'suggest' | 'analyze' | 'counter' | 'generate';
+  currentTeam?: SimplePokemon[];
+  targetTeam?: SimplePokemon[];
+  candidatePool?: SimplePokemon[];
+  strategy?: string;
+}
+
+interface BattleRequest {
+  state: BattleState;
+  side: 'player' | 'opponent';
+  mode: 'single_decision' | 'analyze' | 'full_battle';
+}
+
+// ===== Response Types =====
+
+interface MasterAgentResponse {
+  success: boolean;
+  task: 'team_building' | 'battle';
+  teamBuildingResponse?: TeamBuildingResponse;
+  battleResponse?: BattleResponse;
+  error?: string;
+  executionTime: number;
+}
+
+interface TeamBuildingResponse {
+  success: boolean;
+  mode: string;
+  result: any;
+  toolsUsed: string[];
+  reasoning: string;
+}
+
+interface BattleResponse {
+  success: boolean;
+  decision: BattleDecision;
+  winProbability: number;
+  toolsUsed: string[];
+  reasoning: string;
+}
+
+// ===== Domain Types =====
+
+interface SimplePokemon {
+  id: number;
+  name: string;
+  types: string[];
+  stats?: Stats;
+  moves?: Move[];
+  ability?: string;
+  item?: string;
+  nature?: string;
+}
+
+interface BattleState {
+  myTeam: BattlePokemon[];
+  opponentTeam: BattlePokemon[];
+  myActiveIndex: number;
+  opponentActiveIndex: number;
+  turn: number;
+  weather?: string;
+  terrain?: string;
+}
+
+interface BattleDecision {
+  action: 'attack' | 'switch';
+  moveIndex?: number;
+  moveName?: string;
+  switchToIndex?: number;
+  switchToName?: string;
+  reasoning: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+```
+
+### Schémas Zod pour Tools
+
+```typescript
+import { z } from 'zod';
+
+// Schéma Pokémon simplifié
+const SimplePokemonSchema = z.object({
+  id: z.number().describe("Numéro du Pokémon"),
+  name: z.string().describe("Nom du Pokémon"),
+  types: z.array(z.string()).describe("Types du Pokémon")
+});
+
+// Schéma pour type_analysis
+const TypeAnalysisSchema = z.object({
+  team: z.array(SimplePokemonSchema)
+    .max(6)
+    .describe("Équipe à analyser (max 6)")
+});
+
+// Schéma pour damage_calculator
+const DamageCalculatorSchema = z.object({
+  attacker: z.object({
+    name: z.string(),
+    types: z.array(z.string()),
+    stats: z.object({ attack: z.number(), specialAttack: z.number() }),
+    level: z.number().default(50)
+  }),
+  defender: z.object({
+    name: z.string(),
+    types: z.array(z.string()),
+    stats: z.object({ defense: z.number(), specialDefense: z.number(), hp: z.number() })
+  }),
+  move: z.object({
+    name: z.string(),
+    type: z.string(),
+    power: z.number(),
+    category: z.enum(['physical', 'special']),
+    accuracy: z.number().optional()
+  })
+});
+```
+
+---
+
+## 🔌 Intégration API
+
+### Route API Next.js
+
+```typescript
+// app/api/agents/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { MasterAgent } from '@/lib/agents/langchain';
+
+const agent = new MasterAgent();
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    const result = await agent.process({
+      task: body.task,
+      teamBuildingRequest: body.teamBuilding,
+      battleRequest: body.battle,
+      query: body.query
     });
+    
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
+}
+```
+
+### Appel depuis le client
+
+```typescript
+// Exemple d'appel API
+async function analyzeTeam(team: SimplePokemon[]) {
+  const response = await fetch('/api/agents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      task: 'team_building',
+      teamBuilding: {
+        mode: 'analyze',
+        currentTeam: team
+      }
+    })
+  });
+  
+  return await response.json();
 }
 ```
 
 ---
 
-## 📝 Exemple complet {#exemple-complet}
+## 🛡️ Gestion des erreurs
 
-### 🎬 Scénario: "Suggère-moi un 3ème Pokémon"
-
-```mermaid
-sequenceDiagram
-    autonumber
-    
-    participant C as 👤 Client
-    participant API as 🌐 /api/team/suggest
-    participant MA as 🤖 MasterAgent
-    participant TBA as 🔧 TeamBuildingAgent
-    participant TAT as 🎨 TypeAnalysisTool
-    participant TST as ⭐ TeamScorerTool
-    
-    C->>API: POST { team: [Pikachu, Squirtle] }
-    API->>MA: new MasterAgent().process(request)
-    
-    Note over MA: Classification:<br/>"team_building"
-    
-    MA->>TBA: handleTeamBuilding(request)
-    TBA->>TBA: mode = "suggest"
-    
-    TBA->>TAT: analyzeTeam([Pikachu, Squirtle])
-    TAT-->>TBA: Missing: Grass coverage
-    
-    TBA->>TBA: Filter candidates (Grass type)
-    
-    TBA->>TST: rankCandidates(grassPokemon)
-    TST-->>TBA: [Venusaur:85, Exeggutor:82, ...]
-    
-    TBA-->>MA: Top 10 suggestions + analysis
-    MA-->>API: MasterAgentResponse
-    API-->>C: JSON Response
+```typescript
+// Wrapper avec retry et fallback
+async function safeAgentCall<T>(
+  fn: () => Promise<T>,
+  retries = 3
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Retry sur erreurs réseau/timeout
+      if (error.message.includes('timeout') || 
+          error.message.includes('network')) {
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        continue;
+      }
+      
+      // Ne pas retry sur erreurs de validation
+      throw error;
+    }
+  }
+  
+  throw lastError!;
+}
 ```
-
-**📊 Timeline:**
-
-1. **Client** envoie requête HTTP POST
-2. **API Route** crée MasterAgent instance
-3. **MasterAgent** classifie → `team_building`
-4. **TeamBuildingAgent** détecte mode `suggest`
-5. **TypeAnalysisTool** identifie manques
-6. **Filtrage** des candidats appropriés
-7. **TeamScorerTool** classe par score
-8. **Retour** des résultats au client
-
----
-
-## 📂 Fichiers clés {#fichiers-cles}
-
-### 🗂️ Structure du Projet
-
-```
-lib/
-├── agents/
-│   ├── MasterAgent.ts                    # 🤖 Orchestrateur principal
-│   ├── types.ts                          # Types TypeScript
-│   │
-│   ├── subAgents/
-│   │   ├── TeamBuildingAgent.ts          # 🔧 Expert équipes
-│   │   └── BattleAgent.ts                # ⚔️ Expert combat
-│   │
-│   ├── tools/                            # 🔧 TeamBuilding Tools
-│   │   ├── TypeAnalysisTool.ts
-│   │   ├── RoleClassifierTool.ts
-│   │   ├── SynergyTool.ts
-│   │   └── TeamScorerTool.ts
-│   │
-│   └── battleEngine/
-│       ├── tools/                        # ⚔️ Battle Tools
-│       │   ├── BattleDecisionTool.ts
-│       │   ├── DamageCalculatorTool.ts
-│       │   ├── SpeedComparatorTool.ts
-│       │   ├── StatusEffectTool.ts
-│       │   └── StatModifierTool.ts
-│       │
-│       └── BattleEngine.ts               # Moteur de combat
-│
-├── llm/
-│   ├── LLMChatClient.ts                  # Client LLM universel
-│   └── providers/
-│       ├── mistral.ts
-│       └── ollama.ts
-│
-└── types/
-    ├── pokemon.ts                         # Types Pokémon
-    ├── battle.ts                          # Types Battle
-    └── agent.ts                           # Types Agent
-
-app/
-├── api/
-│   ├── team/
-│   │   ├── suggest/route.ts              # POST suggestions
-│   │   ├── analyze/route.ts              # POST analyse
-│   │   └── counter/route.ts              # POST counter
-│   │
-│   └── battle/
-│       ├── ai-action/route.ts            # POST décision IA
-│       └── simulate/route.ts             # POST simulation
-│
-└── tournament/page.tsx                    # UI Tournoi
-
-data/
-├── pokemon-cache/                         # Cache JSON (640+ Pokémon)
-│   ├── 1.json                            # Bulbasaur
-│   ├── 2.json                            # Ivysaur
-│   └── ...
-│
-└── site-settings.json                     # Config globale
-```
-
----
-
-### 📄 Fichiers Principaux
-
-<table>
-<tr>
-<th>Fichier</th>
-<th>Rôle</th>
-<th>Lignes</th>
-</tr>
-<tr>
-<td>
-
-`MasterAgent.ts`
-
-</td>
-<td>
-
-🤖 **Orchestrateur**
-- Classification des tâches
-- Réflexion LLM (optionnelle)
-- Délégation aux SubAgents
-- Agrégation des résultats
-
-</td>
-<td align="center">~350</td>
-</tr>
-<tr>
-<td>
-
-`TeamBuildingAgent.ts`
-
-</td>
-<td>
-
-🔧 **Expert Équipes**
-- 4 modes: SUGGEST, ANALYZE, COUNTER, GENERATE
-- Utilise TypeAnalysis, RoleClassifier, Synergy, TeamScorer
-- Gestion pool de 640+ Pokémon
-
-</td>
-<td align="center">~800</td>
-</tr>
-<tr>
-<td>
-
-`BattleAgent.ts`
-
-</td>
-<td>
-
-⚔️ **Expert Combat**
-- Décisions de move optimales
-- Switch strategy
-- AutoBattle simulation
-- Win probability calculation
-
-</td>
-<td align="center">~600</td>
-</tr>
-<tr>
-<td>
-
-`LLMChatClient.ts`
-
-</td>
-<td>
-
-🧠 **Client LLM Universel**
-- Abstraction Mistral/Ollama/OpenAI
-- Gestion des prompts
-- Parsing des réponses
-- Retry logic & error handling
-
-</td>
-<td align="center">~250</td>
-</tr>
-</table>
-
----
-
-### 🔌 API Endpoints
-
-| Endpoint | Méthode | Agent | Description |
-|----------|---------|-------|-------------|
-| `/api/team/suggest` | POST | TeamBuilding | Suggère des Pokémon |
-| `/api/team/analyze` | POST | TeamBuilding | Analyse une équipe |
-| `/api/team/counter` | POST | TeamBuilding | Counter équipe adverse |
-| `/api/battle/ai-action` | POST | Battle | Décision IA en combat |
-| `/api/battle/simulate` | POST | Battle | Simulation auto-battle |
-
----
-
-## 🎯 Flow Complet - De A à Z
-
-```mermaid
-flowchart TD
-    Start[🚀 Application Start] --> Frontend[🖥️ Frontend Load]
-    Frontend --> User[👤 User Action]
-    
-    User -->|Click Button| Request[📤 HTTP Request]
-    Request --> Router[🛣️ Next.js API Route]
-    
-    Router --> MA[🤖 MasterAgent.process]
-    
-    MA --> Reflection{enableReflection?}
-    Reflection -->|true| LLM[🧠 LLM Mistral/Ollama]
-    Reflection -->|false| Local[💻 Local Classification]
-    
-    LLM --> Classify[🎭 Task Classification]
-    Local --> Classify
-    
-    Classify -->|team_building| TBA[🔧 TeamBuildingAgent]
-    Classify -->|battle| BA[⚔️ BattleAgent]
-    
-    TBA --> TBTools[🛠️ TeamBuilding Tools]
-    BA --> BTools[🛠️ Battle Tools]
-    
-    TBTools --> Results[📊 Process Results]
-    BTools --> Results
-    
-    Results --> MA_Response[📦 MasterAgentResponse]
-    MA_Response --> API_Response[🌐 API Response]
-    API_Response --> Frontend_Update[🔄 Frontend Update]
-    
-    Frontend_Update --> Display[✅ Display to User]
-    
-    style LLM fill:#A855F7,color:#fff
-    style TBA fill:#10B981,color:#fff
-    style BA fill:#EF4444,color:#fff
-    style Display fill:#4F46E5,color:#fff
-```
-
----
-
-## 🏆 Conclusion
-
-<div align="center">
-
-**Architecture robuste et scalable:**
-
-🎯 **Séparation des responsabilités** • 🧩 **Composants modulaires** • 🔄 **Facile à étendre** • 🧪 **Testable individuellement**
-
-</div>
-
-> Cette architecture multi-agent permet d'ajouter facilement de nouveaux SubAgents
-> (ex: QuizAgent, TrainerAgent) sans modifier le MasterAgent ni les outils existants.
 
 ---
 
 <div align="center">
 
-🔗 **Voir aussi:**
-[Documentation Agents](agent.md) • [Documentation Tools](tool.md) • [Multi-Agent Diagram](multi-agent-architecture.md)
+**🔗 Voir aussi:**
+[Documentation Agents](agent.md) • [Documentation Tools](tool.md)
 
 </div>

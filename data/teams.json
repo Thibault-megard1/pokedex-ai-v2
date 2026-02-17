@@ -2,33 +2,33 @@
   "104585f3-4600-4efc-88c8-f3c5255edcfd": [
     {
       "slot": 1,
-      "pokemonName": "nidoqueen",
-      "pokemonId": 31
+      "pokemonName": "bergmite",
+      "pokemonId": 712
     },
     {
       "slot": 2,
-      "pokemonName": "articuno",
-      "pokemonId": 144
+      "pokemonName": "infernape",
+      "pokemonId": 392
     },
     {
       "slot": 3,
-      "pokemonName": "mewtwo",
-      "pokemonId": 150
+      "pokemonName": "cofagrigus",
+      "pokemonId": 563
     },
     {
       "slot": 4,
-      "pokemonName": "dragonite",
-      "pokemonId": 149
+      "pokemonName": "groudon",
+      "pokemonId": 383
     },
     {
       "slot": 5,
-      "pokemonName": "chansey",
-      "pokemonId": 113
+      "pokemonName": "gengar",
+      "pokemonId": 94
     },
     {
       "slot": 6,
-      "pokemonName": "poliwrath",
-      "pokemonId": 62
+      "pokemonName": "dewgong",
+      "pokemonId": 87
     }
   ]
 }
