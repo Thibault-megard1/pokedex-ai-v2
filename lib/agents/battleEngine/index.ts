@@ -5,7 +5,8 @@
  */
 
 // Orchestrateur principal
-export { BattleOrchestrator, OrchestratorConfig, TurnResult, BattleSimulationResult } from "./BattleOrchestrator";
+export { BattleOrchestrator } from "./BattleOrchestrator";
+export type { OrchestratorConfig, TurnResult, BattleSimulationResult } from "./BattleOrchestrator";
 
 // Agents
 export * from "./agents";

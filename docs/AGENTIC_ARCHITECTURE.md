@@ -2,503 +2,469 @@
 
 ## Vue d'ensemble
 
-Notre system utilise une **architecture multi-agents** pour optimiser deux domaines clés :
-1. **Team Building** : Suggérer les meilleurs Pokémon pour compléter une équipe
-2. **Battle Engine** : Décider de l'action optimale (attaque/switch) en temps réel
+Notre système utilise une **architecture multi-agents hiérarchique** avec un **MasterAgent** intelligent qui utilise **Ollama** pour la réflexion et délègue aux sous-agents spécialisés.
 
-Chaque système est composé d'**agents spécialisés** qui analysent un aspect particulier, plus un **orchestrateur** qui agrège les résultats.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        MASTER AGENT                              │
+│                    (Réflexion via Ollama)                        │
+│                                                                  │
+│  • Analyse le contexte de la requête                            │
+│  • Décide quel sous-agent appeler                               │
+│  • Agrège et retourne les résultats                             │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+           ┌───────────────┼───────────────┐
+           │                               │
+┌──────────▼──────────┐         ┌──────────▼──────────┐
+│  TEAM BUILDING      │         │  BATTLE AGENT       │
+│  AGENT              │         │                     │
+│                     │         │  • Décisions combat │
+│  ┌───────────────┐  │         │  • Évaluation moves │
+│  │ OurTeamAgent  │  │         │  • Prédiction ennemi│
+│  │ (Notre équipe)│  │         │                     │
+│  └───────────────┘  │         └──────────┬──────────┘
+│  ┌───────────────┐  │                    │
+│  │OpponentTeam   │  │                    │
+│  │Agent (Adverse)│  │                    │
+│  └───────────────┘  │                    │
+└──────────┬──────────┘                    │
+           │                               │
+           └───────────────┬───────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │         TOOLS           │
+              │     (Calculs purs)      │
+              │                         │
+              │ • TypeEffectivenessTool │
+              │ • StatsAnalyzerTool     │
+              │ • RoleClassifierTool    │
+              │ • MoveCoverageTool      │
+              │ • SynergyAnalyzerTool   │
+              │ + Battle Tools          │
+              └─────────────────────────┘
+```
 
 ---
 
-## 🏗️ Architecture Générale
+## 🧠 MASTER AGENT
+
+**Fichier** : `lib/agents/MasterAgent.ts`
+
+Le MasterAgent est le cerveau du système. Il utilise **Ollama** (LLM local) pour :
+- Analyser la requête utilisateur
+- Déterminer quelle tâche effectuer (team_building, battle, analysis)
+- Déléguer au bon sous-agent
+- Retourner les résultats
+
+### Fonctionnement
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                   APPLICATION POKEDEX AI                       │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                ┌─────────────┴─────────────┐
-                │                           │
-        ┌───────▼────────┐         ┌────────▼──────────┐
-        │  TEAM BUILDING │         │  BATTLE ENGINE    │
-        │  SYSTEM        │         │  SYSTEM           │
-        └───────┬────────┘         └────────┬──────────┘
-                │                           │
-        ┌───────┴──────────┐       ┌────────┴────────┐
-        │                  │       │                 │
-   ┌────▼─────┐        ┌────▼───┐  │  ┌───────────┐  │
-   │ 5 Agents │        │ Tools  │  │  │  5 Agents │  │
-   │          │        │        │  │  │           │  │
-   │• Type    │        │•Type   │  │  │• Damage   │  │
-   │• Stats   │        │•Stats  │  │  │• Speed    │  │
-   │• Role    │        │•Role   │  │  │• StatMod  │  │
-   │• Coverage│        │•Move   │  │  │• Status   │  │
-   │• Synergy │        │•Synergy│  │  │• Decision │  │
-   └────┬─────┘        └────┬───┘  │  └─────┬─────┘  │
-        │                   │      │        │        │
-        └──────────┬────────┘      └───────┬─────────┘
-                   │                       │
-          ┌────────▼────────┐     ┌────────▼────────┐
-          │ Orchestrateur   │     │ Orchestrateur   │
-          │ Team Building   │     │ Battle          │
-          └────────┬────────┘     └────────┬────────┘
-                   │                       │
-          [API /api/team/suggest]  [API /api/battle/ai-action]
+┌────────────────────────────────────────────────────┐
+│  REQUÊTE UTILISATEUR                               │
+│  • Message: "Aide moi à compléter mon équipe"     │
+│  • Context: { currentTeam: [...], battleState }   │
+└──────────────────────┬─────────────────────────────┘
+                       │
+           ┌───────────▼───────────┐
+           │ PHASE 1: RÉFLEXION    │
+           │ (Via Ollama)          │
+           │                       │
+           │ Prompt → LLM → JSON   │
+           │ {                     │
+           │   task: "team_build", │
+           │   reasoning: "...",   │
+           │   confidence: 0.9     │
+           │ }                     │
+           └───────────┬───────────┘
+                       │
+           ┌───────────▼───────────┐
+           │ PHASE 2: DÉLÉGATION   │
+           │                       │
+           │ switch(task) {        │
+           │   "team_building" →   │
+           │     TeamBuildingAgent │
+           │   "battle" →          │
+           │     BattleAgent       │
+           │ }                     │
+           └───────────┬───────────┘
+                       │
+           ┌───────────▼───────────┐
+           │ PHASE 3: RÉSULTAT     │
+           │                       │
+           │ { success, task,      │
+           │   reflection,         │
+           │   response }          │
+           └───────────────────────┘
+```
+
+### Code Example
+
+```typescript
+import { MasterAgent } from "@/lib/agents/MasterAgent";
+
+const master = new MasterAgent({ enableReflection: true });
+
+// Le MasterAgent décide automatiquement quel agent utiliser
+const result = await master.process({
+  message: "Suggère-moi un Pokémon pour mon équipe",
+  context: {
+    currentTeam: [pikachu, charizard, blastoise]
+  }
+});
+
+// result.task = "team_building"
+// result.teamBuildingResponse = { suggestions: [...] }
 ```
 
 ---
 
-## 🎯 TEAM BUILDING SYSTEM
+## 🏗️ TEAM BUILDING AGENT
 
-### 📋 Architecture détaillée
+**Fichier** : `lib/agents/subAgents/TeamBuildingAgent.ts`
+
+Sous-agent qui gère la construction et l'optimisation des équipes.
+
+### Sous-composants
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  USER INPUT: Equipe actuelle (3-5 Pokémon)          │
-└──────────────────┬──────────────────────────────────┘
-                   │
-        ┌──────────┴──────────┐
-        │                     │
-   ┌────▼──────────┐  ┌──────▼──────────┐
-   │ Candidates    │  │ Current Team    │
-   │ Pool: 100+    │  │ Analysis        │
-   │ Pokémon       │  │ (weaknesses,    │
-   │               │  │  gaps, roles)   │
-   └────┬──────────┘  └──────┬──────────┘
-        │                     │
-        └──────────┬──────────┘
-                   │
-        ┌──────────▼──────────────┐
-        │ EVALUATION PIPELINE      │
-        └──────────┬──────────────┘
-                   │
-        ┌──────────┴──────────────────────────────┐
-        │                                          │
-   ┌────▼──────────────┐  ┌─────────────────┬────▼──────────┐
-   │ TOOL LAYER        │  │ AGENT LAYER     │              │
-   │ (Calculs)         │  │ (Analyse)       │              │
-   │                   │  │                 │              │
-   │• TypeEffectiveness│  │ TypeAnalysis    │ Score: 35%   │
-   │  Tool             │  │ Agent           │              │
-   │                   │◄──                 │              │
-   │• StatsAnalyzer    │  │ StatsAnalysis   │ Score: 25%   │
-   │  Tool             │  │ Agent           │              │
-   │                   │◄──                 │              │
-   │• RoleClassifier   │  │ RoleDistribution│ Score: 25%   │
-   │  Tool             │  │ Agent           │              │
-   │                   │◄──                 │              │
-   │• MoveCoverage     │  │ MoveCoverage    │ Score: 15%   │
-   │  Tool             │  │ Agent           │              │
-   │                   │◄──                 │              │
-   │• SynergyAnalyzer  │  │ Synergy         │ Score: (var) │
-   │  Tool             │  │ Agent           │              │
-   │                   │◄──                 │              │
-   └───────────────────┘  └─────────────────┴──────────────┘
-                                      │
-                         ┌────────────▼────────────┐
-                         │ ORCHESTRATEUR           │
-                         │ Team Building           │
-                         │                         │
-                         │ Agrège les 5 scores:   │
-                         │ • Type Synergy         │
-                         │ • Stats Balance        │
-                         │ • Role Distribution    │
-                         │ • Move Coverage        │
-                         │ • Team Synergy         │
-                         │                         │
-                         │ Retourne Top 5         │
-                         │ Candidates avec        │
-                         │ breakdowns              │
-                         └────────────┬────────────┘
-                                      │
-                         ┌────────────▼────────────┐
-                         │ JSON RESPONSE            │
-                         │                         │
-                         │ {                       │
-                         │   suggestions: [{       │
-                         │     id, name, score,   │
-                         │     breakdown: {        │
-                         │       type,stats,      │
-                         │       role,coverage,   │
-                         │       synergy          │
-                         │     },                  │
-                         │     reasoning: "..."   │
-                         │   }],                   │
-                         │   teamAnalysis: {...}  │
-                         │ }                       │
-                         └─────────────────────────┘
+│              TEAM BUILDING AGENT                     │
+│                                                      │
+│  Modes:                                              │
+│  • suggest - Suggérer des ajouts                    │
+│  • analyze - Analyser l'équipe                      │
+│  • counter - Générer une équipe counter             │
+│  • generate - Créer une équipe complète             │
+│                                                      │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌─────────────────┐    ┌─────────────────┐         │
+│  │  OurTeamAgent   │    │ OpponentTeam    │         │
+│  │                 │    │ Agent           │         │
+│  │ • suggestAdd()  │    │ • analyzeMatch()│         │
+│  │ • generateFull()│    │ • genCounter()  │         │
+│  │ • scoreCands()  │    │ • predictStrat()│         │
+│  │                 │    │ • identifyThreat│         │
+│  └────────┬────────┘    └────────┬────────┘         │
+│           │                      │                   │
+│           └──────────┬───────────┘                   │
+│                      │                               │
+│           ┌──────────▼──────────┐                    │
+│           │       TOOLS         │                    │
+│           │ • TypeEffectiveness │                    │
+│           │ • StatsAnalyzer     │                    │
+│           │ • RoleClassifier    │                    │
+│           │ • MoveCoverage      │                    │
+│           │ • SynergyAnalyzer   │                    │
+│           └─────────────────────┘                    │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 🔧 Les 5 Tools (Couche de Calcul)
+### OurTeamAgent
 
-| Outil | Fichier | Responsabilités |
-|-------|---------|-----------------|
-| **TypeEffectivenessTool** | `lib/agents/tools/TypeEffectivenessTool.ts` | Analyse couverture type, immunités, faiblesses critiques, score efficacité |
-| **StatsAnalyzerTool** | `lib/agents/tools/StatsAnalyzerTool.ts` | Évalue balance HP/ATK/DEF/SPA/SPD, détecte roles (sweeper, tank, etc) |
-| **RoleClassifierTool** | `lib/agents/tools/RoleClassifierTool.ts` | Classification des rôles stratégiques (lead, sweeper, wall, etc) |
-| **MoveCoverageTool** | `lib/agents/tools/MoveCoverageTool.ts` | Analyse couverture offensive, STAB, types problématiques |
-| **SynergyAnalyzerTool** | `lib/agents/tools/SynergyAnalyzerTool.ts` | Mesure les synergies entre Pokémon (stats, abilities, moves) |
+**Fichier** : `lib/agents/subAgents/OurTeamAgent.ts`
 
-### 👥 Les 5 Agents (Couche d'Analyse)
+Spécialisé dans l'optimisation de **notre équipe**.
 
-| Agent | Fichier | Input | Output | Poids |
-|-------|---------|-------|--------|-------|
-| **TypeAnalysisAgent** | `lib/agents/teamBuilding/TypeAnalysisAgent.ts` | Team + Candidates | `TypeAnalysisResult` | **35%** |
-| **StatsAnalysisAgent** | `lib/agents/teamBuilding/StatsAnalysisAgent.ts` | Team + Candidates | `StatsAnalysisResult` | **25%** |
-| **RoleDistributionAgent** | `lib/agents/teamBuilding/RoleDistributionAgent.ts` | Team + Candidates | `RoleDistributionResult` | **25%** |
-| **MoveCoverageAgent** | `lib/agents/teamBuilding/MoveCoverageAgent.ts` | Team + Candidates | `MoveCoverageResult` | **15%** |
-| **SynergyAgent** | `lib/agents/teamBuilding/SynergyAgent.ts` | Team + Candidates | `SynergyResult` | **Variable** |
+| Méthode | Description |
+|---------|-------------|
+| `suggestAdditions()` | Suggère des Pokémon pour compléter l'équipe |
+| `generateFullTeam()` | Génère une équipe complète depuis zéro |
+| `scoreCandidates()` | Score les candidats avec pondération |
 
-### 🎼 L'Orchestrateur Team Building
+**Poids de scoring** :
+- Type: **35%**
+- Role: **25%**
+- Stats: **20%**
+- Coverage: **15%**
+- Synergy: **5%**
 
-**Fichier** : `lib/agents/TeamBuildingOrchestrator.ts`
+### OpponentTeamAgent
 
-**Fonctionnement** :
-1. Reçoit l'équipe actuelle (3-5 Pokémon)
-2. Charge pool de 100+ candidats
-3. Lance les 5 agents **en parallèle**
-4. Agrège les scores avec **poids pondérés**
-5. Retourne Top 5 candidats avec breakdowns
+**Fichier** : `lib/agents/subAgents/OpponentTeamAgent.ts`
 
-**Formule de Score** :
-```
-Score Final = 
-  (TypeScore × 0.35) +
-  (StatsScore × 0.25) +
-  (RoleScore × 0.25) +
-  (CoverageScore × 0.15) +
-  (SynergyScore × 0.XX)
-```
+Spécialisé dans l'analyse de **l'équipe adverse**.
 
-**Endpoint API** : `POST /api/team/suggest`
+| Méthode | Description |
+|---------|-------------|
+| `analyzeMatchup()` | Analyse le matchup vs l'adversaire |
+| `generateCounterTeam()` | Génère une équipe qui counter |
+| `predictStrategy()` | Prédit le style de jeu adverse |
+| `identifyThreats()` | Identifie les menaces principales |
 
 ---
 
-## ⚔️ BATTLE ENGINE SYSTEM
+## ⚔️ BATTLE AGENT
 
-### 📋 Architecture détaillée
+**Fichier** : `lib/agents/subAgents/BattleAgent.ts`
 
-```
-┌──────────────────────────────────────────────┐
-│  BATTLE STATE                                 │
-│  • Current Pokémon (yours/opponent's)        │
-│  • HP, Stages (-6 to +6)                      │
-│  • Status (burn, poison, paralysis, etc)     │
-│  • Active Moves                               │
-│  • Weather/Environment                        │
-└──────────────┬───────────────────────────────┘
-               │
-       ┌───────▼────────────────┐
-       │ DECISION NEEDED        │
-       │ • Which move to use?   │
-       │ • Switch Pokémon?      │
-       │ • Predict opponent?    │
-       └───────┬────────────────┘
-               │
-       ┌───────▼───────────────────────────┐
-       │ EVALUATION PIPELINE                │
-       └───────┬───────────────────────────┘
-               │
-     ┌─────────┴─────────────────────────────────┐
-     │                                           │
-┌────▼──────────────┐  ┌────────────────────┬───▼─────────┐
-│ TOOL LAYER        │  │ AGENT LAYER        │             │
-│ (Calculs)         │  │ (Analyse)          │             │
-│                   │  │                    │             │
-│• DamageCalculator │  │ DamageCalculation  │ Évalue DMG  │
-│  Tool             │  │ Agent              │ & KO chance │
-│                   │◄──                    │             │
-│• SpeedComparator  │  │ SpeedOrder         │ Ordre de    │
-│  Tool             │  │ Agent              │ tour + PR   │
-│                   │◄──                    │             │
-│• StatModifier     │  │ StatModifier       │ Stats effec │
-│  Tool             │  │ Agent              │             │
-│                   │◄──                    │             │
-│• StatusEffect     │  │ StatusEffect       │ Effets stat │
-│  Tool             │  │ Agent              │             │
-│                   │◄──                    │             │
-│• BattleDecision   │  │ BattleDecision     │ Scoring &   │
-│  Tool             │  │ Agent              │ win %       │
-│                   │◄──                    │             │
-└───────────────────┘  └────────────────────┴─────────────┘
-                                  │
-                   ┌──────────────▼──────────────┐
-                   │ ORCHESTRATEUR BATTLE        │
-                   │                             │
-                   │ • Évalue tous les moves    │
-                   │ • Estime les KO odds       │
-                   │ • Évalue les switches      │
-                   │ • Décide action optimale   │
-                   │ • Retourne avec explication│
-                   └──────────────┬──────────────┘
-                                  │
-                   ┌──────────────▼──────────────┐
-                   │ JSON RESPONSE                │
-                   │                             │
-                   │ {                           │
-                   │   action: "move"|"switch"  │
-                   │   targetMove: "Thunder"    │
-                   │   targetPokemon: 25        │
-                   │   reasoning: "...",         │
-                   │   probability: 0.85,        │
-                   │   damageRange: [30,50]     │
-                   │ }                           │
-                   └─────────────────────────────┘
-```
+Sous-agent qui gère les décisions de combat en temps réel.
 
-### 🔧 Les 5 Tools (Couche de Calcul)
-
-| Outil | Fichier | Responsabilités |
-|-------|---------|-----------------|
-| **DamageCalculatorTool** | `lib/agents/battleEngine/tools/DamageCalculatorTool.ts` | Calcul dégâts (Gen V+), STAB, CRIT, effectiveness, burn penalty |
-| **SpeedComparatorTool** | `lib/agents/battleEngine/tools/SpeedComparatorTool.ts` | Ordre de tour, priorités, paralysie impact |
-| **StatModifierTool** | `lib/agents/battleEngine/tools/StatModifierTool.ts` | Stages (-6 à +6), calcul stats effectives |
-| **StatusEffectTool** | `lib/agents/battleEngine/tools/StatusEffectTool.ts` | Burn, poison, paralysis, sleep, freeze, volatiles |
-| **BattleDecisionTool** | `lib/agents/battleEngine/tools/BattleDecisionTool.ts` | Scoring actions, KO odds, switch evaluation, prediction |
-
-### 👥 Les 5 Agents (Couche d'Analyse)
-
-| Agent | Fichier | Responsabilités |
-|-------|---------|-----------------|
-| **DamageCalculationAgent** | `lib/agents/battleEngine/agents/DamageCalculationAgent.ts` | Évalue tous les moves, chances KO |
-| **SpeedOrderAgent** | `lib/agents/battleEngine/agents/SpeedOrderAgent.ts` | Ordre de tour, outspeeding |
-| **StatModifierAgent** | `lib/agents/battleEngine/agents/StatModifierAgent.ts` | Impact des stages sur efficacité |
-| **StatusEffectAgent** | `lib/agents/battleEngine/agents/StatusEffectAgent.ts` | Impact des statuts |
-| **BattleDecisionAgent** | `lib/agents/battleEngine/agents/BattleDecisionAgent.ts` | Décision finale (move/switch) |
-
-### 🎼 L'Orchestrateur Battle
-
-**Fichier** : `lib/agents/battleEngine/BattleOrchestrator.ts`
-
-**Fonctionnement** :
-1. Reçoit l'état du combat (Pokémon, HP, stages, statuts)
-2. Lance les 5 agents en parallèle
-3. Synthétise une décision (move + raison)
-4. Retourne action optimale avec probabilités
-
-**Endpoint API** : `POST /api/battle/ai-action`
-
----
-
-## 🔄 Flux de Données - Team Building
+### Architecture
 
 ```
-1. USER
-   └─→ POST /api/team/suggest
-       └─→ { currentTeam: [id1, id2, id3] }
-
-2. ORCHESTRATOR
-   ├─→ Charge candidats (100+ Pokémon)
-   └─→ Analyse team actuelle
-
-3. AGENTS (PARALLÈLE)
-   ├─→ TypeAnalysisAgent.evaluateCandidates()
-   ├─→ StatsAnalysisAgent.evaluateCandidates()
-   ├─→ RoleDistributionAgent.evaluateCandidates()
-   ├─→ MoveCoverageAgent.evaluateCandidates()
-   └─→ SynergyAgent.evaluateCandidates()
-
-4. AGGREGATION
-   ├─→ Combine scores (poids)
-   ├─→ Trie candidates
-   └─→ Génère top 5
-
-5. RESPONSE
-   └─→ JSON avec suggestions + analysis
-       └─→ Frontend affiche recommendations
+┌─────────────────────────────────────────────────────┐
+│                  BATTLE AGENT                        │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ process(battleState)                         │    │
+│  │ → Décision optimale (move/switch)           │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ evaluateAllActions()                         │    │
+│  │ → Liste ordonnée des actions possibles      │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ analyzeCurrentState()                        │    │
+│  │ → Avantage, momentum, recommandations       │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ predictOpponentAction()                      │    │
+│  │ → Action probable de l'adversaire           │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  Wrapper autour de:                                  │
+│  ┌─────────────────────────────────────────────┐    │
+│  │         BATTLE ORCHESTRATOR                  │    │
+│  │  (lib/agents/battleEngine/BattleOrchestrator)│   │
+│  │                                              │    │
+│  │  Coordonne 5 agents spécialisés:            │    │
+│  │  • DamageCalculationAgent                   │    │
+│  │  • SpeedOrderAgent                          │    │
+│  │  • StatModifierAgent                        │    │
+│  │  • StatusEffectAgent                        │    │
+│  │  • BattleDecisionAgent                      │    │
+│  └─────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔄 Flux de Données - Battle
+## 🔧 TOOLS (Couche de Calcul)
+
+**Dossier** : `lib/agents/tools/`
+
+Les Tools sont des classes de **calcul pur** sans logique métier.
+Ils sont utilisés par les Agents pour obtenir des données.
+
+### Team Building Tools
+
+| Tool | Fichier | Responsabilité |
+|------|---------|----------------|
+| **TypeEffectivenessTool** | `TypeEffectivenessTool.ts` | Analyse types, faiblesses, résistances, immunités |
+| **StatsAnalyzerTool** | `StatsAnalyzerTool.ts` | Analyse stats (HP, ATK, DEF, SPE...), classification |
+| **RoleClassifierTool** | `RoleClassifierTool.ts` | Classification des rôles (sweeper, tank, support...) |
+| **MoveCoverageTool** | `MoveCoverageTool.ts` | Couverture offensive, STAB, types problématiques |
+| **SynergyAnalyzerTool** | `SynergyAnalyzerTool.ts` | Synergies entre Pokémon |
+
+### Battle Tools
+
+| Tool | Fichier | Responsabilité |
+|------|---------|----------------|
+| **DamageCalculatorTool** | `DamageCalculatorTool.ts` | Calcul dégâts (STAB, crit, effectiveness) |
+| **SpeedComparatorTool** | `SpeedComparatorTool.ts` | Ordre de tour, priorités |
+| **StatModifierTool** | `StatModifierTool.ts` | Gestion stages (-6 à +6) |
+| **StatusEffectTool** | `StatusEffectTool.ts` | Statuts (burn, poison, paralysis...) |
+| **BattleDecisionTool** | `BattleDecisionTool.ts` | Scoring actions, KO odds |
+
+---
+
+## 🔄 Flux de Données Complet
+
+### Requête Team Building
 
 ```
-1. USER / BATTLE STATE
-   └─→ POST /api/battle/ai-action
-       └─→ { battleState: {...}, currentPokemon: {...} }
+1. USER → POST /api/team/suggest
+   └── { currentTeam: [id1, id2], opponentTeam?: [...] }
 
-2. ORCHESTRATOR
-   └─→ Parse battle state
-   
-3. AGENTS (PARALLÈLE)
-   ├─→ DamageCalculationAgent.evaluate()
-   ├─→ SpeedOrderAgent.evaluate()
-   ├─→ StatModifierAgent.evaluate()
-   ├─→ StatusEffectAgent.evaluate()
-   └─→ BattleDecisionAgent.evaluate()
+2. MASTER AGENT
+   ├── Réflexion Ollama → task = "team_building"
+   └── Délègue à TeamBuildingAgent
 
-4. DECISION
-   ├─→ Score chaque action
-   ├─→ Évalue KO odds
-   └─→ Sélectionne optimale
+3. TEAM BUILDING AGENT
+   ├── Mode "suggest"
+   │   ├── OurTeamAgent.suggestAdditions()
+   │   │   ├── TypeEffectivenessTool.scorePokemonTypeContribution()
+   │   │   ├── StatsAnalyzerTool.scorePokemonStatsBalance()
+   │   │   ├── RoleClassifierTool.scorePokemonRoleContribution()
+   │   │   └── MoveCoverageTool.scorePokemonMoveCoverage()
+   │   └── Top 5 candidates
+   │
+   └── Si opponentTeam fourni:
+       └── OpponentTeamAgent.analyzeMatchup()
 
-5. RESPONSE
-   └─→ JSON avec action + probabilités
-       └─→ Frontend execute le move
+4. RESPONSE
+   └── { suggestions: [...], analysis: {...} }
+```
+
+### Requête Battle
+
+```
+1. USER → POST /api/battle/ai-action
+   └── { battleState: {...} }
+
+2. MASTER AGENT
+   ├── Réflexion Ollama → task = "battle"
+   └── Délègue à BattleAgent
+
+3. BATTLE AGENT
+   ├── process(battleState)
+   │   └── BattleOrchestrator.decideTurn()
+   │       ├── DamageCalculationAgent
+   │       ├── SpeedOrderAgent
+   │       ├── StatModifierAgent
+   │       ├── StatusEffectAgent
+   │       └── BattleDecisionAgent
+   │
+   └── Décision finale
+
+4. RESPONSE
+   └── { action: "move", moveName: "Thunder", confidence: 0.92 }
 ```
 
 ---
 
-## 📊 Comparaison: Team Building vs Battle Engine
-
-| Aspect | Team Building | Battle Engine |
-|--------|---------------|---------------|
-| **Timing** | Asynchrone | Synchrone (temps réel) |
-| **Horizon** | Long terme (team complète) | Court terme (1 tour) |
-| **État** | Static | Dynamique (HP, stages, statuts) |
-| **Agents** | 5 (analyzes complémentaires) | 5 (couvrent aspects combat) |
-| **Score** | Multi-critères (35% + 25% + ...) | Binaire (action best-scored) |
-| **Complexité** | 100+ candidats | 4-8 moves/switches |
-| **API Endpoint** | `/api/team/suggest` | `/api/battle/ai-action` |
-
----
-
-## 🎯 Points Clés d'Architecture
-
-### 1. **Séparation des Concerns**
-- **Tools** = Calculs purs (pas d'orchestration)
-- **Agents** = Analyse (utilise tools, structure résultats)
-- **Orchestrators** = Décisions (agrège agents)
-
-### 2. **Parallélisation**
-- Les 5 agents tournent **en parallèle** (pas dépendances)
-- Réduit latence (crucial pour battle en temps réel)
-
-### 3. **Poids Configurables**
-- Team Building: 35% Type, 25% Stats, 25% Role, 15% Coverage, XX% Synergy
-- Facilite ajustement via configuration
-
-### 4. **Reasoning Explicite**
-- Chaque suggestion inclut **pourquoi** (breakdown + details)
-- User comprend la logique
-
-### 5. **Cache & Performance**
-- Pokémon data: cache mémoire 5 min (1-5ms)
-- Battle decisions: <100ms pour temps réel
-- Team suggestions: 500-1000ms acceptable
-
----
-
-## 📁 Arborescence des Fichiers
+## 📁 Structure des Fichiers
 
 ```
 lib/agents/
-├── tools/
+├── MasterAgent.ts                  # 🧠 Cerveau principal (Ollama)
+│
+├── subAgents/
+│   ├── index.ts                    # Exports
+│   ├── TeamBuildingAgent.ts        # Sous-agent team building
+│   ├── OurTeamAgent.ts             # Notre équipe
+│   ├── OpponentTeamAgent.ts        # Équipe adverse
+│   └── BattleAgent.ts              # Sous-agent combat
+│
+├── tools/                          # 🔧 Calculs purs (Team Building)
 │   ├── TypeEffectivenessTool.ts
 │   ├── StatsAnalyzerTool.ts
 │   ├── RoleClassifierTool.ts
 │   ├── MoveCoverageTool.ts
 │   └── SynergyAnalyzerTool.ts
 │
-├── teamBuilding/
-│   ├── TypeAnalysisAgent.ts
-│   ├── StatsAnalysisAgent.ts
-│   ├── RoleDistributionAgent.ts
-│   ├── MoveCoverageAgent.ts
-│   ├── SynergyAgent.ts
-│   └── [TeamBuildingOrchestrator.ts => ../TeamBuildingOrchestrator.ts]
-│
-├── battleEngine/
-│   ├── tools/
-│   │   ├── DamageCalculatorTool.ts
-│   │   ├── SpeedComparatorTool.ts
-│   │   ├── StatModifierTool.ts
-│   │   ├── StatusEffectTool.ts
-│   │   └── BattleDecisionTool.ts
-│   │
+├── battleEngine/                   # ⚔️ Moteur de combat
+│   ├── BattleOrchestrator.ts
 │   ├── agents/
 │   │   ├── DamageCalculationAgent.ts
 │   │   ├── SpeedOrderAgent.ts
 │   │   ├── StatModifierAgent.ts
 │   │   ├── StatusEffectAgent.ts
 │   │   └── BattleDecisionAgent.ts
-│   │
-│   ├── BattleOrchestrator.ts
-│   └── index.ts
+│   └── tools/
+│       ├── DamageCalculatorTool.ts
+│       ├── SpeedComparatorTool.ts
+│       ├── StatModifierTool.ts
+│       ├── StatusEffectTool.ts
+│       └── BattleDecisionTool.ts
 │
-├── TeamBuildingOrchestrator.ts
-└── index.ts
-
-app/api/
-├── team/
-│   └── suggest/
-│       └── route.ts
-│
-└── battle/
-    ├── ai-action/
-    │   └── route.ts
-    └── generate-team/
-        └── route.ts
+└── teamBuilding/                   # (Legacy - à migrer)
+    └── ...
 ```
 
 ---
 
-## 🚀 Utilisation des Endpoints
+## 🎯 Points Clés de l'Architecture
+
+### 1. **Hiérarchie Claire**
+```
+MasterAgent (cerveau)
+    ├── TeamBuildingAgent
+    │   ├── OurTeamAgent
+    │   └── OpponentTeamAgent
+    └── BattleAgent
+        └── BattleOrchestrator
+            └── 5 agents spécialisés
+```
+
+### 2. **Séparation des Concerns**
+- **MasterAgent** = Réflexion + Routing
+- **SubAgents** = Logique métier
+- **Tools** = Calculs purs
+
+### 3. **Réflexion via Ollama**
+Le MasterAgent utilise un LLM local pour:
+- Comprendre le contexte
+- Choisir le bon sous-agent
+- Adapter la réponse
+
+```typescript
+// Prompt système pour Ollama
+`Analyse la requête et détermine quelle action effectuer.
+Tâches possibles:
+- "team_building": Construire/optimiser une équipe
+- "battle": Décision de combat
+- "analysis": Analyser sans action`
+```
+
+### 4. **Fallback Sans Ollama**
+Si Ollama n'est pas disponible:
+```typescript
+// Inférence locale basée sur les keywords
+if (message.includes("équipe")) return "team_building";
+if (message.includes("combat")) return "battle";
+```
+
+---
+
+## 🚀 API Endpoints
 
 ### Team Building
 ```bash
 POST /api/team/suggest
-Content-Type: application/json
-
 {
-  "currentTeam": [1, 4, 7],  // IDs Pokémon actuels
-  "teamSize": 3              // Optionnel
+  "currentTeam": [1, 4, 7],
+  "opponentTeam": [25, 94, 149]  # Optionnel
 }
 
 RESPONSE:
 {
+  "success": true,
   "suggestions": [
-    {
-      "id": 25,
-      "name": "Pikachu",
-      "score": 87.5,
-      "breakdown": {
-        "typeScore": 35,
-        "statsScore": 25,
-        "roleScore": 22,
-        "coverageScore": 13.5,
-        "synergyScore": 8
-      },
-      "details": ["Covers flying weakness", "Great speed..."],
-      "reasoning": "Excellent speed form with..."
-    }
-    // ... 4 more candidates
+    { "id": 130, "name": "Gyarados", "score": 87 }
   ],
-  "teamAnalysis": {...}
+  "analysis": { "weaknesses": ["electric"] }
 }
 ```
 
-### Battle Engine
+### Battle
 ```bash
 POST /api/battle/ai-action
-Content-Type: application/json
-
 {
-  "battleState": {...},
-  "currentPokemon": {...},
-  "opponentTeam": [...]
+  "battleState": {
+    "playerPokemon": {...},
+    "opponentPokemon": {...}
+  }
 }
 
 RESPONSE:
 {
-  "action": "move",
-  "targetMove": "Thunder",
-  "targetPokemon": null,
-  "probability": 0.92,
-  "damageRange": [45, 52],
-  "reasoning": "Thunder has 92% chance to KO opponent's water type"
+  "success": true,
+  "action": { "type": "move", "moveName": "Thunderbolt" },
+  "confidence": 0.92,
+  "reasoning": "Super efficace, chance de KO 85%"
 }
 ```
 
 ---
 
-## 🔮 Améliorations Futures
+## 🔮 Avantages de cette Architecture
 
-- [ ] **Machine Learning**: Apprendre des patterns gagnants
-- [ ] **Metagame Awareness**: Adapter aux tendances compétitives
-- [ ] **Live Battle Analytics**: Apprendre du comportement de l'adversaire
-- [ ] **Multi-turn Planning**: Prévoir 2-3 tours à l'avance
-- [ ] **ELO Weighting**: Adapter difficulté selon skill player
+| Aspect | Bénéfice |
+|--------|----------|
+| **Modularité** | Chaque agent est indépendant et testable |
+| **Extensibilité** | Facile d'ajouter de nouveaux sous-agents |
+| **Intelligence** | Ollama permet une compréhension contextuelle |
+| **Fallback** | Fonctionne même sans Ollama (inférence locale) |
+| **Performance** | Tools réutilisables et cachés |
+| **Maintenance** | Code organisé et séparé par responsabilité |
 
 ---
 

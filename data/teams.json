@@ -7,28 +7,28 @@
     },
     {
       "slot": 2,
-      "pokemonName": "lugia",
-      "pokemonId": 249
+      "pokemonName": "articuno",
+      "pokemonId": 144
     },
     {
       "slot": 3,
-      "pokemonName": "wailord",
-      "pokemonId": 321
+      "pokemonName": "moltres",
+      "pokemonId": 146
     },
     {
       "slot": 4,
-      "pokemonName": "ho-oh",
-      "pokemonId": 250
-    },
-    {
-      "slot": 5,
       "pokemonName": "latias",
       "pokemonId": 380
     },
     {
+      "slot": 5,
+      "pokemonName": "wailord",
+      "pokemonId": 321
+    },
+    {
       "slot": 6,
-      "pokemonName": "machamp",
-      "pokemonId": 68
+      "pokemonName": "tyranitar",
+      "pokemonId": 248
     }
   ]
 }
