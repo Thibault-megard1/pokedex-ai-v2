@@ -1,18 +1,39 @@
 /**
- * Battle Agent
+ * Battle Agent (SubAgent)
  * 
- * Sous-agent qui gère les décisions de combat.
- * Wrapper autour du BattleOrchestrator existant pour l'intégrer
- * dans l'architecture MasterAgent.
+ * Sous-agent qui gère les décisions de combat en utilisant directement les Tools.
  * 
- * Responsabilités:
- * - Prendre des décisions de combat (attaque, switch)
- * - Analyser l'état du combat
- * - Prédire les actions adverses
+ * Architecture: MasterAgent → BattleAgent (SubAgent) → Tools
+ * 
+ * Tools utilisés:
+ * - BattleDecisionTool: Décisions d'attaque, switch, prédictions
+ * - DamageCalculatorTool: Calcul précis des dégâts
+ * - SpeedComparatorTool: Ordre des tours
+ * - StatusEffectTool: Gestion des statuts
+ * - StatModifierTool: Gestion des boosts
  */
 
-import { BattleOrchestrator, TurnResult, OrchestratorConfig } from "../battleEngine/BattleOrchestrator";
-import { BattlePokemon, BattleState, BattleAction } from "../battleEngine/tools/BattleDecisionTool";
+import {
+  BattleDecisionTool,
+  BattleState,
+  BattleAction,
+  BattlePokemon,
+  ActionScore,
+  WinProbability,
+  SwitchDecision,
+  OpponentPrediction,
+} from "../battleEngine/tools/BattleDecisionTool";
+import {
+  DamageCalculatorTool,
+  DamageCalculationResult,
+  MoveForDamage,
+} from "../battleEngine/tools/DamageCalculatorTool";
+import {
+  SpeedComparatorTool,
+  SpeedComparisonResult,
+} from "../battleEngine/tools/SpeedComparatorTool";
+import { StatusEffectTool } from "../battleEngine/tools/StatusEffectTool";
+import { StatModifierTool } from "../battleEngine/tools/StatModifierTool";
 
 // ============================================================================
 // TYPES
@@ -20,9 +41,12 @@ import { BattlePokemon, BattleState, BattleAction } from "../battleEngine/tools/
 
 export interface BattleRequest {
   battleState: BattleState;
-  ourTeam: any[];
-  opponentTeam: any[];
-  options?: Partial<OrchestratorConfig>;
+  ourTeam: BattlePokemon[];
+  opponentTeam: BattlePokemon[];
+  options?: {
+    logLevel?: "none" | "minimal" | "detailed";
+    aggressiveness?: "defensive" | "balanced" | "aggressive";
+  };
 }
 
 export interface BattleResponse {
@@ -30,21 +54,27 @@ export interface BattleResponse {
   action?: BattleAction;
   reasoning?: string;
   confidence?: number;
-  turnResult?: TurnResult;
+  analysis?: {
+    moveOptions: ActionScore[];
+    switchAnalysis: SwitchDecision;
+    prediction: OpponentPrediction;
+    winProbability: WinProbability;
+  };
   error?: string;
 }
 
-export interface ActionEvaluation {
-  action: BattleAction;
-  score: number;
-  reasoning: string;
-  riskLevel: "low" | "medium" | "high";
-  expectedOutcome: {
-    damageDealt?: number;
-    damageReceived?: number;
-    koChance?: number;
-    statusEffects?: string[];
-  };
+export interface TurnResult {
+  decision: BattleAction;
+  confidence: number;
+  summary: string;
+  breakdown: string[];
+}
+
+export interface BattleSimulationResult {
+  winner: "player" | "opponent";
+  turns: number;
+  turnHistory: TurnResult[];
+  summary: string;
 }
 
 // ============================================================================
@@ -52,84 +82,130 @@ export interface ActionEvaluation {
 // ============================================================================
 
 export class BattleAgent {
-  private orchestrator: BattleOrchestrator;
+  // === TOOLS ===
+  private decisionTool: BattleDecisionTool;
+  private damageTool: DamageCalculatorTool;
+  private speedTool: SpeedComparatorTool;
+  private statusTool: StatusEffectTool;
+  private statTool: StatModifierTool;
 
-  constructor(config?: Partial<OrchestratorConfig>) {
-    this.orchestrator = new BattleOrchestrator(config);
+  // === CONFIG ===
+  private logLevel: "none" | "minimal" | "detailed";
+  private aggressiveness: "defensive" | "balanced" | "aggressive";
+
+  constructor(options?: BattleRequest["options"]) {
+    // Initialiser les Tools
+    this.decisionTool = new BattleDecisionTool();
+    this.damageTool = new DamageCalculatorTool();
+    this.speedTool = new SpeedComparatorTool();
+    this.statusTool = new StatusEffectTool();
+    this.statTool = new StatModifierTool();
+
+    // Config
+    this.logLevel = options?.logLevel ?? "minimal";
+    this.aggressiveness = options?.aggressiveness ?? "balanced";
   }
 
   /**
-   * Point d'entrée principal
-   * Délègue au BattleOrchestrator pour la décision
+   * Point d'entrée principal - Prend une décision de combat
    */
   async process(request: BattleRequest): Promise<BattleResponse> {
     try {
       // Valider la requête
       if (!request.battleState) {
-        return {
-          success: false,
-          error: "État de combat manquant"
-        };
+        return { success: false, error: "État de combat manquant" };
       }
 
       if (!request.battleState.playerActive || !request.battleState.opponentActive) {
-        return {
-          success: false,
-          error: "Pokémon actifs manquants dans l'état de combat"
-        };
+        return { success: false, error: "Pokémon actifs manquants" };
       }
 
-      // Appeler l'orchestrateur
-      const turnResult = this.orchestrator.executeTurn(request.battleState);
+      // Utiliser le BattleDecisionTool pour la décision
+      const decision = this.decisionTool.makeDecision(request.battleState);
+
+      // Construire le raisonnement
+      const reasoning = this.buildReasoning(decision);
+
+      // Calculer la confiance basée sur le score et la probabilité de victoire
+      const confidence = Math.round(
+        (decision.allOptions[0]?.score ?? 50) * 0.6 +
+        decision.winProbability.playerWinChance * 0.4
+      );
 
       return {
         success: true,
-        action: turnResult.decision,
-        reasoning: turnResult.summary,
-        confidence: turnResult.confidence,
-        turnResult
+        action: decision.bestAction,
+        reasoning,
+        confidence: Math.min(100, Math.max(0, confidence)),
+        analysis: {
+          moveOptions: decision.allOptions,
+          switchAnalysis: decision.switchAnalysis,
+          prediction: decision.prediction,
+          winProbability: decision.winProbability,
+        },
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message || "Erreur dans BattleAgent"
+        error: error.message || "Erreur dans BattleAgent",
       };
     }
   }
 
   /**
+   * Exécute un tour de combat et retourne le résultat détaillé
+   */
+  executeTurn(state: BattleState): TurnResult {
+    const decision = this.decisionTool.makeDecision(state);
+
+    // Résumé de la décision
+    let summary: string;
+    if (decision.bestAction.type === "attack" && decision.bestAction.move) {
+      summary = `${state.playerActive.name} utilise ${decision.bestAction.move.name}`;
+    } else if (decision.bestAction.type === "switch" && decision.bestAction.switchTo) {
+      summary = `Switch vers ${decision.bestAction.switchTo.name}`;
+    } else {
+      summary = "Action inconnue";
+    }
+
+    return {
+      decision: decision.bestAction,
+      confidence: decision.winProbability.playerWinChance,
+      summary,
+      breakdown: decision.breakdown,
+    };
+  }
+
+  /**
    * Évalue toutes les actions possibles et les ordonne par score
    */
-  async evaluateAllActions(battleState: BattleState): Promise<ActionEvaluation[]> {
-    const evaluations: ActionEvaluation[] = [];
+  evaluateAllActions(battleState: BattleState): ActionScore[] {
     const playerPokemon = battleState.playerActive;
+    if (!playerPokemon) return [];
 
-    if (!playerPokemon) {
-      return evaluations;
+    // Évaluer les moves via le Tool
+    const moveScores = this.decisionTool.evaluateMoves(
+      battleState.playerActive,
+      battleState.opponentActive
+    );
+
+    // Évaluer les switches possibles
+    const switchAnalysis = this.decisionTool.evaluateSwitch(battleState);
+
+    // Combiner les résultats
+    const allActions = [...moveScores];
+
+    // Ajouter le switch si recommandé
+    if (switchAnalysis.shouldSwitch && switchAnalysis.bestSwitchTarget) {
+      allActions.push({
+        action: { type: "switch", switchTo: switchAnalysis.bestSwitchTarget },
+        score: 100 - switchAnalysis.risk,
+        reasoning: switchAnalysis.reasons,
+        breakdown: switchAnalysis.breakdown,
+      });
     }
 
-    // Évaluer chaque move
-    if (playerPokemon.moves) {
-      for (const move of playerPokemon.moves) {
-        // Les moves de dégâts sont toujours disponibles dans cette implémentation
-        const evaluation = await this.evaluateMove(battleState, move);
-        evaluations.push(evaluation);
-      }
-    }
-
-    // Évaluer chaque switch possible
-    if (battleState.playerTeam) {
-      for (let i = 0; i < battleState.playerTeam.length; i++) {
-        const pokemon = battleState.playerTeam[i];
-        if (pokemon.currentHp > 0 && pokemon.name !== playerPokemon.name) {
-          const evaluation = this.evaluateSwitch(battleState, pokemon, i);
-          evaluations.push(evaluation);
-        }
-      }
-    }
-
-    // Trier par score décroissant
-    return evaluations.sort((a, b) => b.score - a.score);
+    return allActions.sort((a, b) => b.score - a.score);
   }
 
   /**
@@ -149,357 +225,158 @@ export class BattleAgent {
         advantage: "even",
         momentum: "neutral",
         criticalFactors: [],
-        recommendations: []
+        recommendations: [],
       };
     }
 
     const criticalFactors: string[] = [];
     const recommendations: string[] = [];
 
+    // Utiliser les Tools pour l'analyse
+    const winProb = this.decisionTool.calculateWinProbability(battleState);
+    const speedResult = this.speedTool.compareSpeed(
+      {
+        name: player.name,
+        currentStats: { speed: player.currentStats.speed },
+        statStages: { speed: player.statStages.speed },
+        statusCondition: player.statusCondition,
+        team: "player",
+      },
+      {
+        name: opponent.name,
+        currentStats: { speed: opponent.currentStats.speed },
+        statStages: { speed: opponent.statStages.speed },
+        statusCondition: opponent.statusCondition,
+        team: "opponent",
+      }
+    );
+
     // Analyser les HP
     const playerHpPercent = player.currentHp / player.maxHp;
     const opponentHpPercent = opponent.currentHp / opponent.maxHp;
 
-    let advantageScore = 0;
-
     if (playerHpPercent > opponentHpPercent + 0.3) {
-      advantageScore += 30;
       criticalFactors.push(`Avantage HP (+${Math.round((playerHpPercent - opponentHpPercent) * 100)}%)`);
     } else if (opponentHpPercent > playerHpPercent + 0.3) {
-      advantageScore -= 30;
       criticalFactors.push(`Désavantage HP (${Math.round((playerHpPercent - opponentHpPercent) * 100)}%)`);
     }
 
     // Analyser la vitesse
-    const playerSpeed = this.getEffectiveSpeed(player);
-    const opponentSpeed = this.getEffectiveSpeed(opponent);
-
-    if (playerSpeed > opponentSpeed) {
-      advantageScore += 15;
+    if (speedResult.firstPokemon.team === "player") {
       criticalFactors.push("Plus rapide que l'adversaire");
     } else {
-      advantageScore -= 15;
       criticalFactors.push("Plus lent que l'adversaire");
     }
 
-    // Analyser les boosts
-    const playerBoosts = this.sumBoosts(player.statStages || {});
-    const opponentBoosts = this.sumBoosts(opponent.statStages || {});
-
-    if (playerBoosts > opponentBoosts + 2) {
-      advantageScore += 20;
-      criticalFactors.push(`Boosts avantageux (+${playerBoosts - opponentBoosts})`);
-    } else if (opponentBoosts > playerBoosts + 2) {
-      advantageScore -= 20;
-      criticalFactors.push(`Boosts désavantageux (${playerBoosts - opponentBoosts})`);
+    // Recommandations basées sur la probabilité de victoire
+    if (winProb.playerWinChance > 70) {
+      recommendations.push("Position avantageuse - attaquez agressivement");
+    } else if (winProb.playerWinChance < 30) {
+      recommendations.push("Position difficile - considérez un switch défensif");
     }
 
-    // Recommandations
-    if (playerHpPercent < 0.3 && battleState.playerTeam && battleState.playerTeam.length > 1) {
+    if (playerHpPercent < 0.3 && battleState.playerTeam.length > 1) {
       recommendations.push("Considérez un switch pour préserver ce Pokémon");
-    }
-
-    if (playerBoosts >= 2) {
-      recommendations.push("Profitez de vos boosts pour attaquer agressivement");
     }
 
     if (opponentHpPercent < 0.25) {
       recommendations.push("L'adversaire est faible - finissez-le!");
     }
 
-    // Déterminer l'avantage et le momentum
+    // Déterminer l'avantage
     let advantage: "player" | "opponent" | "even" = "even";
-    if (advantageScore > 25) advantage = "player";
-    else if (advantageScore < -25) advantage = "opponent";
+    if (winProb.playerWinChance > 60) advantage = "player";
+    else if (winProb.playerWinChance < 40) advantage = "opponent";
 
+    // Déterminer le momentum
     let momentum: "player" | "opponent" | "neutral" = "neutral";
-    if (playerBoosts > opponentBoosts && playerHpPercent > 0.5) momentum = "player";
-    else if (opponentBoosts > playerBoosts || opponentHpPercent > playerHpPercent + 0.2) momentum = "opponent";
+    if (playerHpPercent > 0.7 && speedResult.firstPokemon.team === "player") {
+      momentum = "player";
+    } else if (opponentHpPercent > 0.7 && speedResult.firstPokemon.team === "opponent") {
+      momentum = "opponent";
+    }
 
-    return {
-      advantage,
-      momentum,
-      criticalFactors,
-      recommendations
-    };
+    return { advantage, momentum, criticalFactors, recommendations };
   }
 
   /**
    * Prédit l'action probable de l'adversaire
    */
-  predictOpponentAction(battleState: BattleState): {
-    likelyAction: "attack" | "switch" | "setup";
-    confidence: number;
-    reasoning: string;
-  } {
-    const opponent = battleState.opponentActive;
-    const player = battleState.playerActive;
-
-    if (!opponent || !player) {
-      return {
-        likelyAction: "attack",
-        confidence: 0.3,
-        reasoning: "Données insuffisantes"
-      };
-    }
-
-    const opponentHpPercent = opponent.currentHp / opponent.maxHp;
-    const playerHpPercent = player.currentHp / player.maxHp;
-
-    // HP bas → probablement switch
-    if (opponentHpPercent < 0.25 && battleState.opponentTeam && battleState.opponentTeam.length > 1) {
-      return {
-        likelyAction: "switch",
-        confidence: 0.7,
-        reasoning: "HP faible, l'adversaire va probablement switcher"
-      };
-    }
-
-    // Notre Pokémon faible → attaque pour KO
-    if (playerHpPercent < 0.3) {
-      return {
-        likelyAction: "attack",
-        confidence: 0.85,
-        reasoning: "Notre Pokémon est faible, l'adversaire va attaquer pour le KO"
-      };
-    }
-
-    // Début de combat → possible setup
-    if (opponentHpPercent > 0.9 && playerHpPercent > 0.9) {
-      return {
-        likelyAction: "setup",
-        confidence: 0.5,
-        reasoning: "Début de combat, possible setup"
-      };
-    }
-
-    // Par défaut: attaque
-    return {
-      likelyAction: "attack",
-      confidence: 0.6,
-      reasoning: "L'adversaire va probablement attaquer"
-    };
-  }
-
-  // ============================================================================
-  // MÉTHODES PRIVÉES
-  // ============================================================================
-
-  /**
-   * Évalue un move spécifique
-   */
-  private async evaluateMove(
-    battleState: BattleState,
-    move: BattlePokemon["moves"][0]
-  ): Promise<ActionEvaluation> {
-    const player = battleState.playerActive!;
-    const opponent = battleState.opponentActive!;
-
-    // Calcul simplifié du score
-    let score = 50;
-    let riskLevel: ActionEvaluation["riskLevel"] = "medium";
-    const reasons: string[] = [];
-
-    // Bonus pour moves STAB
-    if (player.types?.includes(move.type)) {
-      score += 15;
-      reasons.push("STAB");
-    }
-
-    // Bonus pour super efficace (simplifié)
-    if (this.isSuperEffective(move.type, opponent.types || [])) {
-      score += 30;
-      reasons.push("Super efficace");
-    }
-
-    // Bonus pour puissance élevée
-    if (move.power > 100) {
-      score += 20;
-      reasons.push("High power");
-    } else if (move.power > 80) {
-      score += 10;
-    }
-
-    // Pénalité pour faible précision
-    if (move.accuracy < 100 && move.accuracy > 0) {
-      score -= (100 - move.accuracy) / 2;
-      if (move.accuracy < 80) riskLevel = "high";
-      reasons.push(`${move.accuracy}% accuracy`);
-    }
-
-    // Si ça peut KO, gros bonus
-    const estimatedDamage = this.estimateDamage(player, opponent, move);
-    if (estimatedDamage >= opponent.currentHp) {
-      score += 40;
-      reasons.push("Potentiel KO");
-      riskLevel = "low";
-    }
-
-    return {
-      action: { type: "attack", move: move },
-      score: Math.max(0, Math.min(100, score)),
-      reasoning: reasons.join(", ") || "Attaque standard",
-      riskLevel,
-      expectedOutcome: {
-        damageDealt: estimatedDamage,
-        koChance: estimatedDamage >= opponent.currentHp ? 1 : estimatedDamage / opponent.currentHp
-      }
-    };
+  predictOpponentAction(battleState: BattleState): OpponentPrediction {
+    return this.decisionTool.predictOpponentAction(battleState);
   }
 
   /**
-   * Évalue un switch
+   * Calcule les dégâts d'un move spécifique
    */
-  private evaluateSwitch(
-    battleState: BattleState,
-    targetPokemon: BattlePokemon,
-    teamIndex: number
-  ): ActionEvaluation {
-    const opponent = battleState.opponentActive!;
-    let score = 30; // Base pour switch (généralement moins bon qu'attaquer)
-    let riskLevel: ActionEvaluation["riskLevel"] = "medium";
-    const reasons: string[] = [];
-
-    // Bonus si le switch résiste au type adverse
-    if (opponent.types) {
-      const resistances = this.countResistances(targetPokemon.types || [], opponent.types);
-      if (resistances > 0) {
-        score += resistances * 15;
-        reasons.push(`Résiste à ${resistances} type(s)`);
-        riskLevel = "low";
-      }
-    }
-
-    // Bonus si le switch est super efficace
-    if (targetPokemon.types && opponent.types) {
-      for (const type of targetPokemon.types) {
-        if (this.isSuperEffective(type, opponent.types)) {
-          score += 20;
-          reasons.push("Peut attaquer super efficacement");
-          break;
-        }
-      }
-    }
-
-    // Pénalité si notre Pokémon actuel va bien
-    const currentHp = battleState.playerActive!.currentHp / battleState.playerActive!.maxHp;
-    if (currentHp > 0.7) {
-      score -= 15;
-      reasons.push("Notre Pokémon actuel va bien");
-    }
-
-    // Bonus si notre Pokémon actuel est en danger
-    if (currentHp < 0.3) {
-      score += 25;
-      riskLevel = "high";
-      reasons.push("Notre Pokémon est faible");
-    }
-
-    return {
-      action: { type: "switch", switchTo: targetPokemon },
-      score: Math.max(0, Math.min(100, score)),
-      reasoning: reasons.join(", ") || "Switch tactique",
-      riskLevel,
-      expectedOutcome: {}
-    };
-  }
-
-  /**
-   * Calcule la vitesse effective
-   */
-  private getEffectiveSpeed(pokemon: BattlePokemon): number {
-    let speed = pokemon.currentStats?.speed || 50;
-    
-    const stages = pokemon.statStages?.speed || 0;
-    const multipliers = [2/8, 2/7, 2/6, 2/5, 2/4, 2/3, 2/2, 3/2, 4/2, 5/2, 6/2, 7/2, 8/2];
-    speed = Math.floor(speed * multipliers[stages + 6]);
-
-    // Paralysie divise la vitesse par 2
-    if (pokemon.statusCondition === "paralysis") {
-      speed = Math.floor(speed / 2);
-    }
-
-    return speed;
-  }
-
-  /**
-   * Somme les boosts d'un Pokémon
-   */
-  private sumBoosts(statStages: Record<string, number>): number {
-    return Object.values(statStages).reduce((sum, val) => sum + Math.max(0, val), 0);
-  }
-
-  /**
-   * Vérifie si un type est super efficace
-   */
-  private isSuperEffective(attackType: string, defenderTypes: string[]): boolean {
-    const effectiveness: Record<string, string[]> = {
-      fire: ["grass", "ice", "bug", "steel"],
-      water: ["fire", "ground", "rock"],
-      grass: ["water", "ground", "rock"],
-      electric: ["water", "flying"],
-      ice: ["grass", "ground", "flying", "dragon"],
-      fighting: ["normal", "ice", "rock", "dark", "steel"],
-      ground: ["fire", "electric", "poison", "rock", "steel"],
-      flying: ["grass", "fighting", "bug"],
-      psychic: ["fighting", "poison"],
-      bug: ["grass", "psychic", "dark"],
-      rock: ["fire", "ice", "flying", "bug"],
-      ghost: ["psychic", "ghost"],
-      dragon: ["dragon"],
-      dark: ["psychic", "ghost"],
-      steel: ["ice", "rock", "fairy"],
-      fairy: ["fighting", "dragon", "dark"],
-      poison: ["grass", "fairy"]
-    };
-
-    const targets = effectiveness[attackType.toLowerCase()] || [];
-    return defenderTypes.some(t => targets.includes(t.toLowerCase()));
-  }
-
-  /**
-   * Compte les résistances
-   */
-  private countResistances(defenderTypes: string[], attackerTypes: string[]): number {
-    // Simplifié - dans un vrai cas, utiliser le TypeEffectivenessTool
-    let count = 0;
-    // Approximation basique
-    return count;
-  }
-
-  /**
-   * Estime les dégâts (simplifié)
-   */
-  private estimateDamage(
+  calculateDamage(
     attacker: BattlePokemon,
     defender: BattlePokemon,
-    move: BattlePokemon["moves"][0]
-  ): number {
-    // Formule simplifiée
-    const attackStat = move.damageClass === "physical" 
-      ? (attacker.currentStats?.attack || 100)
-      : (attacker.currentStats?.specialAttack || 100);
-    
-    const defenseStat = move.damageClass === "physical"
-      ? (defender.currentStats?.defense || 100)
-      : (defender.currentStats?.specialDefense || 100);
+    move: MoveForDamage
+  ): DamageCalculationResult {
+    return this.damageTool.calculateDamage(
+      {
+        name: attacker.name,
+        types: attacker.types,
+        level: attacker.level,
+        currentStats: {
+          attack: attacker.currentStats.attack,
+          defense: attacker.currentStats.defense,
+          specialAttack: attacker.currentStats.specialAttack,
+          specialDefense: attacker.currentStats.specialDefense,
+        },
+        statStages: {
+          attack: attacker.statStages.attack,
+          defense: attacker.statStages.defense,
+          specialAttack: attacker.statStages.specialAttack,
+          specialDefense: attacker.statStages.specialDefense,
+        },
+        statusCondition: attacker.statusCondition,
+      },
+      {
+        name: defender.name,
+        types: defender.types,
+        level: defender.level,
+        currentStats: {
+          attack: defender.currentStats.attack,
+          defense: defender.currentStats.defense,
+          specialAttack: defender.currentStats.specialAttack,
+          specialDefense: defender.currentStats.specialDefense,
+        },
+        statStages: {
+          attack: defender.statStages.attack,
+          defense: defender.statStages.defense,
+          specialAttack: defender.statStages.specialAttack,
+          specialDefense: defender.statStages.specialDefense,
+        },
+        statusCondition: defender.statusCondition,
+      },
+      move,
+      defender.currentHp,
+      defender.maxHp
+    );
+  }
 
-    const power = move.power || 50;
-    const level = 50; // Approximation
-
-    let damage = Math.floor((((2 * level / 5 + 2) * power * attackStat / defenseStat) / 50) + 2);
-
-    // STAB
-    if (attacker.types?.includes(move.type)) {
-      damage = Math.floor(damage * 1.5);
-    }
-
-    // Type effectiveness (simplifié)
-    if (this.isSuperEffective(move.type, defender.types || [])) {
-      damage = Math.floor(damage * 2);
-    }
-
-    return damage;
+  /**
+   * Compare la vitesse de deux Pokémon
+   */
+  compareSpeed(pokemon1: BattlePokemon, pokemon2: BattlePokemon): SpeedComparisonResult {
+    return this.speedTool.compareSpeed(
+      {
+        name: pokemon1.name,
+        currentStats: { speed: pokemon1.currentStats.speed },
+        statStages: { speed: pokemon1.statStages.speed },
+        statusCondition: pokemon1.statusCondition,
+        team: pokemon1.team,
+      },
+      {
+        name: pokemon2.name,
+        currentStats: { speed: pokemon2.currentStats.speed },
+        statStages: { speed: pokemon2.statStages.speed },
+        statusCondition: pokemon2.statusCondition,
+        team: pokemon2.team,
+      }
+    );
   }
 
   // ============================================================================
@@ -508,60 +385,234 @@ export class BattleAgent {
 
   /**
    * Simule un combat complet 6v6 de manière automatique
-   * Les deux équipes s'affrontent jusqu'à ce qu'une soit éliminée
-   */
-  simulateFullBattle(
-    battleState: BattleState,
-    options?: { maxTurns?: number }
-  ): {
-    winner: "player" | "opponent";
-    turns: number;
-    turnHistory: TurnResult[];
-    finalState: BattleState;
-  } {
-    return this.orchestrator.simulateBattle(battleState, options?.maxTurns ?? 100);
-  }
-
-  /**
-   * Alias pour combat automatique (plus explicite)
    */
   autoBattle(
     playerTeam: BattlePokemon[],
     opponentTeam: BattlePokemon[],
     options?: { maxTurns?: number }
-  ): {
-    winner: "player" | "opponent";
-    turns: number;
-    turnHistory: TurnResult[];
-    summary: string;
-  } {
-    // Créer l'état initial
-    const initialState: BattleState = {
-      playerActive: playerTeam[0],
-      opponentActive: opponentTeam[0],
-      playerTeam: playerTeam,
-      opponentTeam: opponentTeam,
+  ): BattleSimulationResult {
+    const maxTurns = options?.maxTurns ?? 100;
+    const turnHistory: TurnResult[] = [];
+    
+    // Copier les équipes pour ne pas modifier les originales
+    const pTeam = playerTeam.map((p) => ({ ...p, team: "player" as const }));
+    const oTeam = opponentTeam.map((p) => ({ ...p, team: "opponent" as const }));
+
+    let currentState: BattleState = {
+      playerActive: pTeam[0],
+      opponentActive: oTeam[0],
+      playerTeam: pTeam,
+      opponentTeam: oTeam,
       turn: 1,
-      weather: null
+      weather: null,
     };
 
-    const result = this.orchestrator.simulateBattle(initialState, options?.maxTurns ?? 100);
+    for (let turn = 1; turn <= maxTurns; turn++) {
+      currentState.turn = turn;
+
+      // Vérifier les conditions de victoire
+      const playerAlive = pTeam.filter((p) => p.currentHp > 0).length;
+      const opponentAlive = oTeam.filter((p) => p.currentHp > 0).length;
+
+      if (playerAlive === 0) {
+        return {
+          winner: "opponent",
+          turns: turn,
+          turnHistory,
+          summary: `Combat terminé en ${turn} tours. Adversaire gagne.`,
+        };
+      }
+      if (opponentAlive === 0) {
+        return {
+          winner: "player",
+          turns: turn,
+          turnHistory,
+          summary: `Combat terminé en ${turn} tours. Joueur gagne.`,
+        };
+      }
+
+      // Tour du joueur
+      const playerTurn = this.executeTurn(currentState);
+      turnHistory.push(playerTurn);
+
+      // Appliquer l'action du joueur (simulation simplifiée)
+      this.applyAction(currentState, playerTurn.decision, "player");
+
+      // Tour de l'adversaire (IA inverse)
+      const invertedState = this.invertState(currentState);
+      const opponentDecision = this.decisionTool.makeDecision(invertedState);
+      this.applyAction(currentState, opponentDecision.bestAction, "opponent");
+
+      // Mettre à jour les Pokémon actifs si KO
+      this.updateActiveIfKO(currentState);
+    }
+
+    // Timeout - déterminer le gagnant par HP restants
+    const playerTotalHp = pTeam.reduce((sum, p) => sum + p.currentHp, 0);
+    const opponentTotalHp = oTeam.reduce((sum, p) => sum + p.currentHp, 0);
 
     return {
-      winner: result.winner,
-      turns: result.turns,
-      turnHistory: result.turnHistory,
-      summary: `Combat terminé en ${result.turns} tours. Vainqueur: ${result.winner === "player" ? "Joueur" : "Adversaire"}`
+      winner: playerTotalHp > opponentTotalHp ? "player" : "opponent",
+      turns: maxTurns,
+      turnHistory,
+      summary: `Combat terminé après ${maxTurns} tours (timeout). Vainqueur: ${playerTotalHp > opponentTotalHp ? "Joueur" : "Adversaire"}`,
     };
   }
 
   // ============================================================================
-  // ACCÈS À L'ORCHESTRATEUR
+  // MÉTHODES UTILITAIRES PRIVÉES
   // ============================================================================
 
-  getOrchestrator(): BattleOrchestrator {
-    return this.orchestrator;
+  private buildReasoning(decision: ReturnType<BattleDecisionTool["makeDecision"]>): string {
+    const parts: string[] = [];
+
+    if (decision.bestAction.type === "attack" && decision.bestAction.move) {
+      parts.push(`Utilise ${decision.bestAction.move.name}`);
+      const topOption = decision.allOptions[0];
+      if (topOption) {
+        parts.push(`Score: ${topOption.score}`);
+        if (topOption.koChance && topOption.koChance > 50) {
+          parts.push(`Chance de KO: ${Math.round(topOption.koChance)}%`);
+        }
+      }
+    } else if (decision.bestAction.type === "switch" && decision.bestAction.switchTo) {
+      parts.push(`Switch vers ${decision.bestAction.switchTo.name}`);
+      parts.push(...decision.switchAnalysis.reasons.slice(0, 2));
+    }
+
+    parts.push(`Prob. victoire: ${decision.winProbability.playerWinChance}%`);
+
+    return parts.join(". ");
+  }
+
+  private invertState(state: BattleState): BattleState {
+    return {
+      playerActive: { ...state.opponentActive, team: "player" },
+      opponentActive: { ...state.playerActive, team: "opponent" },
+      playerTeam: state.opponentTeam.map((p) => ({ ...p, team: "player" as const })),
+      opponentTeam: state.playerTeam.map((p) => ({ ...p, team: "opponent" as const })),
+      turn: state.turn,
+      weather: state.weather,
+    };
+  }
+
+  private applyAction(
+    state: BattleState,
+    action: BattleAction,
+    side: "player" | "opponent"
+  ): void {
+    const attacker = side === "player" ? state.playerActive : state.opponentActive;
+    const defender = side === "player" ? state.opponentActive : state.playerActive;
+
+    if (action.type === "attack" && action.move) {
+      // Calculer et appliquer les dégâts
+      const damage = this.calculateDamage(attacker, defender, action.move);
+      defender.currentHp = Math.max(0, defender.currentHp - damage.damage);
+    } else if (action.type === "switch" && action.switchTo) {
+      // Effectuer le switch
+      const team = side === "player" ? state.playerTeam : state.opponentTeam;
+      const idx = team.findIndex((p) => p.name === action.switchTo!.name);
+      if (idx !== -1) {
+        if (side === "player") {
+          state.playerActive = team[idx];
+        } else {
+          state.opponentActive = team[idx];
+        }
+      }
+    }
+  }
+
+  private updateActiveIfKO(state: BattleState): void {
+    // Remplacer le Pokémon joueur si KO
+    if (state.playerActive.currentHp <= 0) {
+      const alive = state.playerTeam.find((p) => p.currentHp > 0);
+      if (alive) state.playerActive = alive;
+    }
+
+    // Remplacer le Pokémon adversaire si KO
+    if (state.opponentActive.currentHp <= 0) {
+      const alive = state.opponentTeam.find((p) => p.currentHp > 0);
+      if (alive) state.opponentActive = alive;
+    }
+  }
+
+  // ============================================================================
+  // HELPER STATIQUE
+  // ============================================================================
+
+  /**
+   * Crée un BattlePokemon à partir de données de base
+   */
+  static createBattlePokemon(
+    name: string,
+    types: string[],
+    level: number,
+    baseStats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    },
+    moves: MoveForDamage[],
+    team: "player" | "opponent"
+  ): BattlePokemon {
+    const calculateStat = (base: number, isHp: boolean = false) => {
+      if (isHp) {
+        return Math.floor(((2 * base + 31 + 252 / 4) * level) / 100) + level + 10;
+      }
+      return Math.floor(((2 * base + 31 + 252 / 4) * level) / 100 + 5);
+    };
+
+    const maxHp = calculateStat(baseStats.hp, true);
+
+    return {
+      name,
+      types,
+      level,
+      baseStats,
+      currentStats: {
+        attack: calculateStat(baseStats.attack),
+        defense: calculateStat(baseStats.defense),
+        specialAttack: calculateStat(baseStats.specialAttack),
+        specialDefense: calculateStat(baseStats.specialDefense),
+        speed: calculateStat(baseStats.speed),
+      },
+      statStages: {
+        attack: 0,
+        defense: 0,
+        specialAttack: 0,
+        specialDefense: 0,
+        speed: 0,
+        accuracy: 0,
+        evasion: 0,
+      },
+      currentHp: maxHp,
+      maxHp,
+      moves,
+      statusCondition: null,
+      team,
+    };
   }
 }
 
 export default BattleAgent;
+
+// Re-export des types depuis les Tools pour faciliter l'utilisation
+export type {
+  BattleState,
+  BattleAction,
+  BattlePokemon,
+  ActionScore,
+  WinProbability,
+  SwitchDecision,
+  OpponentPrediction,
+} from "../battleEngine/tools/BattleDecisionTool";
+
+export type {
+  MoveForDamage,
+  DamageCalculationResult,
+} from "../battleEngine/tools/DamageCalculatorTool";
+
+export type { SpeedComparisonResult } from "../battleEngine/tools/SpeedComparatorTool";

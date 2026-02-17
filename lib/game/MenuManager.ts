@@ -628,7 +628,7 @@ export class MenuManager {
       container.add(noMoves);
     } else {
       moves.forEach((move, i) => {
-        const moveText = typeof move === 'string' ? move : move.name || 'Unknown';
+        const moveText = move || 'Unknown';
         const moveLine = this.uiHelper.createText(0, currentY + i * this.uiHelper.scale(18), `• ${moveText}`, 'small', '#666666');
         moveLine.setOrigin(0.5);
         container.add(moveLine);

@@ -21,5 +21,17 @@ export { BattleAgent } from "./BattleAgent";
 export type { 
   BattleRequest, 
   BattleResponse,
-  ActionEvaluation
+  TurnResult,
+  BattleSimulationResult
+} from "./BattleAgent";
+
+// Re-export types from Tools for convenience
+export type {
+  BattleState,
+  BattleAction,
+  BattlePokemon,
+  ActionScore,
+  WinProbability,
+  SwitchDecision,
+  OpponentPrediction
 } from "./BattleAgent";

@@ -407,7 +407,7 @@ export function checkEffectTrigger(effect?: MoveEffect): boolean {
  * Returns damage amount and optional message
  */
 export function calculateStatusDamage(
-  pokemon: { hp: number; maxHp: number; statusCondition: StatusCondition; level?: number },
+  pokemon: { hp: number; maxHp: number; statusCondition?: StatusCondition; level?: number },
   turnCount: number = 0
 ): { damage: number; message: string } {
   if (!pokemon.statusCondition) {
@@ -472,7 +472,7 @@ export function calculateStatusDamage(
  * Returns { canAct: boolean, message: string }
  */
 export function canPokemonAct(pokemon: {
-  statusCondition: StatusCondition;
+  statusCondition?: StatusCondition;
   name: string;
 }): { canAct: boolean; message: string; removeStatus?: boolean } {
   if (!pokemon.statusCondition) {

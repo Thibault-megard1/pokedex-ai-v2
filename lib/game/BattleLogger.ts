@@ -58,8 +58,6 @@ export class BattleLogger {
     };
 
     this.logAction({
-      turn: 0,
-      timestamp: Date.now(),
       actorName: 'Battle',
       actorType: 'player',
       actionType: 'start',

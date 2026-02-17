@@ -313,8 +313,8 @@ export class GameScene extends Phaser.Scene {
     // Warp zones
     mapData.warps.forEach((warp) => {
       const color = warp.color ?? 0x38bdf8;
-      this.adminOverlayGraphics.lineStyle(2, color, 0.9);
-      this.adminOverlayGraphics.strokeRect(
+      this.adminOverlayGraphics!.lineStyle(2, color, 0.9);
+      this.adminOverlayGraphics!.strokeRect(
         warp.x * this.tileSize,
         warp.y * this.tileSize,
         this.tileSize,

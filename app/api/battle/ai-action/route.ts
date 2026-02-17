@@ -1,12 +1,12 @@
 /**
  * API Route: /api/battle/ai-action
  * 
- * Utilise le système multi-agents pour déterminer la meilleure action IA
+ * Utilise BattleAgent (SubAgent) pour déterminer la meilleure action IA
  */
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { BattleOrchestrator } from "@/lib/agents/battleEngine/BattleOrchestrator";
+import { BattleAgent } from "@/lib/agents/subAgents/BattleAgent";
 import { BattlePokemon, BattleState } from "@/lib/agents/battleEngine/tools/BattleDecisionTool";
 import { MoveForDamage } from "@/lib/agents/battleEngine/tools/DamageCalculatorTool";
 
@@ -85,12 +85,10 @@ export async function POST(req: Request) {
     console.log(`   Side: ${body.side}`);
     console.log(`   Turn: ${body.state.turn}`);
 
-    // Créer l'orchestrateur avec la config
-    const orchestrator = new BattleOrchestrator({
-      logLevel: body.config?.logLevel || "minimal",
-      aggressiveness: body.config?.aggressiveness || "balanced",
-      considerSetup: true,
-      considerSwitch: true
+    // Créer le BattleAgent avec la config
+    const battleAgent = new BattleAgent({
+      logLevel: body.config?.logLevel === "debug" ? "detailed" : body.config?.logLevel || "minimal",
+      aggressiveness: body.config?.aggressiveness || "balanced"
     });
 
     // Normaliser les statStages si manquants
@@ -110,8 +108,8 @@ export async function POST(req: Request) {
     const state: BattleState = {
       playerActive: normalizeStatStages(body.state.playerActive) as BattlePokemon,
       opponentActive: normalizeStatStages(body.state.opponentActive) as BattlePokemon,
-      playerTeam: body.state.playerTeam.map(p => normalizeStatStages(p)) as BattlePokemon[],
-      opponentTeam: body.state.opponentTeam.map(p => normalizeStatStages(p)) as BattlePokemon[],
+      playerTeam: body.state.playerTeam.map((p: any) => normalizeStatStages(p)) as BattlePokemon[],
+      opponentTeam: body.state.opponentTeam.map((p: any) => normalizeStatStages(p)) as BattlePokemon[],
       turn: body.state.turn,
       weather: body.state.weather
     };
@@ -119,58 +117,71 @@ export async function POST(req: Request) {
     let result;
 
     if (body.side === "opponent") {
-      // Générer l'action de l'adversaire IA
-      const action = orchestrator.generateOpponentAction(state);
-      const decision = orchestrator.executeTurn(state);
+      // Générer l'action de l'adversaire IA (inversion du state)
+      const invertedState: BattleState = {
+        playerActive: { ...state.opponentActive, team: "player" },
+        opponentActive: { ...state.playerActive, team: "opponent" },
+        playerTeam: state.opponentTeam.map(p => ({ ...p, team: "player" as const })),
+        opponentTeam: state.playerTeam.map(p => ({ ...p, team: "opponent" as const })),
+        turn: state.turn,
+        weather: state.weather
+      };
+
+      const response = await battleAgent.process({ 
+        battleState: invertedState,
+        ourTeam: invertedState.playerTeam,
+        opponentTeam: invertedState.opponentTeam
+      });
 
       result = {
         action: {
-          type: action.type,
-          moveName: action.move?.name || null,
-          switchToName: action.switchTo?.name || null
+          type: response.action?.type || "attack",
+          moveName: response.action?.move?.name || null,
+          switchToName: response.action?.switchTo?.name || null
         },
-        confidence: decision.confidence,
-        reasoning: decision.fullDecision.reasoning,
+        confidence: response.confidence || 50,
+        reasoning: response.reasoning || "",
         winProbability: {
-          player: decision.fullDecision.winProbability.playerWinChance,
-          opponent: decision.fullDecision.winProbability.opponentWinChance
-        },
-        logs: orchestrator.getLogs()
+          player: response.analysis?.winProbability?.opponentWinChance || 50,
+          opponent: response.analysis?.winProbability?.playerWinChance || 50
+        }
       };
     } else {
       // Suggérer l'action pour le joueur
-      const decision = orchestrator.executeTurn(state);
+      const response = await battleAgent.process({
+        battleState: state,
+        ourTeam: state.playerTeam,
+        opponentTeam: state.opponentTeam
+      });
 
       result = {
         action: {
-          type: decision.decision.type,
-          moveName: decision.decision.move?.name || null,
-          switchToName: decision.decision.switchTo?.name || null
+          type: response.action?.type || "attack",
+          moveName: response.action?.move?.name || null,
+          switchToName: response.action?.switchTo?.name || null
         },
-        confidence: decision.confidence,
-        reasoning: decision.fullDecision.reasoning,
-        mainReason: decision.fullDecision.mainReason,
-        allOptions: decision.fullDecision.moveAnalysis.slice(0, 4).map(opt => ({
+        confidence: response.confidence || 50,
+        reasoning: response.reasoning || "",
+        allOptions: response.analysis?.moveOptions?.slice(0, 4).map((opt: any) => ({
           moveName: opt.action.move?.name,
           score: opt.score,
           koChance: opt.koChance || 0,
           expectedDamage: opt.expectedDamage || 0
-        })),
+        })) || [],
         switchAnalysis: {
-          shouldSwitch: decision.fullDecision.switchAnalysis.shouldSwitch,
-          bestSwitchTarget: decision.fullDecision.switchAnalysis.bestSwitchTarget?.name || null,
-          risk: decision.fullDecision.switchAnalysis.risk
+          shouldSwitch: response.analysis?.switchAnalysis?.shouldSwitch || false,
+          bestSwitchTarget: response.analysis?.switchAnalysis?.bestSwitchTarget?.name || null,
+          risk: response.analysis?.switchAnalysis?.risk || 0
         },
         prediction: {
-          likelyAction: decision.fullDecision.opponentPrediction.likelyAction,
-          expectedMove: decision.fullDecision.opponentPrediction.expectedMove || null,
-          confidence: decision.fullDecision.opponentPrediction.confidence
+          likelyAction: response.analysis?.prediction?.likelyAction || "attack",
+          expectedMove: response.analysis?.prediction?.expectedMove || null,
+          confidence: response.analysis?.prediction?.confidence || 50
         },
         winProbability: {
-          player: decision.fullDecision.winProbability.playerWinChance,
-          opponent: decision.fullDecision.winProbability.opponentWinChance
-        },
-        logs: orchestrator.getLogs()
+          player: response.analysis?.winProbability?.playerWinChance || 50,
+          opponent: response.analysis?.winProbability?.opponentWinChance || 50
+        }
       };
     }
 

@@ -1,15 +1,20 @@
 /**
  * Battle Engine Index
  * 
- * Point d'entrée principal du système multi-agents de combat
+ * Point d'entrée du moteur de combat.
+ * Architecture: MasterAgent → BattleAgent (SubAgent) → Tools
+ * 
+ * Les Tools sont utilisés directement par BattleAgent.
  */
 
-// Orchestrateur principal
-export { BattleOrchestrator } from "./BattleOrchestrator";
-export type { OrchestratorConfig, TurnResult, BattleSimulationResult } from "./BattleOrchestrator";
-
-// Agents
-export * from "./agents";
-
-// Tools
+// Tools (utilisés par BattleAgent)
 export * from "./tools";
+
+// Helper pour génération d'équipes
+export { EnemyTeamGeneratorAgent } from "./agents/EnemyTeamGeneratorAgent";
+export type { 
+  TeamGenerationRequest, 
+  GeneratedTeamMember,
+  PokemonCandidate,
+  PlayerPokemonInfo 
+} from "./agents/EnemyTeamGeneratorAgent";

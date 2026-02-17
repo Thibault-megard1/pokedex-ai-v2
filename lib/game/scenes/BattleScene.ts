@@ -2365,9 +2365,11 @@ export class BattleScene extends Phaser.Scene {
       const target = effect.target === 'self' ? attacker : defender;
       
       for (const statChange of effect.statChanges) {
-        const currentStage = target[`${statChange.stat}Stage`] || 0;
+        const stageKey = `${statChange.stat}Stage` as keyof typeof target;
+        const targetAny = target as unknown as Record<string, number>;
+        const currentStage = targetAny[stageKey] || 0;
         const newStage = Math.max(-6, Math.min(6, currentStage + statChange.stages));
-        target[`${statChange.stat}Stage`] = newStage;
+        targetAny[stageKey] = newStage;
         
         const statNames: Record<string, string> = {
           attack: 'Attack',

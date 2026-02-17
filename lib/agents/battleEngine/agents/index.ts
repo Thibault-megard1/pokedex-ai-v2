@@ -1,12 +1,8 @@
 /**
  * Battle Engine Agents Index
  * 
- * Exporte tous les agents du moteur de combat
+ * NOTE: Les mini-agents ont été remplacés par des Tools (architecture SubAgent → Tools)
+ * Seul EnemyTeamGeneratorAgent est conservé comme helper pour la génération d'équipes.
  */
 
-export * from "./DamageCalculationAgent";
-export * from "./SpeedOrderAgent";
-export * from "./StatModifierAgent";
-export * from "./StatusEffectAgent";
-export * from "./BattleDecisionAgent";
 export * from "./EnemyTeamGeneratorAgent";

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import type { User, Session } from "@/lib/types";
 import { getUsers, saveUsers, getSessions, saveSessions, newId } from "@/lib/db";
 
@@ -118,6 +119,28 @@ export async function getUserFromRequest(): Promise<User | null> {
 
   const users = await getUsers();
   return users.find(u => u.id === session.userId) ?? null;
+}
+
+/**
+ * Récupère la session depuis une NextRequest (pour les routes API).
+ * Cette fonction n'utilise pas d'intelligence artificielle.
+ * Entree: NextRequest. Sortie: session ou null.
+ */
+export async function getSession(req: NextRequest): Promise<Session | null> {
+  // Try Authorization header first
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const sessions = await getSessions();
+    return sessions.find(s => s.token === token) ?? null;
+  }
+
+  // Fall back to cookie
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+
+  const sessions = await getSessions();
+  return sessions.find(s => s.token === token) ?? null;
 }
 
 /**

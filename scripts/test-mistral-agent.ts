@@ -138,25 +138,30 @@ async function exemple3_FullBattle6v6() {
   
   // 3. Lancer le combat auto 6v6
   // NOTE: Cette fonctionnalité nécessite BattleAgent.autoBattle()
+  // NOTE: Les types Pokemon de teamBuilding ne sont pas directement compatibles avec BattlePokemon
+  //       Ce test montre le flow mais nécessiterait une conversion Pokemon -> BattlePokemon
   if (ourTeamResult.teamBuildingResponse?.team && opponentTeamResult.teamBuildingResponse?.team) {
+    const ourTeam = ourTeamResult.teamBuildingResponse.team;
+    const opponentTeam = opponentTeamResult.teamBuildingResponse.team;
+    
     const battleResult = await agent.process({
       task: "battle",
       battleRequest: {
         battleState: {
-          playerActive: ourTeamResult.teamBuildingResponse.team[0],
-          opponentActive: opponentTeamResult.teamBuildingResponse.team[0],
-          playerTeam: ourTeamResult.teamBuildingResponse.team,
-          opponentTeam: opponentTeamResult.teamBuildingResponse.team,
+          playerActive: ourTeam[0] as any, // Pokemon -> BattlePokemon requires conversion
+          opponentActive: opponentTeam[0] as any,
+          playerTeam: ourTeam as any,
+          opponentTeam: opponentTeam as any,
           turn: 1,
           weather: null
         },
-        ourTeam: ourTeamResult.teamBuildingResponse.team,
-        opponentTeam: opponentTeamResult.teamBuildingResponse.team
+        ourTeam: ourTeam as any,
+        opponentTeam: opponentTeam as any
       }
     });
     
-    console.log("Gagnant:", battleResult.battleResponse?.winner);
-    console.log("Tours:", battleResult.battleResponse?.turnCount);
+    console.log("Gagnant:", (battleResult.battleResponse as any)?.winner);
+    console.log("Tours:", (battleResult.battleResponse as any)?.turnCount);
   }
 }
 
