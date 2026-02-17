@@ -18,21 +18,25 @@ Ce schema situe les pages principales et leur passage par les routes API.
 
 ```mermaid
 graph TD
-	Accueil[Accueil] --> Pokedex[Pokédex]
-	Accueil --> Combat[Combat]
-	Accueil --> Quiz[Quiz IA]
-	Accueil --> Jeu[Jeu]
-	Accueil --> Outils[Outils]
-	Accueil --> IA[IA]
-	Accueil --> Equipe[Equipe]
-	Accueil --> Favoris[Favoris]
-	Accueil --> Stats[Statistiques]
-	Auth[Auth] --> Admin[Admin (protege)]
-	Pokedex --> API[/api/*]
-	Combat --> API
-	Quiz --> API
-	IA --> API
-	Jeu --> API
+    Accueil[Accueil]
+
+    Accueil --> Pokedex[Pokédex]
+    Accueil --> Combat[Combat]
+    Accueil --> Quiz[Quiz IA]
+    Accueil --> Jeu[Jeu]
+    Accueil --> Outils[Outils]
+    Accueil --> IA[IA]
+    Accueil --> Equipe[Équipe]
+    Accueil --> Favoris[Favoris]
+    Accueil --> Stats[Statistiques]
+
+    Auth[Authentification] --> Admin[Admin (protégé)]
+
+    Pokedex --> API[API /api/*]
+    Combat --> API
+    Quiz --> API
+    IA --> API
+    Jeu --> API
 ```
 
 Le diagramme met en evidence la navigation centrale et le role transversal des endpoints `/api/*`.
