@@ -44,35 +44,50 @@ export async function POST(req: NextRequest) {
     }
     
     const body = await req.json();
-    const { type } = body;
+    const { types } = body;
     
-    if (!type || typeof type !== 'string') {
+    // Valider l'entrée
+    if (!types || !Array.isArray(types) || types.length === 0) {
       return NextResponse.json(
-        { error: "Type manquant ou invalide" },
+        { error: "Types manquants ou invalides (tableau requis)" },
         { status: 400 }
       );
     }
     
-    const normalizedType = type.toLowerCase();
-    
-    // Vérifier que le type existe
-    if (!TYPE_TO_CORE_POKEMON[normalizedType]) {
+    if (types.length > 3) {
       return NextResponse.json(
-        { error: `Type "${type}" non reconnu` },
+        { error: "Maximum 3 types autorisés" },
         { status: 400 }
       );
     }
     
-    console.log(`🎮 [Generate Team By Type] Type: ${normalizedType}, User: ${user.username}`);
+    const normalizedTypes = types.map(t => t.toLowerCase());
     
-    // Récupérer les IDs des Pokémon du type
-    const coreIds = TYPE_TO_CORE_POKEMON[normalizedType];
+    // Vérifier que tous les types existent
+    for (const type of normalizedTypes) {
+      if (!TYPE_TO_CORE_POKEMON[type]) {
+        return NextResponse.json(
+          { error: `Type "${type}" non reconnu` },
+          { status: 400 }
+        );
+      }
+    }
     
-    // Choisir 1-2 Pokémon du type de départ comme base
-    const numCorePokemons = Math.min(2, coreIds.length);
-    const selectedCoreIds = coreIds
-      .sort(() => Math.random() - 0.5)
-      .slice(0, numCorePokemons);
+    console.log(`🎮 [Generate Team By Types] Types: ${normalizedTypes.join(', ')}, User: ${user.username}`);
+    
+    // Récupérer les IDs des Pokémon pour tous les types sélectionnés
+    const allCoreIds: number[] = [];
+    for (const type of normalizedTypes) {
+      allCoreIds.push(...TYPE_TO_CORE_POKEMON[type]);
+    }
+    
+    // Dédupliquer et mélanger
+    const uniqueCoreIds = Array.from(new Set(allCoreIds))
+      .sort(() => Math.random() - 0.5);
+    
+    // Choisir 1-2 Pokémon par type sélectionné (max 6)
+    const numCorePokemons = Math.min(normalizedTypes.length * 2, 6, uniqueCoreIds.length);
+    const selectedCoreIds = uniqueCoreIds.slice(0, numCorePokemons);
     
     // Récupérer les données des Pokémon choisis
     const coreTeam: Pokemon[] = [];
@@ -185,7 +200,7 @@ export async function POST(req: NextRequest) {
       success: true,
       team: teamSlots,
       analysis: {
-        coreType: normalizedType,
+        selectedTypes: normalizedTypes,
         corePokemons: coreTeam.map(p => p.name),
         teamSize: currentTeam.length
       }
