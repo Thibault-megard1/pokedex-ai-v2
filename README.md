@@ -18,39 +18,36 @@ Ce schema situe les pages principales et leur passage par les routes API.
 
 ```mermaid
 graph TD
-    Accueil[Accueil] --> Pokedex
-    Accueil --> Equipe
-    Accueil --> Combat
-    Accueil --> Tournoi
-    Accueil --> Calculateur
-    Accueil --> Progression
-    Accueil --> Favori
-    Accueil --> Comparer
-    Accueil --> Statistique
-    Accueil --> Quizz
-
-    Pokedex --> Liste
-    Pokedex --> Favori
-    Pokedex --> Comparer
-
-    Combat --> Tournoi
-    Combat --> Calculateur
-    Combat --> Jeu
-
-    Dresseur --> Equipe
-    Dresseur --> Quizz
-    Dresseur --> Statistique
-
-    Outils --> HubOutils[Hub Outils]
-    Outils --> CalculateurIV[Calculateur IV/EV]
-    Outils --> DegatsPro[Dégâts Pro]
-
-    IA --> HubIA[Hub IA]
-    IA --> AssistantIA[Assistant IA]
-    IA --> Equipe
-
-    HubIA --> AssistantIA
-    HubIA --> Equipe
+    Accueil[Accueil] --> MenuPrincipal[Menu Principal]
+    
+    MenuPrincipal --> Pokedex
+    MenuPrincipal --> Combat
+    MenuPrincipal --> Dresseur
+    MenuPrincipal --> Outils
+    MenuPrincipal --> IA
+    
+    Pokedex --> PokeDetails[Gestion Pokédex]
+    PokeDetails --> Liste
+    PokeDetails --> Favori
+    PokeDetails --> Comparer
+    
+    Combat --> CombatDetails[Gestion Combat]
+    CombatDetails --> Tournoi
+    CombatDetails --> Calculateur
+    CombatDetails --> Jeu
+    
+    Dresseur --> DresDetails[Gestion Dresseur]
+    DresDetails --> Equipe
+    DresDetails --> Quizz
+    DresDetails --> Statistique
+    
+    Outils --> OutilsHub[Hub Outils]
+    OutilsHub --> CalculateurIV[Calculateur IV/EV]
+    OutilsHub --> DegatsPro[Dégâts Pro]
+    
+    IA --> IAHub[Hub IA]
+    IAHub --> AssistantIA[Assistant IA]
+    IAHub --> Equipe
 
 ```
 
