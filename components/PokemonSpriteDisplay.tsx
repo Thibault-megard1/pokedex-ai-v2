@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useShiny } from "./ShinyContext";
 
 interface PokemonSpriteDisplayProps {
   sprite: string | null;
@@ -11,7 +12,7 @@ interface PokemonSpriteDisplayProps {
 }
 
 export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemonId, cryUrl }: PokemonSpriteDisplayProps) {
-  const [isShiny, setIsShiny] = useState(false);
+  const { isShiny, setIsShiny } = useShiny();
   const [isAnimating, setIsAnimating] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -46,8 +47,9 @@ export default function PokemonSpriteDisplay({ sprite, shinySprite, name, pokemo
             <img 
               src={currentSprite} 
               alt={isShiny ? `${name} (shiny)` : name} 
-              className="pokedex-sprite-img pixelated" 
+              className="pokedex-sprite-img pokedex-sprite-hd" 
               loading="eager"
+              key={currentSprite}
             />
           ) : (
             <div className="pokedex-sprite-placeholder">

@@ -17,6 +17,55 @@ import PokemonSpriteDisplay from "@/components/PokemonSpriteDisplay";
 import PokedexFlavorText from "@/components/PokedexFlavorText";
 import PokedexInfoPanel from "@/components/PokedexInfoPanel";
 import { AdminDebugPanel } from "@/components/AdminDebugComponents";
+import { ShinyProvider } from "@/components/ShinyContext";
+import NavigationButtons from "@/components/NavigationButtons";
+
+/**
+ * Récupère les sprites HD d'un Pokémon par son ID (official artwork)
+ * Utilisé pour l'affichage central haute qualité
+ */
+async function getPokemonHDSprites(id: number): Promise<{ normal: string | null; shiny: string | null }> {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    if (!response.ok) return { normal: null, shiny: null };
+    const data = await response.json();
+    
+    // Priorité : official artwork > home > default
+    const normal = data.sprites?.other?.["official-artwork"]?.front_default ?? 
+                   data.sprites?.other?.home?.front_default ??
+                   data.sprites?.front_default ?? 
+                   null;
+    
+    const shiny = data.sprites?.other?.["official-artwork"]?.front_shiny ?? 
+                  data.sprites?.other?.home?.front_shiny ??
+                  data.sprites?.front_shiny ?? 
+                  null;
+    
+    return { normal, shiny };
+  } catch {
+    return { normal: null, shiny: null };
+  }
+}
+
+/**
+ * Récupère les sprites pixelisés d'un Pokémon par son ID
+ * Utilisé pour les boutons de navigation (précédent/suivant)
+ */
+async function getPokemonPixelSprites(id: number): Promise<{ normal: string | null; shiny: string | null }> {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    if (!response.ok) return { normal: null, shiny: null };
+    const data = await response.json();
+    
+    // Sprites pixelisés uniquement
+    const normal = data.sprites?.front_default ?? null;
+    const shiny = data.sprites?.front_shiny ?? null;
+    
+    return { normal, shiny };
+  } catch {
+    return { normal: null, shiny: null };
+  }
+}
 
 /**
  * Page detail Pokemon.
@@ -28,6 +77,13 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
   const bg = backgroundForPokemonDetail({ id: p.id, region: p.region ?? null, types: p.types });
   const prevId = await getAdjacentPokemonId(p.id, "prev");
   const nextId = await getAdjacentPokemonId(p.id, "next");
+
+  // Récupérer les sprites HD pour le Pokémon actuel (affichage central)
+  const currentHDSprites = await getPokemonHDSprites(p.id);
+  
+  // Récupérer les sprites pixelisés pour la navigation (précédent/suivant)
+  const prevSprites = await getPokemonPixelSprites(prevId);
+  const nextSprites = await getPokemonPixelSprites(nextId);
 
   // Récupérer l'arbre d'évolution complet
   const evolutionTree = await getPokemonEvolutionTree(p.id);
@@ -42,8 +98,9 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
   const cryUrl = p.cry?.latest ?? p.cry?.legacy ?? null;
 
   return (
-    <div className="pokedex-page" style={{ ["--bg-url" as any]: `url(${bg})` }}>
-      <HistoryTracker id={p.id} name={p.name} sprite={p.sprite} />
+    <ShinyProvider>
+      <div className="pokedex-page" style={{ ["--bg-url" as any]: `url(${bg})` }}>
+        <HistoryTracker id={p.id} name={p.name} sprite={p.sprite} />
       
       {/* Admin Debug Panel */}
       <AdminDebugPanel 
@@ -69,14 +126,14 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
           {/* Hero Section - Identité Principale avec Sprite Centré */}
           <section className="pokedex-hero-section w-full">
             {/* Navigation */}
-            <div className="pokedex-nav-buttons">
-              <Link className="pokedex-nav-button" href={`/pokemon/${prevId}`}>
-                ← Précédent
-              </Link>
-              <Link className="pokedex-nav-button" href={`/pokemon/${nextId}`}>
-                Suivant →
-              </Link>
-            </div>
+            <NavigationButtons 
+              prevId={prevId}
+              nextId={nextId}
+              prevSprite={prevSprites.normal}
+              nextSprite={nextSprites.normal}
+              prevShinySprite={prevSprites.shiny}
+              nextShinySprite={nextSprites.shiny}
+            />
             {/* Titre et Numéro Centrés */}
             <div className="pokedex-hero-header">
               <div className="pokedex-number-badge">N° {String(p.id).padStart(3, '0')}</div>
@@ -91,8 +148,8 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
             {/* Sprite Agrandi et Centré */}
             <div className="pokedex-hero-sprite">
               <PokemonSpriteDisplay 
-                sprite={p.sprite}
-                shinySprite={p.shinySprite ?? null}
+                sprite={currentHDSprites.normal}
+                shinySprite={currentHDSprites.shiny}
                 name={p.name}
                 pokemonId={p.id}
                 cryUrl={cryUrl}
@@ -240,5 +297,6 @@ export default async function PokemonDetailPage({ params }: { params: { name: st
         </section>
       </div>
     </div>
+    </ShinyProvider>
   );
 }
