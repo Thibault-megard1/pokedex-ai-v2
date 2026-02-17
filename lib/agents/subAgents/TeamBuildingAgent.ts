@@ -208,14 +208,21 @@ export class TeamBuildingAgent {
       }
     };
 
-    // Générer aussi des suggestions supplémentaires
-    const suggestions: TeamSuggestion[] = scoredCandidates.slice(0, 5).map(c => ({
+    // Générer aussi des suggestions supplémentaires (minimum 8)
+    const suggestions: TeamSuggestion[] = scoredCandidates.slice(0, 10).map(c => ({
       id: c.pokemon.id,
       name: c.pokemon.name,
       types: c.pokemon.types,
       stats: c.pokemon.stats,
       score: c.score,
-      reasoning: c.reasoning.join(". ") || "Bonne option"
+      reasoning: c.reasoning.join(". ") || "Bonne option",
+      breakdown: {
+        typeScore: c.breakdown.typeImprovement,
+        statsScore: c.breakdown.statsValue,
+        roleScore: c.breakdown.roleValue,
+        coverageScore: c.breakdown.typeImprovement,
+        synergyScore: c.breakdown.synergyScore
+      }
     }));
 
     const analysis = this.buildAnalysis(currentTeam);

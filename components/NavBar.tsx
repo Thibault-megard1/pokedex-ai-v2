@@ -176,7 +176,7 @@ export default function NavBar() {
 
           {/* CENTER: Main Navigation */}
           {me && (
-            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
               <Link
                 href="/"
                 className="px-2 py-1.5 rounded-lg text-xs font-semibold text-white hover:bg-white/20 transition-all no-underline flex items-center gap-1.5"
@@ -236,9 +236,9 @@ export default function NavBar() {
           )}
 
           {/* RIGHT: Status & Actions */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* AI Status */}
-            <div className="hidden md:flex">
+            <div className="hidden lg:flex">
               <AIStatusIndicator />
             </div>
             
@@ -246,7 +246,7 @@ export default function NavBar() {
             {showAdminView && (
               <button
                 onClick={toggleAdminView}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shadow-lg ${
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg font-bold text-xs transition-all shadow-lg ${
                   adminViewEnabled 
                     ? 'bg-orange-500 hover:bg-orange-400 text-white' 
                     : 'bg-gray-600 hover:bg-gray-500 text-white'
@@ -254,7 +254,7 @@ export default function NavBar() {
                 title={adminViewEnabled ? 'Disable Admin View' : 'Enable Admin View'}
               >
                 <span className="text-base">{adminViewEnabled ? '🔍' : '👁️'}</span>
-                <span className="hidden sm:inline">Admin View</span>
+                <span className="hidden lg:inline">Admin View</span>
               </button>
             )}
             
@@ -262,11 +262,11 @@ export default function NavBar() {
             {me?.isAdmin && (
               <Link
                 href="/admin"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs transition-all no-underline shadow-lg"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs transition-all no-underline shadow-lg"
                 title="Administration"
               >
                 <img src="/icons/ui/ic-success.png" alt="Admin" className="w-4 h-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <span className="hidden lg:inline">Admin</span>
               </Link>
             )}
             
@@ -280,13 +280,13 @@ export default function NavBar() {
             {/* User Actions */}
             {me ? (
               <div className="flex items-center gap-1.5">
-                <span className="hidden lg:flex items-center gap-1.5 text-xs text-white/90 bg-white/10 px-2 py-1.5 rounded-lg font-medium">
-                  <span className="hidden xl:inline text-white/70">{t(lang, "nav.trainer.label")}</span>
+                <span className="hidden xl:flex items-center gap-1.5 text-xs text-white/90 bg-white/10 px-2 py-1.5 rounded-lg font-medium">
+                  <span className="text-white/70">{t(lang, "nav.trainer.label")}</span>
                   <b className="text-white">{me.username}</b>
                 </span>
                 <button 
                   onClick={logout}
-                  className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-all shadow-md hover:shadow-lg"
+                  className="px-2 sm:px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-all shadow-md hover:shadow-lg"
                 >
                   {t(lang, "nav.logout")}
                 </button>
@@ -294,13 +294,13 @@ export default function NavBar() {
             ) : (
               <div className="flex items-center gap-1.5">
                 <Link 
-                  className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-all no-underline shadow-md" 
+                  className="px-2 sm:px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-all no-underline shadow-md" 
                   href="/auth/login"
                 >
                   {t(lang, "nav.login")}
                 </Link>
                 <Link 
-                  className="px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs transition-all no-underline shadow-lg hover:shadow-xl" 
+                  className="px-2 sm:px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs transition-all no-underline shadow-lg hover:shadow-xl" 
                   href="/auth/register"
                 >
                   {t(lang, "nav.register")}
@@ -312,7 +312,7 @@ export default function NavBar() {
             {me && (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all text-xl"
+                className="md:hidden p-2.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all text-xl"
                 aria-label="Toggle menu"
               >
                 ☰
@@ -324,7 +324,7 @@ export default function NavBar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && me && (
-        <div className="lg:hidden bg-red-700 border-t border-red-800/50">
+        <div className="md:hidden bg-red-700 border-t border-red-800/50">
           <nav className="px-4 py-4 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
             {/* Mobile AI Status */}
             <div className="mb-3 pb-3 border-b border-white/10">

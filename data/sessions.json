@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "token": "ff6e83da39e247c3f210861518e059cf6dbe8b084b66c03389049db53c809cdc",
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "username": "Jiz3o",
+    "createdAt": "2026-02-17T10:21:49.000Z"
+  },
+  {
+    "token": "42a098330539e4954aa9f524116102959806c919956c899c4402375755e4a327",
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "username": "Jiz3o",
+    "createdAt": "2026-02-17T10:21:49.408Z"
+  },
+  {
+    "token": "1a787e8a5dbc65192fc02d06b92427447b2ba2ebac0950cb2dcbe5655de2117c",
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "username": "Jiz3o",
+    "createdAt": "2026-02-17T10:30:46.816Z"
+  },
+  {
+    "token": "9926c0840af036db36c9f085b01533a67a7d811251b1282f9723e5587203d963",
+    "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
+    "username": "Jiz3o",
+    "createdAt": "2026-02-17T10:34:42.817Z"
+  }
+]
