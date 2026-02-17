@@ -30,5 +30,37 @@
       "pokemonName": "tyranitar",
       "pokemonId": 248
     }
+  ],
+  "104585f3-4600-4efc-88c8-f3c5255edcfd": [
+    {
+      "slot": 1,
+      "pokemonName": "pikachu",
+      "pokemonId": 25
+    },
+    {
+      "slot": 2,
+      "pokemonName": "articuno",
+      "pokemonId": 144
+    },
+    {
+      "slot": 3,
+      "pokemonName": "moltres",
+      "pokemonId": 146
+    },
+    {
+      "slot": 4,
+      "pokemonName": "latias",
+      "pokemonId": 380
+    },
+    {
+      "slot": 5,
+      "pokemonName": "wailord",
+      "pokemonId": 321
+    },
+    {
+      "slot": 6,
+      "pokemonName": "tyranitar",
+      "pokemonId": 248
+    }
   ]
 }

@@ -20,10 +20,9 @@
     "isAdmin": true
   },
   {
-    "id": "a56eb3ff-9992-4cd8-89e3-763828bda1b5",
+    "id": "d321a373-1772-49c4-bc0a-e09f12985ccc",
     "username": "Clement",
-    "passwordHash": "$2a$10$jPKv0Vx4gEMBw6fWE7rq0uBkOHLj9PboFK9gmOoA5D7UVkyN.JH2.",
-    "createdAt": "2026-01-29T11:58:24.580Z",
-    "isAdmin": false
+    "passwordHash": "$2a$10$H7iRkrHjGAuQdJ/m47CkVuK0al3jU0MLhOxY0rUO.a5RDCHqwTUpq",
+    "createdAt": "2026-02-17T10:04:24.593Z"
   }
 ]
