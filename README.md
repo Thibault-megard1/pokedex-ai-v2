@@ -30,11 +30,11 @@ Ce schema situe les pages principales et leur passage par les routes API.
     
         Auth[Authentification] --> Admin[Admin protégé]
     
-        Pokedex --> API
-        Combat --> API
-        Quiz --> API
-        IA --> API
-        Jeu --> API
+        Pokedex --> API[API]
+        Combat --> API[API]
+        Quiz --> API[API]
+        IA --> API[API]
+        Jeu --> API[API]
 
         API --> API["/api/*"]
 ```
