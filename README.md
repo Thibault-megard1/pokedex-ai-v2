@@ -36,7 +36,7 @@ Ce schema situe les pages principales et leur passage par les routes API.
         IA --> API[API]
         Jeu --> API[API]
 
-        API --> API["/api/*"]
+        API --> "/api/*"
 ```
 
 Le diagramme met en evidence la navigation centrale et le role transversal des endpoints `/api/*`.
