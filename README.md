@@ -17,26 +17,24 @@ Ce projet sert de support au cours d'Intelligence Artificielle. Il illustre l'us
 Ce schema situe les pages principales et leur passage par les routes API.
 
 ```mermaid
-graph TD
-    Accueil[Accueil]
-
-    Accueil --> Pokedex[Pokédex]
-    Accueil --> Combat[Combat]
-    Accueil --> Quiz[Quiz IA]
-    Accueil --> Jeu[Jeu]
-    Accueil --> Outils[Outils]
-    Accueil --> IA[IA]
-    Accueil --> Equipe[Équipe]
-    Accueil --> Favoris[Favoris]
-    Accueil --> Stats[Statistiques]
-
-    Auth[Authentification] --> Admin[Admin protégé]
-
-    Pokedex --> API[API "/api/*"]
-    Combat --> API
-    Quiz --> API
-    IA --> API
-    Jeu --> API
+    graph TD
+        Accueil[Accueil] --> Pokedex[Pokédex]
+        Accueil --> Combat[Combat]
+        Accueil --> Quiz[Quiz IA]
+        Accueil --> Jeu[Jeu]
+        Accueil --> Outils[Outils]
+        Accueil --> IA[IA]
+        Accueil --> Equipe[Équipe]
+        Accueil --> Favoris[Favoris]
+        Accueil --> Stats[Statistiques]
+    
+        Auth[Authentification] --> Admin[Admin (protégé)]
+    
+        Pokedex --> API["/api/*"]
+        Combat --> API
+        Quiz --> API
+        IA --> API
+        Jeu --> API
 ```
 
 Le diagramme met en evidence la navigation centrale et le role transversal des endpoints `/api/*`.
