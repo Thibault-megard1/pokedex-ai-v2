@@ -54,7 +54,7 @@ Ce schema situe les pages principales et leur passage par les routes API.
         Accueil --> Statistique
         Accueil --> Quizz
     
-        Pokedex --> [Liste, Favori, Comparer]
+        Pokedex --> Liste, Favori, Comparer
         Combat --> API
         Quiz --> API
         IA --> API
