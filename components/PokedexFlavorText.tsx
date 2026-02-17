@@ -101,7 +101,7 @@ export default function PokedexFlavorText({
   const isPreferenceComplete = preference.generation && preference.version;
 
   // Select the best flavor text based on preferences
-  const bestEntry = isPreferenceComplete
+  const bestEntry = isPreferenceComplete && species.flavor_text_entries
     ? selectBestFlavorText(
         species.flavor_text_entries,
         preference,

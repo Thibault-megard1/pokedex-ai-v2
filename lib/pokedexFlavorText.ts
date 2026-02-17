@@ -12,9 +12,9 @@ export interface FlavorTextEntry {
 export interface PokemonSpeciesData {
   id: number;
   name: string;
-  names: Array<{ name: string; language: { name: string } }>;
-  genera: Array<{ genus: string; language: { name: string } }>;
-  flavor_text_entries: FlavorTextEntry[];
+  names?: Array<{ name: string; language: { name: string } }>;
+  genera?: Array<{ genus: string; language: { name: string } }>;
+  flavor_text_entries?: FlavorTextEntry[];
   habitat: { name: string } | null;
   growth_rate: { name: string } | null;
   generation: { name: string; url: string };
@@ -65,7 +65,7 @@ export function selectBestFlavorText(
   preference: PokedexPreference,
   versionGroups: any[]
 ): FlavorTextEntry | null {
-  if (entries.length === 0) return null;
+  if (!entries || !Array.isArray(entries) || entries.length === 0) return null;
 
   const preferredLang = preference.lang;
   const fallbackLang = preferredLang === "fr" ? "en" : "fr";
@@ -180,6 +180,11 @@ export function getLocalizedPokemonName(
   species: PokemonSpeciesData,
   lang: "fr" | "en" = "fr"
 ): string {
+  // Vérifier que species.names existe
+  if (!species.names || !Array.isArray(species.names)) {
+    return species.name;
+  }
+  
   const nameEntry = species.names.find((n) => n.language.name === lang);
   if (nameEntry) return nameEntry.name;
   
@@ -195,6 +200,11 @@ export function getLocalizedGenus(
   species: PokemonSpeciesData,
   lang: "fr" | "en" = "fr"
 ): string | null {
+  // Vérifier que species.genera existe
+  if (!species.genera || !Array.isArray(species.genera)) {
+    return null;
+  }
+  
   const genusEntry = species.genera.find((g) => g.language.name === lang);
   if (genusEntry) return genusEntry.genus;
   
