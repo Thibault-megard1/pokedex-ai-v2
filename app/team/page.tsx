@@ -79,6 +79,9 @@ export default function TeamPage() {
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
   const [selectedSlotForSuggestion, setSelectedSlotForSuggestion] = useState<number | null>(null);
   const [optimizingOrder, setOptimizingOrder] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [generatingTeam, setGeneratingTeam] = useState(false);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const sortedTeam = useMemo(() => [...team].sort((a, b) => a.slot - b.slot), [team]);
   
   /**
@@ -469,6 +472,61 @@ export default function TeamPage() {
     }
   }
 
+  /**
+   * Génère une équipe complète optimisée basée sur un type de départ.
+   * IA: oui (Multi-agents via TeamBuildingOrchestrator).
+   * Entrée: type Pokémon (water, fire, grass, etc.)
+   * Sortie: équipe de 6 Pokémon optimisés
+   */
+  async function generateTeamByType(type: string) {
+    if (!type) return;
+    
+    setGeneratingTeam(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/team/generate-by-type', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || 'Erreur lors de la génération de l\'équipe');
+        setGeneratingTeam(false);
+        return;
+      }
+
+      // Update team with generated Pokémon
+      const res2 = await fetch("/api/team", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team: data.team })
+      });
+
+      const teamData = await res2.json();
+      if (!res2.ok) {
+        setError(teamData.error ?? "Erreur lors de la sauvegarde de l'équipe");
+        setGeneratingTeam(false);
+        return;
+      }
+
+      setTeam(teamData.team);
+      setShowGenerateModal(false);
+      setSelectedType(null);
+      
+      // Reset details to force reload
+      setDetails({});
+    } catch (err) {
+      console.error('Team generation error:', err);
+      setError('Erreur lors de la génération de l\'équipe');
+    } finally {
+      setGeneratingTeam(false);
+    }
+  }
+
   if (!me) {
     return (
       <div className="page-bg min-h-screen" style={{ ["--bg-url" as any]: `url(${BACKGROUNDS.battle})` }}>
@@ -545,6 +603,14 @@ export default function TeamPage() {
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm transition-colors"
                 >
                   📥 Importer
+                </button>
+                
+                {/* Generate Team Button */}
+                <button
+                  onClick={() => setShowGenerateModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg font-bold text-sm transition-all shadow-lg"
+                >
+                  ✨ Générer Équipe
                 </button>
               </div>
             </div>
@@ -892,6 +958,117 @@ export default function TeamPage() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-purple-600 mx-auto mb-4"></div>
                     <p className="text-gray-600 dark:text-gray-400">Analyse de votre équipe en cours...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Generate Team Modal */}
+        {showGenerateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-t-lg sticky top-0">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">✨ Générer une Équipe par Type</h2>
+                  <button
+                    onClick={() => {
+                      setShowGenerateModal(false);
+                      setSelectedType(null);
+                    }}
+                    className="text-white hover:text-gray-200 text-2xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {!generatingTeam ? (
+                  <>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                      Sélectionnez un type pour générer automatiquement une équipe optimale construite autour de ce type. L'IA multi-agents va analyser les synergies et créer une équipe équilibrée de 6 Pokémon.
+                    </p>
+
+                    {error && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-4">
+                        ⚠️ {error}
+                      </div>
+                    )}
+
+                    {sortedTeam.length > 0 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+                        <p className="text-sm text-yellow-800">
+                          <strong>⚠️ Attention :</strong> Cette action remplacera votre équipe actuelle ({sortedTeam.length} Pokémon).
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                      {[
+                        { type: 'normal', emoji: '⚪', label: 'Normal' },
+                        { type: 'fire', emoji: '🔥', label: 'Feu' },
+                        { type: 'water', emoji: '💧', label: 'Eau' },
+                        { type: 'electric', emoji: '⚡', label: 'Électrik' },
+                        { type: 'grass', emoji: '🌿', label: 'Plante' },
+                        { type: 'ice', emoji: '❄️', label: 'Glace' },
+                        { type: 'fighting', emoji: '🥊', label: 'Combat' },
+                        { type: 'poison', emoji: '☠️', label: 'Poison' },
+                        { type: 'ground', emoji: '🌍', label: 'Sol' },
+                        { type: 'flying', emoji: '🦅', label: 'Vol' },
+                        { type: 'psychic', emoji: '🔮', label: 'Psy' },
+                        { type: 'bug', emoji: '🐛', label: 'Insecte' },
+                        { type: 'rock', emoji: '🪨', label: 'Roche' },
+                        { type: 'ghost', emoji: '👻', label: 'Spectre' },
+                        { type: 'dragon', emoji: '🐉', label: 'Dragon' },
+                        { type: 'dark', emoji: '🌑', label: 'Ténèbres' },
+                        { type: 'steel', emoji: '⚔️', label: 'Acier' },
+                        { type: 'fairy', emoji: '🧚', label: 'Fée' }
+                      ].map(({ type, emoji, label }) => (
+                        <button
+                          key={type}
+                          onClick={() => setSelectedType(type)}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            selectedType === type
+                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900 scale-105'
+                              : 'border-gray-300 hover:border-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <div className="text-3xl mb-1">{emoji}</div>
+                          <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{label}</div>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                      <button
+                        onClick={() => selectedType && generateTeamByType(selectedType)}
+                        disabled={!selectedType}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all"
+                      >
+                        ✨ Générer l'équipe
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowGenerateModal(false);
+                          setSelectedType(null);
+                        }}
+                        className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-cyan-500 mx-auto mb-4"></div>
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                      ✨ Génération en cours...
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      L'IA multi-agents analyse les meilleures options pour votre équipe {selectedType}
+                    </p>
                   </div>
                 )}
               </div>
