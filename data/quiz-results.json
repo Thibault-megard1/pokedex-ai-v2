@@ -3,63 +3,63 @@
     "userId": "104585f3-4600-4efc-88c8-f3c5255edcfd",
     "result": {
       "primary": {
-        "id": 337,
-        "name": "lunatone",
-        "name_fr": "Séléroc",
-        "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/337.png",
-        "confidence": 0.76,
+        "id": 286,
+        "name": "breloom",
+        "name_fr": "Chapignon",
+        "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/286.png",
+        "confidence": 0.72,
         "reasons": [
-          "Votre stabilité et résilience s'accordent au type Roche",
-          "Votre intelligence et réflexion profonde s'accordent au type Psy"
+          "Votre tempérament paisible et bienveillant correspond au type Plante",
+          "Votre détermination et courage s'alignent avec le type Combat"
         ]
       },
       "alternatives": [
         {
-          "id": 338,
-          "name": "solrock",
-          "name_fr": "Solaroc",
-          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/338.png",
-          "confidence": 0.76,
+          "id": 640,
+          "name": "virizion",
+          "name_fr": "Viridium",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/640.png",
+          "confidence": 0.72,
           "reasons": [
-            "Votre stabilité et résilience s'accordent au type Roche",
-            "Votre intelligence et réflexion profonde s'accordent au type Psy"
+            "Votre tempérament paisible et bienveillant correspond au type Plante",
+            "Votre détermination et courage s'alignent avec le type Combat"
           ]
         },
         {
-          "id": 219,
-          "name": "magcargo",
-          "name_fr": "Volcaropod",
-          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/219.png",
-          "confidence": 0.72,
+          "id": 102,
+          "name": "exeggcute",
+          "name_fr": "Noeunoeuf",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/102.png",
+          "confidence": 0.68,
           "reasons": [
-            "Votre stabilité et résilience s'accordent au type Roche",
+            "Votre tempérament paisible et bienveillant correspond au type Plante",
             "Votre personnalité s'aligne naturellement avec ce Pokémon"
           ]
         },
         {
-          "id": 639,
-          "name": "terrakion",
-          "name_fr": "Terrakium",
-          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/639.png",
-          "confidence": 0.72,
+          "id": 103,
+          "name": "exeggutor",
+          "name_fr": "Noadkoko",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/103.png",
+          "confidence": 0.68,
           "reasons": [
-            "Votre stabilité et résilience s'accordent au type Roche",
+            "Votre tempérament paisible et bienveillant correspond au type Plante",
             "Votre personnalité s'aligne naturellement avec ce Pokémon"
           ]
         }
       ],
       "traits_inferred": [
-        "Introverti",
-        "Déterminé",
-        "Rapide",
+        "Sociable",
+        "Moderne",
+        "Pacifique",
         "Courageux",
-        "Leader",
-        "Altruiste",
-        "Analytique",
-        "Collaboratif",
-        "Fidèle"
+        "Intelligent",
+        "Zen",
+        "Créatif",
+        "Prudent",
+        "Indépendant"
       ]
     },
-    "completedAt": "2026-02-16T15:49:09.180Z"
+    "completedAt": "2026-02-17T07:46:55.273Z"
   }
 }

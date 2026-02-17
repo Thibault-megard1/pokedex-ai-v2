@@ -20,6 +20,29 @@ type UserDetail = {
   createdAt: string;
   team: Array<{ slot: number; pokemonId: number; pokemonName: string }>;
   favoritePokemons: number[];
+  quizResult?: {
+    userId: string;
+    result: {
+      primary: {
+        id: number;
+        name: string;
+        name_fr: string;
+        sprite_url: string;
+        confidence: number;
+        reasons: string[];
+      };
+      alternatives: Array<{
+        id: number;
+        name: string;
+        name_fr: string;
+        sprite_url: string;
+        confidence: number;
+        reasons: string[];
+      }>;
+      traits_inferred: string[];
+    };
+    completedAt: string;
+  } | null;
 };
 
 type ThemeColors = {
@@ -488,24 +511,86 @@ export default function AdminPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Favoris: {selectedUser.favoritePokemons.length} Pokémon
                     </p>
+                    {selectedUser.quizResult && (
+                      <p className="text-sm text-green-600 dark:text-green-400 font-semibold mt-2">
+                        ✓ Quiz complété le {new Date(selectedUser.quizResult.completedAt).toLocaleDateString("fr-FR")}
+                      </p>
+                    )}
                   </div>
+                  
+                  {selectedUser.quizResult && (
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <h4 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <span className="text-xl">🔮</span>
+                        <span>Résultat du Quiz</span>
+                      </h4>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-700">
+                        <div className="flex items-center gap-4 mb-3">
+                          <img
+                            src={selectedUser.quizResult.result.primary.sprite_url}
+                            alt={selectedUser.quizResult.result.primary.name_fr}
+                            className="w-20 h-20"
+                          />
+                          <div className="flex-1">
+                            <h5 className="text-lg font-bold text-gray-900 dark:text-white">
+                              {selectedUser.quizResult.result.primary.name_fr}
+                            </h5>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                              {selectedUser.quizResult.result.primary.name}
+                            </p>
+                            <div className="mt-1">
+                              <span className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">
+                                {Math.round(selectedUser.quizResult.result.primary.confidence * 100)}% confiance
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {selectedUser.quizResult.result.traits_inferred && selectedUser.quizResult.result.traits_inferred.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Traits identifiés:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {selectedUser.quizResult.result.traits_inferred.slice(0, 6).map((trait, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded-full"
+                                >
+                                  {trait}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   
                   {selectedUser.team.length > 0 && (
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <h4 className="font-bold text-gray-900 dark:text-white mb-2">Team</h4>
+                      <h4 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <span className="text-xl">⚔️</span>
+                        <span>Team ({selectedUser.team.length}/6)</span>
+                      </h4>
                       <div className="grid grid-cols-3 gap-2">
                         {selectedUser.team.map(slot => (
                           <div
                             key={slot.slot}
-                            className="p-2 bg-gray-100 dark:bg-gray-700 rounded text-center"
+                            className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg text-center border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow"
                           >
-                            <img
-                              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${slot.pokemonId}.png`}
-                              alt={slot.pokemonName}
-                              className="w-16 h-16 mx-auto"
-                            />
-                            <p className="text-xs text-gray-700 dark:text-gray-300 capitalize mt-1">
+                            <div className="relative">
+                              <img
+                                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${slot.pokemonId}.png`}
+                                alt={slot.pokemonName}
+                                className="w-20 h-20 mx-auto drop-shadow-lg"
+                              />
+                              <div className="absolute top-0 left-0 bg-gray-800 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                {slot.slot}
+                              </div>
+                            </div>
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 capitalize mt-1">
                               {slot.pokemonName}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              #{slot.pokemonId}
                             </p>
                           </div>
                         ))}

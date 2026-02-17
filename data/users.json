@@ -9,7 +9,8 @@
     "id": "f09faa21-1b1b-4a0e-bd2d-b10aee55d6ab",
     "username": "goatier",
     "passwordHash": "$2a$10$d4pwFdge2409qBCIPm3zauGlVcCGTL3vuP.sC3yhdlYdNX.fXn8oS",
-    "createdAt": "2026-01-25T23:06:21.366Z"
+    "createdAt": "2026-01-25T23:06:21.366Z",
+    "isAdmin": true
   },
   {
     "id": "104585f3-4600-4efc-88c8-f3c5255edcfd",

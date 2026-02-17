@@ -24,6 +24,11 @@ export async function GET(req: NextRequest, { params }: Params) {
     const favorites = await readJsonFile<Record<string, number[]>>(favPath, {});
     const favoritePokemons = favorites[params.id] || [];
     
+    // Try to get quiz results
+    const quizPath = path.join(DATA_DIR, "quiz-results.json");
+    const quizResults = await readJsonFile<Record<string, any>>(quizPath, {});
+    const userQuizResult = quizResults[params.id] || null;
+    
     return NextResponse.json({
       user: {
         id: user.id,
@@ -31,7 +36,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         isAdmin: user.isAdmin || false,
         createdAt: user.createdAt,
         team: team,
-        favoritePokemons: favoritePokemons
+        favoritePokemons: favoritePokemons,
+        quizResult: userQuizResult
       }
     });
   } catch (err: any) {
