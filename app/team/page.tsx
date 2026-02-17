@@ -81,7 +81,7 @@ export default function TeamPage() {
   const [optimizingOrder, setOptimizingOrder] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generatingTeam, setGeneratingTeam] = useState(false);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const sortedTeam = useMemo(() => [...team].sort((a, b) => a.slot - b.slot), [team]);
   
   /**
@@ -473,13 +473,13 @@ export default function TeamPage() {
   }
 
   /**
-   * Génère une équipe complète optimisée basée sur un type de départ.
-   * IA: oui (Multi-agents via TeamBuildingOrchestrator).
-   * Entrée: type Pokémon (water, fire, grass, etc.)
+   * Génère une équipe complète optimisée basée sur plusieurs types.
+   * IA: oui (Multi-agents via MasterAgent).
+   * Entrée: types Pokémon (water, fire, grass, etc.)
    * Sortie: équipe de 6 Pokémon optimisés
    */
-  async function generateTeamByType(type: string) {
-    if (!type) return;
+  async function generateTeamByTypes(types: string[]) {
+    if (!types || types.length === 0) return;
     
     setGeneratingTeam(true);
     setError(null);
@@ -488,7 +488,7 @@ export default function TeamPage() {
       const res = await fetch('/api/team/generate-by-type', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type })
+        body: JSON.stringify({ types })
       });
 
       const data = await res.json();
@@ -515,7 +515,7 @@ export default function TeamPage() {
 
       setTeam(teamData.team);
       setShowGenerateModal(false);
-      setSelectedType(null);
+      setSelectedTypes([]);
       
       // Reset details to force reload
       setDetails({});
@@ -975,7 +975,7 @@ export default function TeamPage() {
                   <button
                     onClick={() => {
                       setShowGenerateModal(false);
-                      setSelectedType(null);
+                      setSelectedTypes([]);
                     }}
                     className="text-white hover:text-gray-200 text-2xl font-bold"
                   >
@@ -987,9 +987,47 @@ export default function TeamPage() {
               <div className="p-6">
                 {!generatingTeam ? (
                   <>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                      Sélectionnez un type pour générer automatiquement une équipe optimale construite autour de ce type. L'IA multi-agents va analyser les synergies et créer une équipe équilibrée de 6 Pokémon.
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Sélectionnez 1 à 3 types pour générer automatiquement une équipe optimale. L'IA multi-agents va analyser les synergies et créer une équipe équilibrée de 6 Pokémon.
                     </p>
+
+                    {selectedTypes.length > 0 && (
+                      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-xs font-bold text-blue-700 dark:text-blue-300 mb-2">
+                          {selectedTypes.length} type{selectedTypes.length > 1 ? 's' : ''} sélectionné{selectedTypes.length > 1 ? 's' : ''} :
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedTypes.map(type => {
+                            const typeData = [
+                              { type: 'normal', emoji: '⚪', label: 'Normal' },
+                              { type: 'fire', emoji: '🔥', label: 'Feu' },
+                              { type: 'water', emoji: '💧', label: 'Eau' },
+                              { type: 'electric', emoji: '⚡', label: 'Électrik' },
+                              { type: 'grass', emoji: '🌿', label: 'Plante' },
+                              { type: 'ice', emoji: '❄️', label: 'Glace' },
+                              { type: 'fighting', emoji: '🥊', label: 'Combat' },
+                              { type: 'poison', emoji: '☠️', label: 'Poison' },
+                              { type: 'ground', emoji: '🌍', label: 'Sol' },
+                              { type: 'flying', emoji: '🦅', label: 'Vol' },
+                              { type: 'psychic', emoji: '🔮', label: 'Psy' },
+                              { type: 'bug', emoji: '🐛', label: 'Insecte' },
+                              { type: 'rock', emoji: '🪨', label: 'Roche' },
+                              { type: 'ghost', emoji: '👻', label: 'Spectre' },
+                              { type: 'dragon', emoji: '🐉', label: 'Dragon' },
+                              { type: 'dark', emoji: '🌑', label: 'Ténèbres' },
+                              { type: 'steel', emoji: '⚔️', label: 'Acier' },
+                              { type: 'fairy', emoji: '🧚', label: 'Fée' }
+                            ].find(t => t.type === type);
+                            return (
+                              <span key={type} className="px-3 py-1 bg-blue-500 text-white rounded-full text-xs font-bold flex items-center gap-2">
+                                <span>{typeData?.emoji}</span>
+                                <span>{typeData?.label}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {error && (
                       <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-4">
@@ -1025,34 +1063,50 @@ export default function TeamPage() {
                         { type: 'dark', emoji: '🌑', label: 'Ténèbres' },
                         { type: 'steel', emoji: '⚔️', label: 'Acier' },
                         { type: 'fairy', emoji: '🧚', label: 'Fée' }
-                      ].map(({ type, emoji, label }) => (
-                        <button
-                          key={type}
-                          onClick={() => setSelectedType(type)}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            selectedType === type
-                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900 scale-105'
-                              : 'border-gray-300 hover:border-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          <div className="text-3xl mb-1">{emoji}</div>
-                          <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{label}</div>
-                        </button>
-                      ))}
+                      ].map(({ type, emoji, label }) => {
+                        const isSelected = selectedTypes.includes(type);
+                        const isDisabled = !isSelected && selectedTypes.length >= 3;
+                        return (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedTypes(selectedTypes.filter(t => t !== type));
+                              } else if (selectedTypes.length < 3) {
+                                setSelectedTypes([...selectedTypes, type]);
+                              }
+                            }}
+                            disabled={isDisabled}
+                            className={`p-4 rounded-lg border-2 transition-all ${
+                              isSelected
+                                ? 'border-cyan-500 bg-cyan-100 dark:bg-cyan-900 scale-105 shadow-lg'
+                                : isDisabled
+                                ? 'border-gray-200 bg-gray-100 dark:bg-gray-800 opacity-50 cursor-not-allowed'
+                                : 'border-gray-300 hover:border-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            <div className="text-3xl mb-1">{emoji}</div>
+                            <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{label}</div>
+                            {isSelected && (
+                              <div className="text-xs text-cyan-600 dark:text-cyan-300 mt-1 font-bold">✓</div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="flex gap-3 mt-6">
                       <button
-                        onClick={() => selectedType && generateTeamByType(selectedType)}
-                        disabled={!selectedType}
+                        onClick={() => selectedTypes.length > 0 && generateTeamByTypes(selectedTypes)}
+                        disabled={selectedTypes.length === 0}
                         className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all"
                       >
-                        ✨ Générer l'équipe
+                        ✨ Générer l'équipe ({selectedTypes.length > 0 ? `${selectedTypes.length} type${selectedTypes.length > 1 ? 's' : ''}` : 'choisir un type'})
                       </button>
                       <button
                         onClick={() => {
                           setShowGenerateModal(false);
-                          setSelectedType(null);
+                          setSelectedTypes([]);
                         }}
                         className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"
                       >
@@ -1067,7 +1121,7 @@ export default function TeamPage() {
                       ✨ Génération en cours...
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      L'IA multi-agents analyse les meilleures options pour votre équipe {selectedType}
+                      L'IA multi-agents analyse les meilleures options pour votre équipe ({selectedTypes.join(', ')})
                     </p>
                   </div>
                 )}
