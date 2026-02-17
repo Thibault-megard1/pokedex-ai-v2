@@ -5,53 +5,59 @@
 ## Diagramme Mermaid
 
 ```mermaid
-graph TD
-    MA(MasterAgent [Mistral])
-    SBA(TeamBuildingAgent)
-    BA(BattleAgent)
-    QA(QuizAgent)
-    TA(TypeAnalysisTool)
-    RA(RoleClassifierTool)
-    SY(SynergyTool)
-    SC(TeamScorerTool)
-    BD(BattleDecisionTool)
-    DC(DamageCalculatorTool)
-    SP(SpeedComparatorTool)
-    SE(StatusEffectTool)
-    SM(StatModifierTool)
-
-    MA --> SBA
-    MA --> BA
-    MA --> QA
-
-    SBA --> TA
-    SBA --> RA
-    SBA --> SY
-    SBA --> SC
-
-    BA --> BD
-    BA --> DC
-    BA --> SP
-    BA --> SE
-    BA --> SM
-
-    QA -->|Utilise| TA
-    QA -->|Utilise| RA
-
-    subgraph TeamBuildingAgent
-        TA
-        RA
-        SY
-        SC
+graph TB
+    MA[MasterAgent<br/>Mistral LLM]
+    
+    subgraph " "
+        direction TB
+        SBA[TeamBuildingAgent<br/>Construction d'équipes]
+        subgraph "Tools TeamBuilding"
+            TA[TypeAnalysisTool<br/>Analyse des types]
+            RA[RoleClassifierTool<br/>Classification des rôles]
+            SY[SynergyTool<br/>Analyse des synergies]
+            SC[TeamScorerTool<br/>Scoring d'équipe]
+        end
+        SBA --> TA
+        SBA --> RA
+        SBA --> SY
+        SBA --> SC
+    end
+    
+    subgraph " "
+        direction TB
+        BA[BattleAgent<br/>Gestion des combats]
+        subgraph "Tools Battle"
+            BD[BattleDecisionTool<br/>Décisions tactiques]
+            DC[DamageCalculatorTool<br/>Calcul des dégâts]
+            SP[SpeedComparatorTool<br/>Comparaison vitesse]
+            SE[StatusEffectTool<br/>Effets de statut]
+            SM[StatModifierTool<br/>Modificateurs stats]
+        end
+        BA --> BD
+        BA --> DC
+        BA --> SP
+        BA --> SE
+        BA --> SM
+    end
+    
+    subgraph " "
+        direction TB
+        QA[QuizAgent<br/>Quiz et apprentissage]
+        QA -.->|Utilise| TA
+        QA -.->|Utilise| RA
     end
 
-    subgraph BattleAgent
-        BD
-        DC
-        SP
-        SE
-        SM
-    end
+    MA ==> SBA
+    MA ==> BA
+    MA ==> QA
+
+    classDef masterStyle fill:#4F46E5,stroke:#312E81,stroke-width:3px,color:#fff
+    classDef agentStyle fill:#10B981,stroke:#065F46,stroke-width:2px,color:#fff
+    classDef toolStyle fill:#F59E0B,stroke:#92400E,stroke-width:2px,color:#000
+    
+    class MA masterStyle
+    class SBA,BA,QA agentStyle
+    class TA,RA,SY,SC,BD,DC,SP,SE,SM toolStyle
 ```
 
 ---
