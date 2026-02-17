@@ -13,6 +13,8 @@
  * - TeamScorerTool: Scoring global
  */
 
+import fs from 'fs';
+import path from 'path';
 import { 
   Pokemon, 
   PokemonRole,
@@ -88,28 +90,56 @@ export interface TeamBuildingResponse {
 // POKEMON POOL (pour la génération)
 // ============================================================================
 
-const POKEMON_POOL: Pokemon[] = [
-  { id: 149, name: "dragonite", types: ["dragon", "flying"], stats: [{ name: "hp", value: 91 }, { name: "attack", value: 134 }, { name: "defense", value: 95 }, { name: "special-attack", value: 100 }, { name: "special-defense", value: 100 }, { name: "speed", value: 80 }] },
-  { id: 376, name: "metagross", types: ["steel", "psychic"], stats: [{ name: "hp", value: 80 }, { name: "attack", value: 135 }, { name: "defense", value: 130 }, { name: "special-attack", value: 95 }, { name: "special-defense", value: 90 }, { name: "speed", value: 70 }] },
-  { id: 248, name: "tyranitar", types: ["rock", "dark"], stats: [{ name: "hp", value: 100 }, { name: "attack", value: 134 }, { name: "defense", value: 110 }, { name: "special-attack", value: 95 }, { name: "special-defense", value: 100 }, { name: "speed", value: 61 }] },
-  { id: 94, name: "gengar", types: ["ghost", "poison"], stats: [{ name: "hp", value: 60 }, { name: "attack", value: 65 }, { name: "defense", value: 60 }, { name: "special-attack", value: 130 }, { name: "special-defense", value: 75 }, { name: "speed", value: 110 }] },
-  { id: 143, name: "snorlax", types: ["normal"], stats: [{ name: "hp", value: 160 }, { name: "attack", value: 110 }, { name: "defense", value: 65 }, { name: "special-attack", value: 65 }, { name: "special-defense", value: 110 }, { name: "speed", value: 30 }] },
-  { id: 212, name: "scizor", types: ["bug", "steel"], stats: [{ name: "hp", value: 70 }, { name: "attack", value: 130 }, { name: "defense", value: 100 }, { name: "special-attack", value: 55 }, { name: "special-defense", value: 80 }, { name: "speed", value: 65 }] },
-  { id: 227, name: "skarmory", types: ["steel", "flying"], stats: [{ name: "hp", value: 65 }, { name: "attack", value: 80 }, { name: "defense", value: 140 }, { name: "special-attack", value: 40 }, { name: "special-defense", value: 70 }, { name: "speed", value: 70 }] },
-  { id: 242, name: "blissey", types: ["normal"], stats: [{ name: "hp", value: 255 }, { name: "attack", value: 10 }, { name: "defense", value: 10 }, { name: "special-attack", value: 75 }, { name: "special-defense", value: 135 }, { name: "speed", value: 55 }] },
-  { id: 373, name: "salamence", types: ["dragon", "flying"], stats: [{ name: "hp", value: 95 }, { name: "attack", value: 135 }, { name: "defense", value: 80 }, { name: "special-attack", value: 110 }, { name: "special-defense", value: 80 }, { name: "speed", value: 100 }] },
-  { id: 130, name: "gyarados", types: ["water", "flying"], stats: [{ name: "hp", value: 95 }, { name: "attack", value: 125 }, { name: "defense", value: 79 }, { name: "special-attack", value: 60 }, { name: "special-defense", value: 100 }, { name: "speed", value: 81 }] },
-  { id: 59, name: "arcanine", types: ["fire"], stats: [{ name: "hp", value: 90 }, { name: "attack", value: 110 }, { name: "defense", value: 80 }, { name: "special-attack", value: 100 }, { name: "special-defense", value: 80 }, { name: "speed", value: 95 }] },
-  { id: 121, name: "starmie", types: ["water", "psychic"], stats: [{ name: "hp", value: 60 }, { name: "attack", value: 75 }, { name: "defense", value: 85 }, { name: "special-attack", value: 100 }, { name: "special-defense", value: 85 }, { name: "speed", value: 115 }] },
-  { id: 36, name: "clefable", types: ["fairy"], stats: [{ name: "hp", value: 95 }, { name: "attack", value: 70 }, { name: "defense", value: 73 }, { name: "special-attack", value: 95 }, { name: "special-defense", value: 90 }, { name: "speed", value: 60 }] },
-  { id: 197, name: "umbreon", types: ["dark"], stats: [{ name: "hp", value: 95 }, { name: "attack", value: 65 }, { name: "defense", value: 110 }, { name: "special-attack", value: 60 }, { name: "special-defense", value: 130 }, { name: "speed", value: 65 }] },
-  { id: 68, name: "machamp", types: ["fighting"], stats: [{ name: "hp", value: 90 }, { name: "attack", value: 130 }, { name: "defense", value: 80 }, { name: "special-attack", value: 65 }, { name: "special-defense", value: 85 }, { name: "speed", value: 55 }] },
-  { id: 65, name: "alakazam", types: ["psychic"], stats: [{ name: "hp", value: 55 }, { name: "attack", value: 50 }, { name: "defense", value: 45 }, { name: "special-attack", value: 135 }, { name: "special-defense", value: 95 }, { name: "speed", value: 120 }] },
-  { id: 131, name: "lapras", types: ["water", "ice"], stats: [{ name: "hp", value: 130 }, { name: "attack", value: 85 }, { name: "defense", value: 80 }, { name: "special-attack", value: 85 }, { name: "special-defense", value: 95 }, { name: "speed", value: 60 }] },
-  { id: 6, name: "charizard", types: ["fire", "flying"], stats: [{ name: "hp", value: 78 }, { name: "attack", value: 84 }, { name: "defense", value: 78 }, { name: "special-attack", value: 109 }, { name: "special-defense", value: 85 }, { name: "speed", value: 100 }] },
-  { id: 9, name: "blastoise", types: ["water"], stats: [{ name: "hp", value: 79 }, { name: "attack", value: 83 }, { name: "defense", value: 100 }, { name: "special-attack", value: 85 }, { name: "special-defense", value: 105 }, { name: "speed", value: 78 }] },
-  { id: 3, name: "venusaur", types: ["grass", "poison"], stats: [{ name: "hp", value: 80 }, { name: "attack", value: 82 }, { name: "defense", value: 83 }, { name: "special-attack", value: 100 }, { name: "special-defense", value: 100 }, { name: "speed", value: 80 }] }
-];
+/**
+ * Charge tous les Pokémon depuis le cache JSON
+ * Utilise les fichiers numérotés dans data/pokemon-cache/
+ */
+function loadPokemonPool(): Pokemon[] {
+  const cacheDir = path.join(process.cwd(), 'data', 'pokemon-cache');
+  const pokemonPool: Pokemon[] = [];
+
+  try {
+    // Lire tous les fichiers du dossier cache
+    const files = fs.readdirSync(cacheDir);
+    
+    // Filtrer uniquement les fichiers numérotés (1.json, 2.json, etc.)
+    const numberedFiles = files.filter(file => /^\d+\.json$/.test(file));
+    
+    for (const file of numberedFiles) {
+      try {
+        const filePath = path.join(cacheDir, file);
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        
+        // Convertir au format Pokemon si les données sont valides
+        if (data.id && data.name && data.types && data.stats) {
+          pokemonPool.push({
+            id: data.id,
+            name: data.name,
+            types: data.types,
+            stats: data.stats
+          });
+        }
+      } catch (err) {
+        // Ignorer les fichiers mal formés
+        console.warn(`[TeamBuildingAgent] Erreur lecture ${file}:`, err);
+      }
+    }
+    
+    console.log(`[TeamBuildingAgent] ${pokemonPool.length} Pokémon chargés depuis le cache`);
+    return pokemonPool;
+  } catch (error) {
+    console.error('[TeamBuildingAgent] Erreur chargement du pool:', error);
+    // Fallback vers un pool minimal si erreur
+    return [
+      { id: 149, name: "dragonite", types: ["dragon", "flying"], stats: [{ name: "hp", value: 91 }, { name: "attack", value: 134 }, { name: "defense", value: 95 }, { name: "special-attack", value: 100 }, { name: "special-defense", value: 100 }, { name: "speed", value: 80 }] },
+      { id: 376, name: "metagross", types: ["steel", "psychic"], stats: [{ name: "hp", value: 80 }, { name: "attack", value: 135 }, { name: "defense", value: 130 }, { name: "special-attack", value: 95 }, { name: "special-defense", value: 90 }, { name: "speed", value: 70 }] },
+      { id: 248, name: "tyranitar", types: ["rock", "dark"], stats: [{ name: "hp", value: 100 }, { name: "attack", value: 134 }, { name: "defense", value: 110 }, { name: "special-attack", value: 95 }, { name: "special-defense", value: 100 }, { name: "speed", value: 61 }] },
+    ];
+  }
+}
+
+// Charger le pool une seule fois au démarrage
+const POKEMON_POOL: Pokemon[] = loadPokemonPool();
 
 // ============================================================================
 // TEAM BUILDING AGENT
