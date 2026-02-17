@@ -2,6 +2,10 @@
  * Role Classifier Tool
  * 
  * Outil pour classifier les rôles des Pokémon et analyser la distribution.
+ * Conseille les rôles manquants et surchargés dans une équipe.
+ * Fournit des recommandations pour équilibrer l'équipe.
+ * Permet de trouver des Pokémon candidats pour remplir des rôles spécifiques. 
+ * (Attack, defence, tank, etc)
  */
 
 import {
