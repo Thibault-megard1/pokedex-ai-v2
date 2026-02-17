@@ -43,7 +43,7 @@ Ce schema situe les pages principales et leur passage par les routes API.
 
 ```mermaid
     graph TD
-        Accueil[Accueil] --> Pokedex
+        Accueil[Accueil] --> Pokedex[Liste, Favori, Comparer]
         Accueil --> Equipe
         Accueil --> Combat
         Accueil --> Tournoi
