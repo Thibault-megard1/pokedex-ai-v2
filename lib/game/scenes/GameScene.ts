@@ -8,6 +8,7 @@ import { createPlayer, updatePlayer, stopPlayer } from '../player';
 import { MenuManager } from '../MenuManager';
 import { UIHelper } from '../UIHelper';
 import { DebugHelper } from '../DebugHelper';
+import { MusicManager } from '../audio/musicManager';
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
@@ -149,6 +150,9 @@ export class GameScene extends Phaser.Scene {
     this.collisionLayer = mapData.layers.collision;
     this.grassLayer = mapData.layers.grass;
     this.tileSize = mapData.tileSize;
+
+    // Start zone music
+    MusicManager.playZoneMusic(mapName);
 
     // Create tile map (simple grid rendering)
     const ground = mapData.layers.ground;
@@ -1505,5 +1509,8 @@ export class GameScene extends Phaser.Scene {
     // Clean up timers
     if (this.playTimeTimer) this.playTimeTimer.destroy();
     if (this.autoSaveTimer) this.autoSaveTimer.destroy();
+    
+    // Clean up music
+    MusicManager.cleanup();
   }
 }

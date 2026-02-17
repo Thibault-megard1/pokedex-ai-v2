@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { SettingsManager, GameSettings, DEFAULT_SETTINGS } from '@/lib/game/SettingsManager';
+import { MusicManager } from '@/lib/game/audio/musicManager';
 
 interface GameSettingsPanelProps {
   isOpen: boolean;
@@ -24,6 +25,11 @@ export default function GameSettingsPanel({ isOpen, onClose }: GameSettingsPanel
 
   const updateSetting = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     SettingsManager.save({ [key]: value });
+    
+    // Update music volume in real-time when changed
+    if (key === 'musicVolume') {
+      MusicManager.updateVolume();
+    }
   };
 
   const resetSettings = () => {
