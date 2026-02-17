@@ -61,5 +61,68 @@
       ]
     },
     "completedAt": "2026-02-17T07:46:55.273Z"
+  },
+  "f09faa21-1b1b-4a0e-bd2d-b10aee55d6ab": {
+    "userId": "f09faa21-1b1b-4a0e-bd2d-b10aee55d6ab",
+    "result": {
+      "primary": {
+        "id": 81,
+        "name": "magnemite",
+        "name_fr": "Magnéti",
+        "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/81.png",
+        "confidence": 0.64,
+        "reasons": [
+          "Votre vivacité et dynamisme résonnent avec le type Électrik",
+          "Votre personnalité s'aligne naturellement avec ce Pokémon"
+        ]
+      },
+      "alternatives": [
+        {
+          "id": 82,
+          "name": "magneton",
+          "name_fr": "Magnéton",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/82.png",
+          "confidence": 0.64,
+          "reasons": [
+            "Votre vivacité et dynamisme résonnent avec le type Électrik",
+            "Votre personnalité s'aligne naturellement avec ce Pokémon"
+          ]
+        },
+        {
+          "id": 145,
+          "name": "zapdos",
+          "name_fr": "Électhor",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/145.png",
+          "confidence": 0.6,
+          "reasons": [
+            "Votre vivacité et dynamisme résonnent avec le type Électrik",
+            "Votre personnalité s'aligne naturellement avec ce Pokémon"
+          ]
+        },
+        {
+          "id": 16,
+          "name": "pidgey",
+          "name_fr": "Roucool",
+          "sprite_url": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/16.png",
+          "confidence": 0.6,
+          "reasons": [
+            "Ce Pokémon reflète votre personnalité unique",
+            "Vous partagez des valeurs et un tempérament similaires"
+          ]
+        }
+      ],
+      "traits_inferred": [
+        "Loyal",
+        "Mystérieux",
+        "Rapide",
+        "Joyeux",
+        "Dévoué",
+        "Aventurier",
+        "Visionnaire",
+        "Prudent",
+        "Extraverti"
+      ]
+    },
+    "completedAt": "2026-02-17T07:58:39.538Z"
   }
 }
