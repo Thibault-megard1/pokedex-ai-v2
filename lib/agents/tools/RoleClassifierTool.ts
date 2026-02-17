@@ -1,7 +1,211 @@
 /**
- * Role Classifier Tool
+ * ============================================================================
+ * ROLE CLASSIFIER TOOL - Tool de classification des rôles stratégiques
+ * ============================================================================
  * 
- * Classifie et gère les rôles stratégiques dans l'équipe
+ * OBJECTIF:
+ * Ce tool classifie les Pokémon dans des RÔLES STRATÉGIQUES précis.
+ * Une équipe équilibrée doit avoir une DISTRIBUTION variée de rôles.
+ * 
+ * Contrairement au StatsAnalyzerTool qui classifie basé sur les stats brutes,
+ * ce tool se concentre sur la FONCTION STRATÉGIQUE dans une équipe compétitive.
+ * 
+ * ============================================================================
+ * LES 8 RÔLES STRATÉGIQUES
+ * ============================================================================
+ * 
+ * 1. **LEAD** (Meneur / Starter) 🎯
+ *    - Rôle: Premier Pokémon envoyé en combat
+ *    - Mission:
+ *      * Poser les entry hazards (Stealth Rock, Spikes)
+ *      * Momentum control (Taunt, Thunder Wave)
+ *      * Suicide lead (explosion après setup)
+ *    - Caractéristiques:
+ *      * Speed moyen-élevé (pour agir avant adversaire)
+ *      * Accès à Stealth Rock ou Taunt
+ *      * Souvent sacrifiable
+ *    - Exemples:
+ *      * Azelf: 115 Speed, Stealth Rock, Explosion
+ *      * Landorus-T: Stealth Rock, U-turn (momentum)
+ *      * Tapu Koko: Taunt, Electric Terrain setter
+ * 
+ * 2. **SWEEPER** (Balayeur) ⚔️
+ *    - Rôle: Attaquant principal qui KO plusieurs Pokémon
+ *    - Mission:
+ *      * Setup (+2 Atk/SpA avec Swords Dance/Nasty Plot)
+ *      * Balayer l'équipe adverse une fois setup
+ *    - Caractéristiques:
+ *      * Attaque élevée (> 110)
+ *      * Speed élevée (> 90)
+ *      * Accès à setup moves
+ *    - Types:
+ *      * **Physical Sweeper**: Garchocho, Excadrill, Mega Lucario
+ *      * **Special Sweeper**: Alakazam, Volcarona, Tapu Lele
+ *      * **Mixed Sweeper**: Salamence, Infernape
+ *    - Stratégie:
+ *      1. Switch in sur un matchup favorable
+ *      2. Setup (Swords Dance, Dragon Dance, Quiver Dance)
+ *      3. Sweep (KO 2-3+ Pokémon)
+ * 
+ * 3. **WALLBREAKER** (Brise-Mur) 🔨
+ *    - Rôle: Détruire les walls/tanks adverses
+ *    - Mission:
+ *      * Infliger dégâts massifs aux défenseurs
+ *      * Ouvrir la voie pour les sweepers
+ *      * 2HKO ou OHKO les walls
+ *    - Caractéristiques:
+ *      * Attaque EXTRÊME (> 130)
+ *      * Speed moyenne (pas prioritaire)
+ *      * Grande force brute
+ *    - Items typiques:
+ *      * Choice Band (physique ×1.5)
+ *      * Choice Specs (spécial ×1.5)
+ *      * Life Orb (×1.3 avec fléxibilité)
+ *    - Exemples:
+ *      * Hoopa-Unbound: 160 Atk, 170 SpA (wallbreaker ultime!)
+ *      * Mega Mawile: 105 Atk → Huge Power = 210 effective
+ *      * Kyurem-Black: 170 Atk (nukes tout)
+ * 
+ * 4. **TANK** (Mur Défensif) 🛡️
+ *    - Rôle: Encaisser les coups, heal, staller
+ *    - Mission:
+ *      * Absorber les attaques
+ *      * Infliger status (Toxic, Burn)
+ *      * Heal avec Recover/Roost
+ *      * Poser entry hazards
+ *    - Caractéristiques:
+ *      * HP + Défenses élevées
+ *      * Vitesse basse (pas grave)
+ *      * Accès à recovery moves
+ *    - Types:
+ *      * **Physical Wall**: Skarmory, Hippowdon, Ferrothorn
+ *      * **Special Wall**: Blissey, Chansey, Toxapex
+ *      * **Mixed Wall**: Cresselia, Celesteela, Umbreon
+ *    - Moves clés:
+ *      * Recover/Roost (heal)
+ *      * Toxic (poison lent)
+ *      * Protect (stall)
+ *      * Hazards (Stealth Rock, Spikes)
+ * 
+ * 5. **SUPPORT** (Soutien) ✨
+ *    - Rôle: Aider toute l'équipe (utility)
+ *    - Mission:
+ *      * Heal allies (Wish, Heal Bell)
+ *      * Setup Screens (Light Screen, Reflect)
+ *      * Entry hazards (Stealth Rock, Spikes, Toxic Spikes)
+ *      * Speed control (Thunder Wave, Tailwind)
+ *      * Redirect (Follow Me, Rage Powder in Doubles)
+ *    - Caractéristiques:
+ *      * Stats variables (pas de pattern fixe)
+ *      * Large movepool utility
+ *      * Défensivement solid (pour survivre)
+ *    - Exemples:
+ *      * Clefable: Wish + Heal Bell + Stealth Rock
+ *      * Ferrothorn: Spikes + Leech Seed + Knock Off
+ *      * Amoonguss: Spore + Regenerator (heal passif)
+ *      * Tapu Fini: Defog + Nature's Madness + Taunt
+ * 
+ * 6. **PIVOT** (Tournant) 🔄
+ *    - Rôle: Maintenir le MOMENTUM (contrôle du rythme)
+ *    - Mission:
+ *      * Switch in safe (bons matchups)
+ *      * Attaquer puis switch out (U-turn, Volt Switch)
+ *      * Scouter les moves adverses
+ *      * Bring in un teammate favorable
+ *    - Caractéristiques:
+ *      * Vitesse élevée (pour U-turn avant adversaire)
+ *      * Bulk décent (pour switch in safe)
+ *      * Accès à pivot moves
+ *    - Moves de pivot:
+ *      * U-turn (Insecte)
+ *      * Volt Switch (Électrique)
+ *      * Flip Turn (Eau)
+ *      * Parting Shot (debuff puis switch)
+ *    - Exemples:
+ *      * Landorus-T: U-turn + Intimidate
+ *      * Rotom-Wash: Volt Switch + Will-O-Wisp
+ *      * Tornadus-T: U-turn + Defiant
+ *      * Barraskewda: Flip Turn + Swift Swim
+ * 
+ * 7. **REVENGE KILLER** (Finisseur) ⚡
+ *    - Rôle: Finir les Pokémon affaiblis
+ *    - Mission:
+ *      * Outspeed ET KO les menaces
+ *      * Clean-up en late game
+ *      * Utiliser priority moves pour bypass speed
+ *    - Caractéristiques:
+ *      * Speed EXTRÊME (> 115) OU priority moves
+ *      * Attaque décente (pas besoin d'être énorme)
+ *      * Souvent porte Choice Scarf
+ *    - Priority Moves:
+ *      * Aqua Jet, Mach Punch (+1)
+ *      * Bullet Punch, Ice Shard (+1)
+ *      * Extreme Speed (+2)
+ *      * Sucker Punch (+1, mais conditionnel)
+ *    - Exemples:
+ *      * Weavile: 125 Speed + Ice Shard
+ *      * Dragapult: 142 Speed (outspeed tout)
+ *      * Mega Lucario: Extreme Speed + Adaptability
+ *      * Choice Scarf Landorus: 101 Speed × 1.5 = 151
+ * 
+ * 8. **BALANCED** (Polyvalent) ⚖️
+ *    - Rôle: Pokémon sans rôle spécialisé clair
+ *    - Caractéristiques:
+ *      * Stats équilibrées (rien d'exceptionnel)
+ *      * Peut remplir plusieurs rôles moyennement
+ *      * Flexibilité mais manque d'excellence
+ *    - Exemples: Mew, Celebi (stats all 100)
+ *    - Note: Généralement moins optimal en compétitif haut niveau
+ * 
+ * ============================================================================
+ * RÔLES ESSENTIELS DANS UNE ÉQUIPE
+ * ============================================================================
+ * 
+ * Une équipe COMPÈTE doit avoir AU MINIMUM:
+ * 1. **Au moins 1 SWEEPER** (win condition)
+ * 2. **Au moins 1 TANK** (pour absorber les coups)
+ * 3. **Au moins 1 SUPPORT** (utilité, hazards)
+ * 
+ * ÉQUIPE IDÉALE (6 Pokémon):
+ * - 1 Lead (setup hazards)
+ * - 2 Sweepers (physical + special pour balance)
+ * - 1 Wallbreaker (casser les walls adverses)
+ * - 1 Tank/Wall (absorber les coups)
+ * - 1 Pivot (momentum control)
+ * 
+ * ANTI-PATTERNS À ÉVITER:
+ * - Trop de sweepers (4+): vulnérable au revenge killing
+ * - Trop de tanks (3+): manque de killing power
+ * - Aucun sweeper: impossible de finir le match
+ * - Aucun tank: team trop fragile ("hyper offense")
+ * 
+ * ============================================================================
+ * ALGORITHME DE CLASSIFICATION
+ * ============================================================================
+ * 
+ * Le tool classe un Pokémon en:
+ * 1. Analysant ses stats (via StatsAnalyzerTool)
+ * 2. Mappant le rôle de base vers un rôle stratégique
+ * 3. Considérant les speed tiers
+ * 
+ * Exemples de mapping:
+ * - baseRole = "sweeper" + speedTier = "ultra-fast" → "revenge-killer"
+ * - baseRole = "tank" + bulk = "wall" → "tank"
+ * - baseRole = "pivot" + speedTier = "fast" → "pivot"
+ * 
+ * ============================================================================
+ * SCORING D'UN CANDIDAT
+ * ============================================================================
+ * 
+ * BONUS MASSIFS:
+ * - +80 points: Ajoute un rôle MANQUANT essentiel (sweeper/tank/support)
+ * - +50 points: Ajoute un rôle nouveau (plus de diversité)
+ * - +30 points: Pokémon polyvalent (peut remplir 2+ rôles)
+ * 
+ * PÉNALITÉS:
+ * - -20 points: Rôle déjà SURCHARGÉ (3+ Pokémon du même rôle)
+ * - -10 points: Équipe déjà bien équilibrée (moins de besoin)
+ * ============================================================================
  */
 
 import { Pokemon } from "./TypeEffectivenessTool";

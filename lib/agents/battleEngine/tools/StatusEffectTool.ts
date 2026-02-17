@@ -1,17 +1,108 @@
 /**
- * Status Effect Tool
+ * ============================================================================
+ * STATUS EFFECT TOOL - Tool de gestion des statuts
+ * ============================================================================
  * 
- * Gère les conditions de statut en combat:
- * - Poison (dégâts par tour)
- * - Burn (dégâts par tour + ATK -50%)
- * - Paralysis (Speed -50% + 25% immobilisation)
- * - Sleep (2-5 tours)
- * - Freeze (10% dégel par tour)
+ * OBJECTIF:
+ * Ce tool gère les conditions de statut (status conditions) en combat Pokémon.
+ * Les status sont des effets négatifs persistants qui affectent un Pokémon.
  * 
- * Gère aussi les conditions volatiles:
- * - Confusion
- * - Flinch
- * - Infatuation
+ * RÈGLE FONDAMENTALE:
+ * Un Pokémon ne peut avoir qu'UN SEUL statut primaire à la fois.
+ * Mais il peut avoir PLUSIEURS statuts volatiles simultanément.
+ * 
+ * ============================================================================
+ * STATUTS PRIMAIRES (Primary Status) - PERSISTENT APRÈS LE COMBAT
+ * ============================================================================
+ * 
+ * 1. POISON (PSN) 🟣
+ *    - Effet: Perd 1/8 de HP max par tour (12.5%)
+ *    - Durée: Jusqu'à guérison (Item/Move) ou fin du combat
+ *    - Moves: Poison Powder, Toxic, Poison Jab
+ *    - Immunité: Types Poison et Steel
+ *    - Note: Toxic (Poison grave) augmente les dégâts chaque tour (1/16, 2/16, 3/16...)
+ * 
+ * 2. BURN (BRN) 🔥
+ *    - Effet double:
+ *      a) Perd 1/16 de HP max par tour (6.25%)
+ *      b) Attaque physique réduite de 50% (×0.5 Attack)
+ *    - Durée: Jusqu'à guérison ou fin du combat
+ *    - Moves: Will-O-Wisp, Flamethrower (10% chance), Scald (30% chance)
+ *    - Immunité: Types Feu
+ *    - Stratégie: Excellent pour neutraliser les sweepers physiques (Gyarados, Machamp)
+ * 
+ * 3. PARALYSIS (PAR) ⚡
+ *    - Effet double:
+ *      a) Vitesse réduite de 50% (×0.5 Speed)
+ *      b) 25% de chance d'être immobilisé (ne peut pas attaquer) chaque tour
+ *    - Durée: Jusqu'à guérison ou fin du combat
+ *    - Moves: Thunder Wave, Body Slam (30% chance), Thunderbolt (10% chance)
+ *    - Immunité: Types Électrique
+ *    - Stratégie: Très puissant, ralentit ET peut empêcher d'agir
+ * 
+ * 4. SLEEP (SLP) 😴
+ *    - Effet: Ne peut PAS attaquer (sauf Sleep Talk, Snore)
+ *    - Durée: 1 à 3 tours (aléatoire)
+ *    - Moves: Sleep Powder, Hypnosis, Spore (100% précision!)
+ *    - Immunité: Aucune immunité de type
+ *    - Note: Le plus puissant des status (immobilisation totale)
+ *    - Contre: Chesto Berry, Wake-Up Slap
+ * 
+ * 5. FREEZE (FRZ) ❄️
+ *    - Effet: Ne peut PAS attaquer (sauf certains moves Feu)
+ *    - Durée: 20% de chance de dégel par tour (peut durer longtemps!)
+ *    - Moves: Ice Beam (10% chance), Blizzard (10% chance)
+ *    - Immunité: Types Glace
+ *    - Note: Rare car difficilement infligeable (pas de move 100%)
+ * 
+ * ============================================================================
+ * STATUTS VOLATILES (Volatile Status) - DISPARAISSENT AU SWITCH OUT
+ * ============================================================================
+ * 
+ * 1. CONFUSION (confuse) 😵
+ *    - Effet: 50% de chance de se frapper soi-même (40 power typeless attack)
+ *    - Durée: 1 à 4 tours
+ *    - Moves: Confuse Ray, Swagger, Dynamic Punch
+ * 
+ * 2. FLINCH 😱
+ *    - Effet: Ne peut pas attaquer CE TOUR
+ *    - Durée: 1 tour seulement
+ *    - Moves: Fake Out, Iron Head (30%), Air Slash (30%)
+ *    - Note: Ne fonctionne QUE si l'utilisateur est plus rapide
+ * 
+ * 3. INFATUATION (attract) 💕
+ *    - Effet: 50% de chance de ne pas pouvoir attaquer
+ *    - Durée: Jusqu'au switch
+ *    - Condition: Sexes opposés requis
+ * 
+ * 4. LEECH SEED 🌱
+ *    - Effet: Perd 1/8 HP max par tour, l'adversaire récupère ces HP
+ *    - Immunité: Types Grass
+ * 
+ * ============================================================================
+ * STRATÉGIES DE STATUS:
+ * ============================================================================
+ * 
+ * "Stall Teams" (équipes défensives):
+ * - Burn les sweepers physiques
+ * - Paralyze les speedsters
+ * - Toxic + Protect pour empoisonner et staller
+ * 
+ * "Cleric" (support):
+ * - Pokémon avec Heal Bell ou Aromatherapy pour guérir toute l'équipe
+ * 
+ * "Status Absorber":
+ * - Pokémon avec Natural Cure (ability) guérit le status au switch
+ * - Pokémon avec Guts (ability) boost l'attaque si status (Heracross, Machamp)
+ * 
+ * PRIORITY DES STATUS EN COMPÉTITIF:
+ * 1. Sleep (le plus fort, souvent banni en "Sleep Clause")
+ * 2. Paralysis (ralentit ET peut immobiliser)
+ * 3. Burn (réduit Attack, bon contre physiques)
+ * 4. Toxic (dégâts croissants, excellent pour stall)
+ * 5. Freeze (rare, peu fiable)
+ * 6. Poison normal (moins bon que Toxic)
+ * ============================================================================
  */
 
 export type PrimaryStatus = "burn" | "poison" | "paralysis" | "sleep" | "freeze" | null;

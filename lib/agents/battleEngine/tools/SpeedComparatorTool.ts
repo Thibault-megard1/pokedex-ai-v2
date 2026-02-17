@@ -1,11 +1,49 @@
 /**
- * Speed Comparator Tool
+ * ============================================================================
+ * SPEED COMPARATOR TOOL - Tool de comparaison de vitesse
+ * ============================================================================
  * 
- * Détermine l'ordre des tours en combat basé sur:
- * - Speed de base + stat stages
- * - Condition de paralysie (-50% speed)
- * - Priorité des moves
- * - Tie-breaker aléatoire
+ * OBJECTIF:
+ * Ce tool détermine l'ordre d'action des Pokémon pendant un tour de combat.
+ * L'ordre est crucial car attaquer en premier peut faire la différence entre
+ * gagner et perdre (KO avant de subir des dégâts).
+ * 
+ * ALGORITHME DE CALCUL DE VITESSE EFFECTIVE:
+ * 1. Base Speed: statistique Speed du Pokémon (ex: 130 pour Jolteon)
+ * 2. Stat Stages: multiplicateurs de -6 à +6 appliqués
+ *    - +1 stage = ×1.5, +2 = ×2, +3 = ×2.5, etc.
+ *    - -1 stage = ×0.66, -2 = ×0.5, etc.
+ * 3. Paralysis: si paralysé, vitesse divisée par 2 (×0.5)
+ * 4. Items/Abilities (non implémenté ici): Choice Scarf = ×1.5, etc.
+ * 
+ * ORDRE DES TOURS:
+ * 1. PRIORITÉ DES MOVES (range: -7 à +5)
+ *    - Exemples de priorité:
+ *      * +5: Helping Hand
+ *      * +4: Protect, Detect
+ *      * +3: Fake Out, Extreme Speed
+ *      * +2: Feint, Aqua Jet, Mach Punch
+ *      * +1: Quick Attack, Bullet Punch
+ *      *  0: Attaques normales (la majorité)
+ *      * -1: Vital Throw
+ *      * -3: Focus Punch
+ *      * -6: Trick Room (attaque en dernier)
+ * 2. VITESSE EFFECTIVE: si même priorité, le plus rapide attaque en premier
+ * 3. TIE-BREAKER: si même vitesse ET priorité, 50/50 aléatoire
+ * 
+ * CAS D'USAGE:
+ * - Prédire si le joueur peut KO l'adversaire avant de prendre des dégâts
+ * - Décider d'utiliser une attaque prioritaire (Quick Attack) pour finir un adversaire
+ * - Évaluer l'impact de la paralysie sur l'ordre des tours
+ * - Choisir entre booster sa vitesse ou sa défense
+ * 
+ * EXEMPLE CONCRET:
+ * Pikachu (Speed 90, +1 stage → 135) vs Charizard (Speed 100, paralysé → 50)
+ * → Pikachu attaque en premier car 135 > 50
+ * 
+ * Mais si Charizard utilise Extreme Speed (+3 priority) et Pikachu Thunder (0):
+ * → Charizard attaque en premier malgré sa vitesse réduite (priorité l'emporte)
+ * ============================================================================
  */
 
 export interface PokemonForSpeed {

@@ -1,7 +1,182 @@
 /**
- * Move Coverage Tool
+ * ============================================================================
+ * MOVE COVERAGE TOOL - Tool d'analyse de couverture des attaques
+ * ============================================================================
  * 
- * Analyse les attaques pour maximiser la couverture et éviter les doublons
+ * OBJECTIF:
+ * Ce tool analyse les ATTAQUES (moves) disponibles dans l'équipe pour
+ * maximiser la COUVERTURE OFFENSIVE. Une bonne couverture signifie pouvoir
+ * infliger des dégâts SUPER EFFICACES contre un maximum de types adverses.
+ * 
+ * DIFFÉRENCE AVEC TypeEffectivenessTool:
+ * - TypeEffectivenessTool: analyse les TYPES des Pokémon (défensif + offensif)
+ * - MoveCoverageTool: analyse les MOVES spécifiques (offensif pur)
+ * 
+ * ============================================================================
+ * CONCEPTS CLÉS
+ * ============================================================================
+ * 
+ * 1. **STAB (Same Type Attack Bonus)** ⭐
+ *    - Définition: Bonus de ×1.5 quand type du move = type du Pokémon
+ *    - Exemple:
+ *      * Charizard (Feu/Vol) utilise Flamethrower (Feu)
+ *      * Dégâts: 90 power × 1.5 STAB = 135 effective power
+ *    - Importance: STAB moves sont généralement les plus puissants
+ *    - Stratégie: Toujours avoir au moins 1-2 STAB moves par Pokémon
+ * 
+ * 2. **COVERAGE MOVES** (Moves de couverture) 🔮
+ *    - Définition: Moves d'un type DIFFÉRENT du Pokémon
+ *    - Objectif: Couvrir les types qui résistent aux STAB moves
+ *    - Exemple:
+ *      * Garchocho (Dragon/Sol)
+ *      * STAB: Earthquake (Sol), Outrage (Dragon)
+ *      * Problème: Steel résiste aux deux!
+ *      * Solution: Fire Fang (Feu) pour coverage vs Steel
+ * 
+ * 3. **TYPES PROBLÉMATIQUES** (Difficult to cover) ⚠️
+ *    - Certains types défensifs sont DIFFICILES à hit super efficacement:
+ *      * **Steel**: Résiste à 11 types! (le plus tanky)
+ *        Solution: Fire, Fighting, Ground
+ *      * **Fairy**: Immunisé Dragon, résiste Fighting
+ *        Solution: Steel, Poison
+ *      * **Water**: Bon bulk + peu de faiblesses
+ *        Solution: Electric, Grass
+ *      * **Dragon**: Résiste Feu/Eau/Plante/Électrique
+ *        Solution: Ice, Fairy, Dragon
+ *      * **Ghost**: Immunisé Normal/Fighting
+ *        Solution: Ghost, Dark
+ * 
+ * 4. **COVERAGE TRIOS** (BoltBeam, EdgeQuake, etc.) 💥
+ *    - Combinaisons classiques de 2-3 moves pour couverture maximale:
+ *    
+ *    **BoltBeam** (Thunderbolt + Ice Beam):
+ *    - Couvre: Eau, Sol, Vol, Plante, Dragon
+ *    - Utilisé par: Starmie, Tapu Koko, Magnezone
+ *    - Presque rien ne résiste aux deux
+ *    
+ *    **EdgeQuake** (Stone Edge + Earthquake):
+ *    - Couvre: Feu, Électrique, Poison, Roche, Acier, Vol
+ *    - Utilisé par: Garchocho, Landorus-T, Terrakion
+ *    - Physique equivalent du BoltBeam
+ *    
+ *    **FightingGhost** (Close Combat + Shadow Ball):
+ *    - Fighting hit: Normal, Steel, Rock, Dark, Ice
+ *    - Ghost hit: Ghost, Psychic
+ *    - Utilisé par: Marshadow, Lucario
+ *    
+ *    **FairyFighting** (Moonblast + Close Combat):
+ *    - Couvre: Dragon, Dark, Normal, Steel, Rock
+ *    - Utilisé par: Clefable, Tapu Bulu
+ * 
+ * ============================================================================
+ * MOVESET OPTIMAL (4 MOVES PAR POKÉMON)
+ * ============================================================================
+ * 
+ * Règle générale pour choisir 4 moves:
+ * 
+ * **Slot 1-2: STAB MOVES** (Same Type Attack Bonus)
+ * - Utiliser les attaques du même type que le Pokémon
+ * - Exemple pour Garchocho:
+ *   * Earthquake (STAB Sol)
+ *   * Outrage ou Dragon Claw (STAB Dragon)
+ * 
+ * **Slot 3: COVERAGE MOVE**
+ * - Couvrir les types qui résistent aux STAB
+ * - Exemple pour Garchocho:
+ *   * Fire Fang (contre Steel qui résiste Sol + Dragon)
+ * 
+ * **Slot 4: UTILITY ou SETUP**
+ * - Option A: Setup move (Swords Dance, Nasty Plot)
+ * - Option B: Priority move (Extreme Speed, Aqua Jet)
+ * - Option C: Status move (Will-O-Wisp, Thunder Wave)
+ * - Option D: Deuxième coverage move
+ * 
+ * ============================================================================
+ * EXEMPLES DE MOVESETS COMPÉTITIFS
+ * ============================================================================
+ * 
+ * **Garchocho (Dragon/Sol):**
+ * - Earthquake (STAB Sol)
+ * - Outrage (STAB Dragon)
+ * - Fire Fang (coverage vs Steel)
+ * - Swords Dance (setup)
+ * 
+ * **Alakazam (Psy):**
+ * - Psychic (STAB)
+ * - Focus Blast (coverage vs Steel/Dark qui résistent Psy)
+ * - Shadow Ball (coverage vs Ghost/Psy)
+ * - Energy Ball ou Dazzling Gleam (coverage vs Dark)
+ * 
+ * **Ferrothorn (Plante/Acier):**
+ * - Gyro Ball (STAB Acier, bénéficie de sa lenteur)
+ * - Power Whip (STAB Plante)
+ * - Leech Seed (utility)
+ * - Stealth Rock (hazard) ou Knock Off (utility)
+ * 
+ * **Dragonite (Dragon/Vol):**
+ * - Dragon Dance (setup)
+ * - Outrage (STAB Dragon)
+ * - Extreme Speed (priority, coverage vs Fairy)
+ * - Earthquake (coverage vs Steel/Electric)
+ * 
+ * ============================================================================
+ * STRATÉGIES DE COUVERTURE
+ * ============================================================================
+ * 
+ * 1. **"6-MOVE" STRATEGY**
+ *    - Chaque Pokémon a 4 moves
+ *    - 6 Pokémon × 4 moves = 24 moves total
+ *    - OBJECTIF: Couvrir LES 18 TYPES avec ces 24 moves
+ *    - Réalité: Besoin d'au moins 10-12 types DIFFÉRENTS
+ * 
+ * 2. **PRIORITY TARGETS** (Cibles prioritaires)
+ *    - Assurer qu'on peut hit SUPER EFFICACEMENT:
+ *      * Steel (Fire, Fighting, Ground)
+ *      * Fairy (Steel, Poison)
+ *      * Dragon (Ice, Fairy, Dragon)
+ *      * Water (Electric, Grass)
+ * 
+ * 3. **NO DEAD WEIGHT** (Pas de move inutile)
+ *    - Éviter les moves redondants
+ *    - Exemple MAUVAIS: Garchocho avec Earthquake + Bulldoze
+ *      * Les deux sont Sol, redondant!
+ *      * Mieux: Earthquake + Fire Fang
+ * 
+ * ============================================================================
+ * LIMITATIONS DU TOOL
+ * ============================================================================
+ * 
+ * IMPORTANT: Dans le contexte actuel, ce tool utilise les TYPES des Pokémon
+ * comme PROXY (approximation) des moves réels.
+ * 
+ * POURQUOI?
+ * - Les données complètes de moves ne sont pas toujours disponibles
+ * - Charger tous les moves de tous les Pokémon serait très lent
+ * - Les types donnent une bonne ESTIMATION de la couverture
+ * 
+ * ASSUMPTION:
+ * - Un Pokémon Feu aura probablement des moves Feu (STAB)
+ * - Un Pokémon Dragon/Sol aura probablement Earthquake + Dragon move
+ * 
+ * FUTURE IMPROVEMENT:
+ * - Intégrer l'API PokeAPI pour récupérer les moves réels
+ * - Analyser les movesets populaires (Smogon data)
+ * - Permettre à l'utilisateur de choisir les moves
+ * 
+ * ============================================================================
+ * ALGORITHME DE SCORING
+ * ============================================================================
+ * 
+ * BONUS:
+ * - +20 points: Ajoute un nouveau type STAB
+ * - +50 points: Couvre un type PROBLÉMATIQUE (Steel, Fairy, Water)
+ * - +30 points: Réduit les "types mal couverts" (uncovered types)
+ * - +15 points: Pokémon DUAL-TYPE (plus de flexibilité)
+ * 
+ * PÉNALITÉS:
+ * - -25 points: Type REDONDANT (déjà 3+ dans l'équipe)
+ * - -15 points: N'apporte aucune nouvelle couverture
+ * ============================================================================
  */
 
 import { Pokemon } from "./TypeEffectivenessTool";

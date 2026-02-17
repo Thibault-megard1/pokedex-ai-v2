@@ -1,8 +1,198 @@
 /**
- * Synergy Analyzer Tool
+ * ============================================================================
+ * SYNERGY ANALYZER TOOL - Tool d'analyse de synergie d'équipe
+ * ============================================================================
  * 
- * Analyse les synergies et anti-synergies entre Pokémon
- * pour améliorer la cohésion d'équipe.
+ * OBJECTIF:
+ * Ce tool mesure la SYNERGIE globale de l'équipe - à quel point les Pokémon
+ * TRAVAILLENT BIEN ENSEMBLE. Une bonne synergie signifie que chaque Pokémon
+ * COMPLÈTE les autres plutôt que de les dupliquer.
+ * 
+ * DÉFINITIONS:
+ * - **SYNERGIE POSITIVE**: Les Pokémon se complètent et couvrent leurs faiblesses
+ * - **ANTI-SYNERGIE**: Les Pokémon partagent les mêmes faiblesses ou rôles
+ * - **REDONDANCE**: Duplication inutile de fonctions/types
+ * 
+ * ============================================================================
+ * SYNERGIES POSITIVES (Ce qu'on VEUT dans une équipe)
+ * ============================================================================
+ * 
+ * 1. **CORE TEAMS** (Duos/Trios complémentaires) 💚
+ *    
+ *    **FWG CORE (Fire-Water-Grass)** - LE CLASSIQUE
+ *    - Feu bat: Plante, Acier, Glace, Insecte
+ *    - Eau bat: Feu, Sol, Roche
+ *    - Plante bat: Eau, Sol, Roche
+ *    - Synergie: Chacun couvre les faiblesses des autres
+ *    - Exemple: Charizard + Blastoise + Venusaur (starters Kanto)
+ *    - Score: +50 points si ce core est présent
+ *    
+ *    **STEEL-FAIRY CORE** - META MODERNE
+ *    - Acier: Résiste à 11 types (défense incroyable)
+ *    - Fée: Immunisé Dragon + tue Dragon
+ *    - Synergie:
+ *      * Acier couvre faiblesse Poison/Acier de Fée
+ *      * Fée couvre faiblesse Combat/Feu de Acier
+ *    - Exemple: Magearna + Tapu Fini, Heatran + Clefable
+ *    - Score: +60 points (très fort en compétitif)
+ *    
+ *    **DRAGON-STEEL-FAIRY TRIANGLE**
+ *    - Dragon: Puissance offensive brute
+ *    - Acier: Mur défensif
+ *    - Fée: Couvre faiblesse Dragon du Dragon
+ *    - Synergie: Offense + Défense + Anti-Dragon
+ *    - Exemple: Garchocho + Ferrothorn + Clefable
+ *    
+ *    **REGENERATOR CORE** - STALL TEAMS
+ *    - Plusieurs Pokémon avec l'ability Regenerator
+ *    - Regenerator: heal 33% HP au switch out
+ *    - Synergie: Switch en boucle = heal infini
+ *    - Exemple: Tornadus-T + Amoonguss + Toxapex
+ *    
+ *    **VoltTurn CORE** - MOMENTUM TEAMS
+ *    - Plusieurs Pokémon avec Volt Switch ou U-turn
+ *    - Synergie: Maintenir le contrôle du rythme constamment
+ *    - Switch in le bon counter à chaque fois
+ *    - Exemple: Landorus-T + Rotom-W + Scizor
+ * 
+ * 2. **DIVERSITÉ DE TYPES** 🌈
+ *    - OBJECTIF: Maximum de types DIFFÉRENTS dans l'équipe
+ *    - 6-8 types: Décent
+ *    - 9-10 types: Bon
+ *    - 11+ types: Excellent!
+ *    - 12+ types: Parfait (rare, dual-types bien choisis)
+ *    - Score: +40 points si 8+ types uniques
+ * 
+ * 3. **SPEED TIERS VARIÉS** ⚡
+ *    - MÉLANGE de Pokémon rapides ET lents
+ *    - Rapides: Pour outspeed et KO
+ *    - Lents: Pour tanker et staller
+ *    - Éviter d'avoir QUE des rapides ou QUE des lents
+ *    - Score: +30 points si bon mix
+ * 
+ * 4. **PHYSICAL + SPECIAL BALANCE** 💥
+ *    - Mix d'attaquants PHYSIQUES et SPÉCIAUX
+ *    - Pourquoi?
+ *      * Évite d'être wall par un seul type de défense
+ *      * Blissey wall les spéciaux → besoin de physiques
+ *      * Skarmory wall les physiques → besoin de spéciaux
+ *    - Idéal: 3 physiques + 3 spéciaux
+ *    - Score: +35 points si bien équilibré
+ * 
+ * 5. **WEATHER SYNERGY** ☀️☔
+ *    - Si l'équipe utilise une météo (Sun, Rain, Sand, Hail):
+ *      * TOUS les Pokémon doivent en bénéficier
+ *    - **Rain Team**:
+ *      * Types Eau: +50% puissance moves Eau
+ *      * Swift Swim: ×2 Speed sous pluie
+ *      * Thunder: 100% accuracy
+ *      * Exemple: Politoed (setter) + Kingdra + Mega Swampert
+ *    - **Sun Team**:
+ *      * Types Feu: +50% puissance moves Feu
+ *      * Chlorophyll: ×2 Speed au soleil
+ *      * Solar Beam: pas de charge
+ *      * Exemple: Torkoal (setter) + Venusaur + Charizard
+ * 
+ * ============================================================================
+ * ANTI-SYNERGIES (Ce qu'on VEUT ÉVITER)
+ * ============================================================================
+ * 
+ * 1. **FAIBLESSES PARTAGÉES** ❌
+ *    - PROBLÈME: Plusieurs Pokémon faibles au MÊME type
+ *    - Conséquence: Un seul Pokémon adversaire peut menacer toute l'équipe
+ *    - Exemple MAUVAIS:
+ *      * Équipe: Charizard + Talonflame + Moltres (tous Feu/Vol)
+ *      * Problème: TOUS x4 faibles à Roche (Stealth Rock = mort)
+ *    - Exemple MAUVAIS 2:
+ *      * Équipe avec 4 Pokémon faibles à Électrique
+ *      * Un Raikou peut sweep toute l'équipe
+ *    - SOLUTION: Limiter à MAX 2 Pokémon avec même faiblesse
+ *    - Pénalité: -40 points
+ * 
+ * 2. **REDONDANCE DE TYPES** 🔁
+ *    - PROBLÈME: 3+ Pokémon du MÊME TYPE
+ *    - Conséquence: Couverture offensive limitée
+ *    - Exemple: 3 Pokémon Eau dans une équipe → tous weak à Électrique
+ *    - EXCEPTION: Mono-type teams (challenge volontaire)
+ *    - Pénalité: -30 points
+ * 
+ * 3. **STEALTH ROCK WEAKNESS** 🪨
+ *    - PROBLÈME: Plusieurs Pokémon x4 weak à Roche
+ *    - Stealth Rock: Entry hazard qui inflige dégâts au switch
+ *      * Normal: 12.5% HP
+ *      * x2 weak: 25% HP
+ *      * x4 weak: 50% HP!! (dévastateur)
+ *    - Exemple MAUVAIS: Volcarona + Charizard + Moltres
+ *      * Tous perdent 50% HP au switch si Stealth Rock est posé
+ *    - SOLUTION:
+ *      * MAX 1 Pokémon x4 weak Roche par équipe
+ *      * Avoir un "Rapid Spin" ou "Defog" user pour enlever hazards
+ *    - Pénalité: -50 points
+ * 
+ * 4. **ALL FAST / ALL SLOW TEAMS** 🐢🐇
+ *    - PROBLÈME: Tous les Pokémon ont la même speed tier
+ *    - **All Fast (Hyper Offense)**:
+ *      * Problème: Fragiles, no bulk
+ *      * Vulnérable aux priority moves
+ *      * Si un tank setup (Calm Mind), difficile à piercer
+ *    - **All Slow (Stall)**:
+ *      * Problème: Vulnérable aux setup sweepers
+ *      * Pas de revenge killers
+ *      * Taunt les bloque complètement
+ *    - Pénalité: -35 points
+ * 
+ * 5. **RÔLE REDONDANCE** 🔄
+ *    - PROBLÈME: 4+ Pokémon avec le MÊME rôle
+ *    - Exemple: 4 Sweepers physiques
+ *      * Vulnérable à un Physical wall (Skarmory)
+ *      * Manque de utility (healing, hazards)
+ *    - SOLUTION: Diversifier les rôles
+ *    - Pénalité: -30 points
+ * 
+ * ============================================================================
+ * ALGORITHME DE CALCUL DU SCORE DE SYNERGIE (0-100)
+ * ============================================================================
+ * 
+ * **BASE SCORE** (adapté à la taille d'équipe):
+ * - 1 Pokémon: 80 (pas de synergie possible, mais OK)
+ * - 2 Pokémon: 70
+ * - 3 Pokémon: 60
+ * - 4 Pokémon: 55
+ * - 5 Pokémon: 50
+ * - 6 Pokémon: 50 (base neutre)
+ * 
+ * **AJUSTEMENTS**:
+ * 1. +Points pour synergies positives (cores, diversité)
+ * 2. -Points pour anti-synergies (redondance, faiblesses)
+ * 3. Final score = clamped entre 0-100
+ * 
+ * **INTERPRÉTATION**:
+ * - 0-30: Équipe très faible (faiblesses majeures)
+ * - 31-50: Équipe moyenne (quelques problèmes)
+ * - 51-70: Bonne équipe (synergie décente)
+ * - 71-85: Très bonne équipe (bien équilibrée)
+ * - 86-100: Équipe exceptionnelle (synergie parfaite)
+ * 
+ * ============================================================================
+ * SCORING D'UN CANDIDAT
+ * ============================================================================
+ * 
+ * Quand on évalue un nouveau Pokémon:
+ * 1. Calcule synergie ACTUELLE de l'équipe
+ * 2. Simule l'ajout du candidat
+ * 3. Recalcule la synergie
+ * 4. Score = (nouvelle_synergie - ancienne_synergie) × 2
+ * 
+ * BONUS:
+ * - +70 points: Complète un core (FWG, Steel-Fairy)
+ * - +50 points: Réduit significativement les faiblesses communes
+ * - +40 points: Ajoute diversité de types
+ * 
+ * PÉNALITÉS:
+ * - -60 points: Crée une faiblesse commune critique
+ * - -40 points: Augmente la redondance de types
+ * - -35 points: Déséquilibre la speed distribution
+ * ============================================================================
  */
 
 import { Pokemon } from "./TypeEffectivenessTool";

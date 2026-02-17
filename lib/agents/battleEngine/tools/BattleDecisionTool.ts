@@ -1,11 +1,129 @@
 /**
- * Battle Decision Tool
+ * ============================================================================
+ * BATTLE DECISION TOOL - Tool de prise de décision stratégique
+ * ============================================================================
  * 
- * Outil de prise de décision stratégique:
- * - Choix d'attaque optimal
- * - Décision de switch
- * - Anticipation de l'adversaire
- * - Calcul de probabilité de victoire
+ * OBJECTIF:
+ * Ce tool est le "cerveau" du Battle Engine. Il agrège les analyses des autres
+ * tools (damage, speed, status, stats) pour prendre la MEILLEURE décision
+ * stratégique possible à chaque tour.
+ * 
+ * DÉCISIONS POSSIBLES:
+ * 1. ATTACK: choisir une attaque parmi les 4 moves disponibles
+ * 2. SWITCH: changer de Pokémon actif
+ * 3. ITEM: utiliser un item (Potion, Revive, etc.) [moins utilisé en compétitif]
+ * 
+ * ============================================================================
+ * ALGORITHME DE SCORING DES MOVES
+ * ============================================================================
+ * 
+ * Pour chaque move, un score est calculé basé sur plusieurs facteurs:
+ * 
+ * 1. DÉGÂTS BRUTS (poids: 0.5x)
+ *    - Plus l'attaque fait de dégâts, plus le score est élevé
+ *    - Formule: damage * 0.5
+ * 
+ * 2. BONUS KO (+150 points)
+ *    - Si l'attaque peut KO l'adversaire ce tour
+ *    - Poids MASSIF car KO = adversaire ne peut pas riposter
+ *    - Si KO chance > 80%, considéré comme KO garanti
+ * 
+ * 3. EFFICACITÉ DE TYPE (jusqu'à +100 points)
+ *    - Super efficace (×2): +50 points
+ *    - Super efficace (×4): +100 points (double faiblesse!)
+ *    - Peu efficace (×0.5): -30 points
+ *    - Pas efficace (×0.25 ou 0): -60 points
+ * 
+ * 4. STAB - Same Type Attack Bonus (+20 points)
+ *    - Si le type de l'attaque = type du Pokémon
+ *    - Ex: Pikachu utilisant Thunderbolt (Électrique)
+ * 
+ * 5. PRECISION/ACC (+0 à -50 points)
+ *    - Moves à 100% précision: aucun malus
+ *    - Moves risqués (Thunder 70%, Blizzard 70%): pénalité
+ *    - Formule: -(100 - accuracy) * 0.5
+ * 
+ * 6. MOVES DE STATUT (scoring spécial)
+ *    - Paralyze: +80 points si adversaire plus rapide
+ *    - Burn: +90 points si adversaire est sweeper physique
+ *    - Sleep: +100 points (le plus fort!)
+ *    - Setup moves (Swords Dance, etc.): +60 si stats déjà boostées
+ * 
+ * ============================================================================
+ * ALGORITHME DE DÉCISION DE SWITCH
+ * ============================================================================
+ * 
+ * Un switch est considéré quand:
+ * 
+ * SITUATIONS DE SWITCH NÉCESSAIRE (shouldSwitch = true):
+ * 1. Type Disadvantage sévère (matchup < 0.5)
+ *    - Ex: Charizard Feu/Vol face à un Raichu Électrique
+ *    - Riské de prendre un OHKO
+ * 
+ * 2. HP critique (< 30%) ET menace de KO
+ *    - Si on est faible ET l'adversaire peut nous KO
+ *    - Mieux vaut sacrifier un autre Pokémon ou switch sur un counter
+ * 
+ * 3. Pokémon mort (currentHp = 0) [obligatoire]
+ * 
+ * CHOIX DU MEILLEUR SWITCH TARGET:
+ * Pour chaque Pokémon de l'équipe, on score:
+ * - Type matchup favorable (+100 points si résiste)
+ * - HP restant (plus HP = mieux)
+ * - Can counter adversaire (peut-il KO?)
+ * 
+ * RISQUE DU SWITCH:
+ * Switch a un coût:
+ * - Adversaire peut attaquer pendant le switch ("free hit")
+ * - Adversaire peut prédire le switch et utiliser un move pour counter
+ * - Phazing moves (Roar, Whirlwind) peuvent forcer un switch aléatoire
+ * 
+ * ============================================================================
+ * PRÉDICTION DE L'ADVERSAIRE (Mind Games)
+ * ============================================================================
+ * 
+ * Le tool essaie de prédire l'action de l'adversaire:
+ * 
+ * PATTERNS DÉTECTÉS:
+ * 1. Si adversaire low HP → probablement va switch
+ * 2. Si on résiste à ses attaques → va switch ou setup
+ * 3. Si adversaire a avantage → va attaquer agressivement
+ * 4. Si adversaire a setup move ET opportunité → va setup
+ * 
+ * CONTRE-JEU:
+ * - Si on prédit un switch adversaire → utiliser setup move (Swords Dance)
+ * - Si on prédit un setup adversaire → attaquer ou infliger status
+ * - Utiliser des moves à double effet (Scald: dégâts + 30% burn chance)
+ * 
+ * ============================================================================
+ * CALCUL DE WIN PROBABILITY (Probabilité de victoire)
+ * ============================================================================
+ * 
+ * Facteurs pris en compte:
+ * 1. HP Advantage (30% du score)
+ *    - Ratio des HP totaux restants (joueur vs adversaire)
+ * 2. Pokemon Count (25%)
+ *    - Nombre de Pokémon vivants de chaque côté
+ * 3. Type Matchup (20%)
+ *    - Avantage de type actuel
+ * 4. Speed Advantage (15%)
+ *    - Qui attaque en premier?
+ * 5. Status Advantage (10%)
+ *    - Un côté a-t-il des status débilitants?
+ * 
+ * Formule finale: sum(facteur * poids) → 0-100%
+ * 
+ * ============================================================================
+ * UTILISATION PAR LE BATTLEORCHESTRATOR:
+ * ============================================================================
+ * 
+ * Le BattleOrchestrator appelle ce tool dans cet ordre:
+ * 1. evaluateMoves() → score tous les moves
+ * 2. evaluateSwitchDecision() → faut-il switch?
+ * 3. predictOpponentAction() → que va faire l'adversaire?
+ * 4. calculateWinProbability() → quelle est notre chance de gagner?
+ * 5. Décision finale: move avec best score OU switch si nécessaire
+ * ============================================================================
  */
 
 import { DamageCalculatorTool, DamageCalculationResult, MoveForDamage, BattlePokemonForDamage } from "./DamageCalculatorTool";

@@ -1,11 +1,77 @@
 /**
- * Stat Modifier Tool
+ * ============================================================================
+ * STAT MODIFIER TOOL - Tool de modification des statistiques
+ * ============================================================================
  * 
- * Gère les modifications de stats en combat:
- * - Boost/Debuff (+6 à -6 stages)
- * - Reset des stats
- * - Calcul des stats effectives
- * - Prédiction de l'impact des boosts
+ * OBJECTIF:
+ * Ce tool gère le système de "stages" de stats en combat Pokémon.
+ * Les stages permettent de booster ou réduire les stats temporairement pendant
+ * un combat (ces changements ne persistent pas après le combat).
+ * 
+ * SYSTÈME DE STAGES (-6 à +6):
+ * Chaque stat peut être modifiée de -6 (minimale) à +6 (maximale).
+ * Un stage 0 = stat normale (×1.0)
+ * 
+ * MULTIPLICATEURS (stats normales: Atk, Def, SpA, SpD, Speed):
+ * Stage | Multiplicateur | Exemple (base 100)
+ * ------|----------------|------------------
+ *   -6  |     ×2/8 = ×0.25  |  25
+ *   -5  |     ×2/7 = ×0.29  |  29
+ *   -4  |     ×2/6 = ×0.33  |  33
+ *   -3  |     ×2/5 = ×0.40  |  40
+ *   -2  |     ×2/4 = ×0.50  |  50
+ *   -1  |     ×2/3 = ×0.67  |  67
+ *    0  |     ×1.0         | 100
+ *   +1  |     ×3/2 = ×1.5   | 150
+ *   +2  |     ×4/2 = ×2.0   | 200
+ *   +3  |     ×5/2 = ×2.5   | 250
+ *   +4  |     ×6/2 = ×3.0   | 300
+ *   +5  |     ×7/2 = ×3.5   | 350
+ *   +6  |     ×8/2 = ×4.0   | 400
+ * 
+ * MOVES DE BOOST/DEBUFF COURANTS:
+ * Boosts (+stages):
+ * - Swords Dance: +2 Attack
+ * - Dragon Dance: +1 Attack, +1 Speed
+ * - Calm Mind: +1 SpA, +1 SpD
+ * - Agility: +2 Speed
+ * - Nasty Plot: +2 Special Attack
+ * 
+ * Debuffs (-stages):
+ * - Intimidate (ability): -1 Attack adversaire à l'entrée
+ * - Scary Face: -2 Speed adversaire
+ * - Charm: -2 Attack adversaire
+ * - Tickle: -1 Attack, -1 Defense adversaire
+ * 
+ * MULTIPLICATEURS ACCURACY/EVASION (différents!):
+ * Ces stats utilisent une formule différente (×3/N au lieu de ×N/2)
+ * Stage | Accuracy Mult | Exemple
+ * ------|---------------|--------
+ *   -6  |    ×3/9 = ×0.33  | 33%
+ *    0  |    ×1.0         | 100%
+ *   +6  |    ×9/3 = ×3.0   | 300%
+ * 
+ * STRATÉGIES "SETUP SWEEPER":
+ * Certains Pokémon sont conçus pour booster leurs stats puis balayer l'équipe:
+ * 1. Tour 1: utiliser Swords Dance (+2 Atk) ou Dragon Dance (+1 Atk, +1 Spe)
+ * 2. Tours 2+: attaquer avec des stats boostées pour OHKO (One Hit KO) l'équipe
+ * 
+ * Exemple: Gyarados
+ * - Dragon Dance × 2 → +2 Attack, +2 Speed
+ * - Waterfall boosted peut OHKO la plupart des Pokémon
+ * 
+ * COUNTERS AUX SETUP SWEEPERS:
+ * - Utiliser des moves à priorité (Quick Attack, Mach Punch)
+ * - Phazing (Roar, Whirlwind) pour forcer le switch et réinitialiser les stages
+ * - Haze pour reset tous les stages
+ * - Status (paralysie, burn) pour handicaper même avec boost
+ * 
+ * RESET DES STAGES:
+ * Les stages sont réinitialisés à 0 quand:
+ * - Le Pokémon switch out
+ * - Un move Haze est utilisé (reset les deux côtés)
+ * - Certains moves comme Clear Smog
+ * ============================================================================
  */
 
 export interface StatStages {

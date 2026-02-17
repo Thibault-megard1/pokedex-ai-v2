@@ -1,7 +1,113 @@
 /**
- * Type Effectiveness Tool
+ * ============================================================================
+ * TYPE EFFECTIVENESS TOOL - Tool d'analyse de couverture de types
+ * ============================================================================
  * 
- * Calcule les relations de types, faiblesses, résistances et couverture offensive.
+ * OBJECTIF:
+ * Ce tool analyse les relations de types d'une équipe pour identifier:
+ * - Les FAIBLESSES (types contre lesquels l'équipe est vulnérable)
+ * - Les RÉSISTANCES (types contre lesquels l'équipe est solide)
+ * - Les IMMUNITÉS (types auxquels l'équipe est immunisée)
+ * - La COUVERTURE OFFENSIVE (types que l'équipe peut attaquer efficacement)
+ * 
+ * ============================================================================
+ * SYSTÈME DE TYPES POKÉMON - 18 TYPES AU TOTAL
+ * ============================================================================
+ * 
+ * Types: Normal, Fire, Water, Grass, Electric, Ice, Fighting, Poison,
+ *        Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy
+ * 
+ * RÈGLES D'EFFICACITÉ:
+ * - Super efficace: ×2.0 dégâts
+ * - Efficacité normale: ×1.0
+ * - Peu efficace: ×0.5 dégâts
+ * - Pas efficace (immunité): ×0.0 dégâts
+ * 
+ * Pour les Pokémon DUAL-TYPE (ex: Gyarados Eau/Vol):
+ * - Les multiplcateurs se COMBINENT
+ * - Ex: Électrique → Gyarados (Eau/Vol)
+ *   * Électrique super efficace contre Eau (×2)
+ *   * Électrique super efficace contre Vol (×2)
+ *   * Résultat: ×4 dégâts! (double faiblesse)
+ * 
+ * ============================================================================
+ * EXEMPLES D'IMMUNITÉS IMPORTANTES
+ * ============================================================================
+ * - Sol IMMUNISÉ contre Électrique (Ground immune to Electric)
+ * - Vol IMMUNISÉ contre Sol (Flying immune to Ground)
+ * - Fée IMMUNISÉ contre Dragon (Fairy immune to Dragon)
+ * - Fantôme IMMUNISÉ contre Normal et Combat (Ghost immune to Normal/Fighting)
+ * - Ténèbres IMMUNISÉ contre Psy (Dark immune to Psychic)
+ * - Normal IMMUNISÉ contre Fantôme (Normal immune to Ghost)
+ * - Acier RÉSISTE à 11 types! (défenseur très solide)
+ * 
+ * ============================================================================
+ * CORE TEAMS (combinaisons classiques)
+ * ============================================================================
+ * 
+ * 1. **FWG CORE (Fire-Water-Grass)**
+ *    - Feu bat Plante, Acier, Glace, Insecte
+ *    - Eau bat Feu, Sol, Roche
+ *    - Plante bat Eau, Sol, Roche
+ *    - Ensemble, ils corent BEAUCOUP de types
+ *    - Ex: Charizard + Blastoise + Venusaur (starters!)
+ * 
+ * 2. **STEEL-FAIRY CORE**
+ *    - Acier résiste à 11 types
+ *    - Fée immunisé contre Dragon
+ *    - Acier couvre la faiblesse Poison de Fée
+ *    - Fée couvre la faiblesse Combat de Acier
+ *    - Ex: Magearna (Acier/Fée) + Heatran (Feu/Acier)
+ * 
+ * 3. **DRAGON-STEEL-FAIRY CORE**
+ *    - Dragon: offensif puissant
+ *    - Acier: défensif solide
+ *    - Fée: couvre faiblesse Dragon du Dragon
+ * 
+ * ============================================================================
+ * ALGORITHME DE SCORING D'UN CANDIDAT
+ * ============================================================================
+ * 
+ * Quand on évalue un nouveau Pokémon pour l'équipe:
+ * 
+ * BONUS MASSIFS (priorité = couvrir faiblesses!):
+ * - +60 points: IMMUNITÉ contre une faiblesse d'équipe
+ *   * Ex: équipe faible à Électrique → ajouter Rhydon (Sol, immunisé)
+ * 
+ * - +45 points: RÉSISTE à une faiblesse CRITIQUE (x4)
+ *   * Ex: équipe avec Tyranitar (Roche/Ténèbres, x4 faible Combat)
+ *     → ajouter Toxicroak (Poison/Combat, résiste Combat)
+ * 
+ * - +30 points: RÉSISTE à une faiblesse x2
+ * 
+ * - +25 points: Ajoute un NOUVEAU TYPE OFFENSIF
+ *   * Plus de types = plus de couverture contre adversaires
+ * 
+ * - +20 points: Fort contre une faiblesse d'équipe
+ *   * Ex: équipe faible à Feu → ajouter Quagsire (Eau, super efficace vs Feu)
+ * 
+ * PÉNALITÉS (on veut éviter!):
+ * - -30 points: Partage UNE faiblesse avec l'équipe
+ *   * Ex: équipe déjà faible à Combat, ajouter un autre faible Combat
+ * 
+ * - -40 points: Dual-type REDONDANT (les 2 types déjà dans l'équipe)
+ *   * Ex: équipe a déjà Feu et Vol → ajouter Charizard (Feu/Vol) = mauvais
+ * 
+ * - Score réduit si le candidat ajoute peu de valeur
+ * 
+ * ============================================================================
+ * STRATÉGIE DE TEAM BUILDING
+ * ============================================================================
+ * 
+ * Étapes recommandées:
+ * 1. Choisir un "core" défensif (Steel/Fairy par ex)
+ * 2. Identifier les faiblesses du core
+ * 3. Ajouter des Pokémon qui COUVRENT ces faiblesses
+ * 4. Viser au moins 10-12 types DIFFÉRENTS dans l'équipe
+ * 5. Éviter les faiblesses COMMUNES (ex: tous faibles à Électrique)
+ * 6. Avoir au moins 1-2 immunités importantes (Sol pour Électrique, etc.)
+ * 
+ * ============================================================================
  */
 
 import { calculateDefensiveMultiplier, getTypeRelations } from "@/lib/typeRelations";

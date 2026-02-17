@@ -1,8 +1,165 @@
 /**
- * Stats Analyzer Tool
+ * ============================================================================
+ * STATS ANALYZER TOOL - Tool d'analyse des statistiques
+ * ============================================================================
  * 
- * Analyse les statistiques de base pour équilibrer l'équipe
- * et identifier les rôles (sweeper, tank, support, etc.)
+ * OBJECTIF:
+ * Ce tool analyse les statistiques de base (base stats) des Pokémon pour:
+ * - Identifier les GAPS dans l'équipe (manque de vitesse, de bulk, etc.)
+ * - Classifier les ROLES (Sweeper, Tank, Support, etc.)
+ * - Équilibrer l'équipe (mix de offensif et défensif)
+ * - Déterminer le BIAIS physique vs spécial
+ * 
+ * ============================================================================
+ * LES 6 STATISTIQUES POKÉMON
+ * ============================================================================
+ * 
+ * 1. **HP** (Hit Points / Points de Vie)
+ *    - Détermine combien de dégâts le Pokémon peut encaisser
+ *    - Range typique: 20-255
+ *    - Exemples:
+ *      * Blissey: 255 HP (le plus haut!)
+ *      * Shedinja: 1 HP (mais ability Wonder Guard = quasi-invincible)
+ *      * Moyenne: ~70-80 HP
+ * 
+ * 2. **ATTACK** (Attaque Physique)
+ *    - Puissance des attaques PHYSIQUES (contact direct)
+ *    - Moves concernés: Tackle, Earthquake, Close Combat, etc.
+ *    - Exemples:
+ *      * Mega Mewtwo X: 190 Attack
+ *      * Shuckle: 10 Attack (le plus faible)
+ * 
+ * 3. **DEFENSE** (Défense Physique)
+ *    - Résistance aux attaques physiques
+ *    - Exemples:
+ *      * Shuckle: 230 Defense (le plus haut!)
+ *      * Chansey: 5 Defense
+ * 
+ * 4. **SPECIAL ATTACK** (Attaque Spéciale)
+ *    - Puissance des attaques SPÉCIALES (à distance, énergie)
+ *    - Moves: Flamethrower, Thunderbolt, Psychic, etc.
+ *    - Exemples:
+ *      * Mega Mewtwo Y: 194 SpA
+ *      * Clefable: 95 SpA (décent)
+ * 
+ * 5. **SPECIAL DEFENSE** (Défense Spéciale)
+ *    - Résistance aux attaques spéciales
+ *    - Exemples:
+ *      * Shuckle: 230 SpD
+ *      * Blissey: 135 SpD (mur spécial parfait)
+ * 
+ * 6. **SPEED** (Vitesse)
+ *    - Détermine qui attaque en premier
+ *    - CRITIQUE en compétitif (attaquer en premier = souvent gagner)
+ *    - Exemples:
+ *      * Deoxys-Speed: 180 Speed (le plus rapide)
+ *      * Shuckle: 5 Speed (le plus lent)
+ *      * Speed Tiers compétitifs:
+ *        - Slow: < 60 (Ferrothorn, Slowbro)
+ *        - Medium: 60-90 (Tyranitar, Clefable)
+ *        - Fast: 90-110 (Garchomp, Latios)
+ *        - Ultra-Fast: > 110 (Dragapult, Weavile)
+ * 
+ * **BASE STAT TOTAL (BST):**
+ * - Somme des 6 stats
+ * - Legendaries: 580-680 BST typique
+ * - Standards: 450-550 BST
+ * - Pseudo-legendaries: 600 BST (Dragonite, Tyranitar, Garchomp, etc.)
+ * 
+ * ============================================================================
+ * CLASSIFICATION DES RÔLES
+ * ============================================================================
+ * 
+ * Le tool classifie automatiquement chaque Pokémon dans un rôle:
+ * 
+ * 1. **SWEEPER** (Balayeur Offensif)
+ *    - Haute attaque (Atk OU SpA > 110) + Vitesse élevée (Speed > 90)
+ *    - Mission: KO plusieurs Pokémon adverses rapidement
+ *    - Exemples:
+ *      * Garchomp: 130 Atk, 102 Speed (Physical Sweeper)
+ *      * Alakazam: 135 SpA, 120 Speed (Special Sweeper)
+ *    - Stratégie: Setup (Swords Dance/Nasty Plot) puis balayer
+ * 
+ * 2. **TANK / WALL** (Mur Défensif)
+ *    - HP + Défenses élevés (HP > 90, Def/SpD > 100)
+ *    - Vitesse généralement basse
+ *    - Mission: Encaisser les coups, staller, infliger status
+ *    - Types:
+ *      * Physical Wall: Def élevé (Skarmory, Ferrothorn)
+ *      * Special Wall: SpD élevé (Blissey, Chansey)
+ *      * Mixed Wall: Les deux (Toxapex, Cresselia)
+ *    - Moves typiques: Toxic, Protect, Recover, Roost
+ * 
+ * 3. **WALLBREAKER** (Brise-Mur)
+ *    - Attaque EXTRÊMEMENT élevée (> 130) mais vitesse moyenne
+ *    - Mission: Détruire les walls adverses avec sa puissance brute
+ *    - Exemples: Mega Mawile, Choice Band Tyranitar
+ *    - Souvent utilise Choice Band/Specs pour encore plus de puissance
+ * 
+ * 4. **SUPPORT** (Soutien)
+ *    - Stats équilibrées mais pas exceptionnelles
+ *    - Mission: Aider l'équipe (heal, setup entry hazards, status)
+ *    - Moves: Stealth Rock, Spikes, Heal Bell, Thunder Wave
+ *    - Exemples: Clefable, Ferrothorn, Toxapex
+ * 
+ * 5. **PIVOT** (Tournant)
+ *    - Vitesse élevée + bulk décent
+ *    - Mission: Switch in/out facilement, maintenir momentum
+ *    - Moves: U-turn, Volt Switch, Flip Turn (switch après attaque)
+ *    - Exemples: Landorus-T, Rotom-Wash
+ * 
+ * 6. **REVENGE KILLER** (Finisseur)
+ *    - Vitesse EXTRÊME + attaque décente
+ *    - Mission: Finir les Pokémon affaiblis
+ *    - Souvent utilise priority moves ou Choice Scarf
+ *    - Exemples: Weavile, Dragapult
+ * 
+ * ============================================================================
+ * ANALYSE D'ÉQUIPE
+ * ============================================================================
+ * 
+ * Le tool calcule pour toute l'équipe:
+ * 
+ * 1. **STATS MOYENNES**
+ *    - Moyenne de chaque stat (HP, Atk, Def, SpA, SpD, Speed)
+ *    - Permet d'identifier les faiblesses globales
+ * 
+ * 2. **PHYSICAL VS SPECIAL BIAS** (-1 à +1)
+ *    - Formule: (Avg Attack - Avg SpA) / max(Avg Attack, Avg SpA)
+ *    - +1 = entièrement physique
+ *    - -1 = entièrement spécial
+ *    -  0 = parfaitement équilibré
+ *    - IMPORTANT: Avoir un mix est mieux!
+ *      * Si que physique → vulnérable aux Physical walls (Skarmory)
+ *      * Si que spécial → vulnérable aux Special walls (Blissey)
+ * 
+ * 3. **SPEED DISTRIBUTION**
+ *    - "slow": < 60 moyenne (problématique!)
+ *    - "balanced": 60-90
+ *    - "fast": > 90 (idéal)
+ * 
+ * 4. **BULK RATING** (0-100)
+ *    - Formule: (HP + Def + SpD moyens) / 450 * 100
+ *    - Mesure la résistance globale de l'équipe
+ *    - < 50: équipe "glass cannon" (fragile)
+ *    - > 70: équipe défensive "stall team"
+ * 
+ * ============================================================================
+ * SCORING D'UN CANDIDAT
+ * ============================================================================
+ * 
+ * Quand on évalue un nouveau Pokémon:
+ * 
+ * BONUS SI:
+ * - Corrige une équipe TROP LENTE (+40 points si rapide)
+ * - Corrige une équipe TROP RAPIDE (+30 points si bulky)
+ * - Équilibre le biais physique/spécial (+35 points)
+ * - Ajoute du BULK si l'équipe est fragile (+40 points)
+ * 
+ * PÉNALITÉS SI:
+ * - Réduit le poids des stats brutes (moins important que les types/roles)
+ * - Candidat trop similaire à l'équipe actuelle
+ * ============================================================================
  */
 
 import { Pokemon } from "./TypeEffectivenessTool";

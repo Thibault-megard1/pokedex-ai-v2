@@ -1,16 +1,50 @@
 /**
- * Damage Calculator Tool
+ * ============================================================================
+ * DAMAGE CALCULATOR TOOL - Tool de calcul de dégâts Pokémon
+ * ============================================================================
  * 
- * Calcule précisément les dégâts selon la formule officielle Pokémon Gen V+
+ * OBJECTIF:
+ * Ce tool implémente la formule officielle de calcul de dégâts Pokémon Gen V+.
+ * Il est utilisé par le DamageCalculationAgent pour évaluer la puissance des
+ * attaques et les chances de KO.
  * 
- * Formule: ((((2 * Level / 5 + 2) * Power * A/D) / 50) + 2) * Modifiers
+ * ALGORITHME (Formule Gen V+):
+ * damage = ((((2 × Level / 5 + 2) × Power × A/D) / 50) + 2) × Modifiers
  * 
- * Modifiers:
- * - Type effectiveness (0, 0.25, 0.5, 1, 2, 4)
- * - STAB (Same Type Attack Bonus): 1.5x
- * - Critical hit: 1.5x (base 6.25% chance)
- * - Random factor: 0.85 to 1.0
- * - Status conditions (burn = 0.5x physical)
+ * Où:
+ * - Level: niveau du Pokémon attaquant (généralement 50 ou 100)
+ * - Power: puissance de base de l'attaque (ex: 90 pour Surf)
+ * - A: stat d'attaque (Attack ou Special Attack selon le type de move)
+ * - D: stat de défense du défenseur (Defense ou Special Defense)
+ * 
+ * MODIFIERS APPLIQUÉS (dans l'ordre):
+ * 1. STAB (Same Type Attack Bonus): ×1.5 si le type de l'attaque correspond
+ *    au type de l'attaquant (ex: Pikachu utilisant Thunderbolt)
+ * 2. Type Effectiveness: ×0 (immunité), ×0.25, ×0.5, ×1, ×2, ou ×4
+ *    - ×4 pour double faiblesse (ex: Électrique → Gyarados Eau/Vol)
+ *    - ×0.25 pour double résistance
+ * 3. Critical Hit: ×1.5 (chance de base: 6.25% = 1/16)
+ * 4. Burn Penalty: ×0.5 pour les attaques physiques si brûlé
+ * 5. Random Factor: entre 0.85 et 1.0 (variance de 15%)
+ * 
+ * STATISTIQUES CALCULÉES:
+ * - Dégâts min/max (compte pour la variance aléatoire)
+ * - Pourcentage de HP infligé
+ * - Chance de KO en un coup
+ * - Nombre de tours estimé pour KO
+ * 
+ * UTILISATION PAR LES AGENTS:
+ * Le DamageCalculationAgent utilise ce tool pour:
+ * - Évaluer tous les moves disponibles
+ * - Choisir l'attaque optimale
+ * - Prédire les tours de KO
+ * - Calculer le risque d'être KO par l'adversaire
+ * 
+ * CONCEPTS CLÉS:
+ * - Stat Stages: les modificateurs de stats (-6 à +6) sont appliqués avant calcul
+ * - STAB encourage à utiliser des attaques du même type que le Pokémon
+ * - La variance aléatoire (85-100%) empêche les dégâts d'être totalement prédictibles
+ * ============================================================================
  */
 
 import { calculateDefensiveMultiplier } from "@/lib/typeRelations";
