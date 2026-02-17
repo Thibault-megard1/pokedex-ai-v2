@@ -32,7 +32,7 @@ graph TD
 
     Auth[Authentification] --> Admin[Admin protégé]
 
-    Pokedex --> API[API /api/*]
+    Pokedex --> API[API "/api/*"]
     Combat --> API
     Quiz --> API
     IA --> API
